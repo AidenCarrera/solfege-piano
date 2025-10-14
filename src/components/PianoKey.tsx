@@ -23,11 +23,13 @@ export default function PianoKey({
     : "bg-white w-16 h-60 border border-gray-800 rounded-b-md relative";
 
   // Active (pressed) state color
-  const activeStyle = activeNote === note.name
-    ? note.isSharp
-      ? "bg-gray-600"
-      : "bg-blue-200"
-    : "";
+  const activeStyle =
+    activeNote === note.name
+      ? note.isSharp
+        ? "bg-black shadow-inner shadow-blue-400"
+        : "bg-blue-100 shadow-inner shadow-blue-400"
+      : "";
+
 
   // Inline style for sharp key positioning
   const positionStyle = note.isSharp
@@ -37,10 +39,14 @@ export default function PianoKey({
   return (
     <button
       key={note.name}
-      onMouseDown={() => onMouseDown(note.fileName, note.name)}
+      onMouseDown={e => {
+        e.preventDefault(); // prevents focus highlight
+        onMouseDown(note.fileName, note.name);
+      }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
       className={`${baseStyle} ${activeStyle} transition-colors duration-100`}
       style={positionStyle}
+      tabIndex={-1} // optional: makes it not tabbable
     >
       <span
         className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono ${

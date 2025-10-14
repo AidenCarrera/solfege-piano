@@ -5,25 +5,31 @@ import { Howl } from "howler";
 import { notes, type Note } from "@/lib/notes";
 import PianoKey from "./PianoKey";
 
+// ----- CONFIGURABLE SCALING -----
+const WHITE_KEY_WIDTH_REM = 4;
+const PIANO_SCALE = 1.5; // adjust this for size
+
 export default function Piano() {
   // ----- STATE -----
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [lastPlayedNote, setLastPlayedNote] = useState<string | null>(null);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const [lastPlayedTimes, setLastPlayedTimes] = useState<Record<string, number>>({});
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (pressedKeys.has(key)) return; // avoid repeat
-
       const note = notes.find(n => n.key === key);
-      if (note) {
-        e.preventDefault();
-        setPressedKeys(prev => new Set(prev).add(key));
-        playNote(note.fileName, note.name);
-      }
+      if (!note) return;
+
+      e.preventDefault();
+
+      // Prevent holding a key from spamming infinitely fast
+      if (pressedKeys.has(key)) return;
+
+      setPressedKeys(prev => new Set(prev).add(key));
+      playNote(note.fileName, note.name);
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -46,15 +52,25 @@ export default function Piano() {
 
   // ----- AUDIO PLAYBACK -----
   const playNote = (fileName: string, noteName: string) => {
-    if (noteName === lastPlayedNote) return; // prevent duplicates
+    const now = Date.now();
+    const cooldown = 50; // ms between retriggers for same note
+
+    if (lastPlayedTimes[noteName] && now - lastPlayedTimes[noteName] < cooldown) {
+      return;
+    }
+
     const sound = new Howl({
       src: [`/samples/piano/${fileName}.mp3`],
-      volume: 0.25,
+      volume: 0.2,
     });
+
     sound.play();
     setActiveNote(noteName);
-    setLastPlayedNote(noteName);
-    setTimeout(() => setActiveNote(null), 200);
+    setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
+
+    setTimeout(() => {
+      setActiveNote(current => (current === noteName ? null : current));
+    }, 150);
   };
 
   // ----- MOUSE HANDLERS -----
@@ -69,27 +85,34 @@ export default function Piano() {
 
   const handleMouseUp = () => {
     setIsMouseDown(false);
-    setLastPlayedNote(null);
   };
 
-  // ----- KEY POSITIONING HELPERS -----
+  // ----- KEY POSITIONING -----
   const getSharpKeyPosition = (note: Note) => {
     const baseNote = note.name[0];
     const whiteNotes = notes.filter(n => !n.isSharp);
     const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(baseNote));
-    return whiteIndex * 4 + 4; // 4rem per white key
+    return whiteIndex * WHITE_KEY_WIDTH_REM + WHITE_KEY_WIDTH_REM;
   };
 
   // ----- RENDER -----
   return (
     <main
-      className="flex flex-col items-center justify-center min-h-screen bg-neutral-950"
+      className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 select-none"
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
       <h1 className="text-white text-3xl font-semibold mb-8">🎹 Playable Piano</h1>
 
-      <div className="relative flex">
+      {/* Wrapper that visually scales piano but keeps layout correct */}
+      <div
+        className="relative flex"
+        style={{
+          transform: `scale(${PIANO_SCALE})`,
+          transformOrigin: "top center",
+          marginBottom: `${(PIANO_SCALE - 1) * 200}px`,
+        }}
+      >
         {notes.map(note => (
           <PianoKey
             key={note.name}
