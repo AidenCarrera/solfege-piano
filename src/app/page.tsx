@@ -1,103 +1,118 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Howl } from "howler";
+
+type Note = {
+  name: string;
+  isSharp: boolean;
+  fileName: string;
+};
+
+const notes: Note[] = [
+  { name: "C4", isSharp: false, fileName: "C4" },
+  { name: "C#4", isSharp: true, fileName: "Cs4" },
+  { name: "D4", isSharp: false, fileName: "D4" },
+  { name: "D#4", isSharp: true, fileName: "Ds4" },
+  { name: "E4", isSharp: false, fileName: "E4" },
+  { name: "F4", isSharp: false, fileName: "F4" },
+  { name: "F#4", isSharp: true, fileName: "Fs4" },
+  { name: "G4", isSharp: false, fileName: "G4" },
+  { name: "G#4", isSharp: true, fileName: "Gs4" },
+  { name: "A4", isSharp: false, fileName: "A4" },
+  { name: "A#4", isSharp: true, fileName: "As4" },
+  { name: "B4", isSharp: false, fileName: "B4" },
+  { name: "C5", isSharp: false, fileName: "C5" },
+];
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeNote, setActiveNote] = useState<string | null>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [lastPlayedNote, setLastPlayedNote] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  const playNote = (fileName: string, noteName: string) => {
+    // Prevent playing the same note twice in quick succession during drag
+    if (noteName === lastPlayedNote) return;
+    
+    const sound = new Howl({
+      src: [`/samples/piano/${fileName}.mp3`],
+      volume: 0.25,
+    });
+    sound.play();
+    setActiveNote(noteName);
+    setLastPlayedNote(noteName);
+    setTimeout(() => setActiveNote(null), 200);
+  };
+
+  const handleMouseDown = (fileName: string, noteName: string) => {
+    setIsMouseDown(true);
+    playNote(fileName, noteName);
+  };
+
+  const handleMouseEnter = (fileName: string, noteName: string) => {
+    if (isMouseDown) {
+      playNote(fileName, noteName);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+    setLastPlayedNote(null);
+  };
+
+  // Get white key index for positioning sharp keys
+  const getWhiteKeyIndex = (note: Note) => {
+    const whiteNotes = notes.filter(n => !n.isSharp);
+    return whiteNotes.findIndex(n => n.name === note.name);
+  };
+
+  // Get position for sharp keys based on the white key to their left
+  const getSharpKeyPosition = (note: Note) => {
+    const baseNote = note.name[0]; // C, D, F, G, or A
+    const whiteNotes = notes.filter(n => !n.isSharp);
+    const whiteKeyIndex = whiteNotes.findIndex(n => n.name.startsWith(baseNote));
+    return whiteKeyIndex * 4 + 3.5; // 4rem per white key (64px), centered between keys
+  };
+
+  return (
+    <main 
+      className="flex flex-col items-center justify-center min-h-screen bg-neutral-950"
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <h1 className="text-white text-3xl font-semibold mb-8">🎹 Playable Piano</h1>
+
+      <div className="relative flex">
+        {notes.map((note) => (
+          <button
+            key={note.name}
+            onMouseDown={() => handleMouseDown(note.fileName, note.name)}
+            onMouseEnter={() => handleMouseEnter(note.fileName, note.name)}
+            className={`${
+              note.isSharp
+                ? "absolute bg-black w-10 h-40 -mx-5 z-10 rounded-b-md"
+                : "bg-white w-16 h-60 border border-gray-800 rounded-b-md"
+            } ${
+              activeNote === note.name
+                ? note.isSharp
+                  ? "bg-gray-600"
+                  : "bg-blue-200"
+                : ""
+            } transition-colors duration-100`}
+            style={
+              note.isSharp
+                ? {
+                    left: `${getSharpKeyPosition(note)}rem`,
+                  }
+                : {}
+            }
+          ></button>
+        ))}
+      </div>
+
+      <p className="text-gray-400 text-sm mt-10">
+        Click or drag across keys to play notes (C4–C5)
+      </p>
+    </main>
   );
 }
