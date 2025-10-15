@@ -14,24 +14,25 @@ type Props = {
   setSoundType: (s: SoundType) => void;
 };
 
-export default function PianoControls(props: Props) {
-  const {
-    volume,
-    setVolume,
-    labelsEnabled,
-    setLabelsEnabled,
-    pianoScale,
-    setPianoScale,
-    bgColor,
-    setBgColor,
-    soundType,
-    setSoundType,
-  } = props;
-
+export default function PianoControls({
+  volume,
+  setVolume,
+  labelsEnabled,
+  setLabelsEnabled,
+  pianoScale,
+  setPianoScale,
+  bgColor,
+  setBgColor,
+  soundType,
+  setSoundType,
+}: Props) {
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8 items-center justify-center text-foreground">
-      <div className="flex flex-col">
-        <label>Volume: {volume.toFixed(2)}</label>
+    <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
+      {/* Volume */}
+      <div className="flex flex-col items-start">
+        <label className="text-sm font-medium mb-1">
+          Volume: {volume.toFixed(2)}
+        </label>
         <input
           type="range"
           min={0}
@@ -39,10 +40,12 @@ export default function PianoControls(props: Props) {
           step={0.01}
           value={volume}
           onChange={(e) => setVolume(parseFloat(e.target.value))}
+          className="w-40"
         />
       </div>
 
-      <label>
+      {/* Labels Enabled */}
+      <label className="flex items-center gap-2 text-sm font-medium">
         <input
           type="checkbox"
           checked={labelsEnabled}
@@ -51,8 +54,11 @@ export default function PianoControls(props: Props) {
         Labels Enabled
       </label>
 
-      <div className="flex flex-col">
-        <label>Piano Scale: {pianoScale.toFixed(2)}</label>
+      {/* Piano Scale */}
+      <div className="flex flex-col items-start">
+        <label className="text-sm font-medium mb-1">
+          Piano Scale: {pianoScale.toFixed(2)}
+        </label>
         <input
           type="range"
           min={0.5}
@@ -60,25 +66,28 @@ export default function PianoControls(props: Props) {
           step={0.01}
           value={pianoScale}
           onChange={(e) => setPianoScale(parseFloat(e.target.value))}
+          className="w-40"
         />
       </div>
 
-      <div className="flex flex-col">
-        <label>Background:</label>
+      {/* Background Color */}
+      <div className="flex flex-col items-start">
+        <label className="text-sm font-medium mb-1">Background:</label>
         <input
           type="color"
           value={bgColor}
           onChange={(e) => setBgColor(e.target.value)}
-          className="w-16 h-8 p-0 border-0"
+          className="w-16 h-8 rounded-md border border-[var(--input-border)]"
         />
       </div>
 
-      <div className="flex flex-col">
-        <label>Sound Type:</label>
+      {/* Sound Type */}
+      <div className="flex flex-col items-start">
+        <label className="text-sm font-medium mb-1">Sound Type:</label>
         <select
           value={soundType}
           onChange={(e) => setSoundType(e.target.value as SoundType)}
-          className="px-2 py-1 border rounded-md bg-transparent"
+          className="px-2 py-1 border rounded-md"
         >
           {SOUND_OPTIONS.map((s) => (
             <option key={s}>{s}</option>
