@@ -1,6 +1,11 @@
 "use client";
 import { SOUND_OPTIONS, type SoundType } from "./config";
 
+/**
+ * PianoControls Component
+ *
+ * Provides UI controls for piano configuration
+ */
 type Props = {
   volume: number;
   setVolume: (v: number) => void;
@@ -28,7 +33,7 @@ export default function PianoControls({
 }: Props) {
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
-      {/* Volume */}
+      {/* ----- Volume Control ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
           Volume: {volume.toFixed(2)}
@@ -44,7 +49,7 @@ export default function PianoControls({
         />
       </div>
 
-      {/* Labels Enabled */}
+      {/* ----- Label Visibility Toggle ----- */}
       <label className="flex items-center gap-2 text-sm font-medium">
         <input
           type="checkbox"
@@ -54,7 +59,7 @@ export default function PianoControls({
         Labels Enabled
       </label>
 
-      {/* Piano Scale */}
+      {/* ----- Piano Scale (Zoom) ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
           Piano Scale: {pianoScale.toFixed(2)}
@@ -70,7 +75,7 @@ export default function PianoControls({
         />
       </div>
 
-      {/* Background Color */}
+      {/* ----- Background Color Picker ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">Background:</label>
         <input
@@ -81,7 +86,7 @@ export default function PianoControls({
         />
       </div>
 
-      {/* Sound Type */}
+      {/* ----- Sound Type Selector ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">Sound Type:</label>
         <select
