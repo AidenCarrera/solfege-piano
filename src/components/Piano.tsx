@@ -15,6 +15,9 @@ const DEFAULT_CONFIG = {
   DEFAULT_PIANO_SCALE: 1.5,      // Default scale
 };
 
+const SOUND_OPTIONS = ["Piano", "Solfege"] as const;
+type SoundType = (typeof SOUND_OPTIONS)[number];
+
 export default function Piano() {
   // ----- STATE -----
   const [activeNote, setActiveNote] = useState<string | null>(null);
@@ -23,6 +26,7 @@ export default function Piano() {
   const [labelsEnabled, setLabelsEnabled] = useState<boolean>(DEFAULT_CONFIG.DEFAULT_LABELS_ENABLED);
   const [pianoScale, setPianoScale] = useState<number>(DEFAULT_CONFIG.DEFAULT_PIANO_SCALE);
   const [bgColor, setBgColor] = useState<string>("var(--background)");
+  const [soundType, setSoundType] = useState<SoundType>("Piano");
 
   const pressedKeys = useRef<Set<string>>(new Set());
   const lastPlayedTimes = useRef<Record<string, number>>({});
@@ -36,16 +40,22 @@ export default function Piano() {
     const lastTime = lastPlayedTimes.current[noteName] ?? 0;
     if (now - lastTime < DEFAULT_CONFIG.NOTE_COOLDOWN_MS) return;
 
+    // Determine folder based on sound type
+    const folder = soundType.toLowerCase();
+
     new Howl({
-      src: [`/samples/piano/${fileName}.mp3`],
+      src: [`/samples/${folder}/${fileName}.mp3`],
       volume,
     }).play();
 
     lastPlayedTimes.current[noteName] = now;
     setActiveNote(noteName);
 
-    setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), DEFAULT_CONFIG.NOTE_ACTIVE_DURATION_MS);
-  }, [volume]);
+    setTimeout(
+      () => setActiveNote(a => (a === noteName ? null : a)),
+      DEFAULT_CONFIG.NOTE_ACTIVE_DURATION_MS
+    );
+  }, [volume, soundType]);
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
@@ -76,14 +86,20 @@ export default function Piano() {
   }, [playNote]);
 
   // ----- MOUSE HANDLERS -----
-  const handleMouseDown = useCallback((fileName: string, noteName: string) => {
-    setIsMouseDown(true);
-    playNote(fileName, noteName);
-  }, [playNote]);
+  const handleMouseDown = useCallback(
+    (fileName: string, noteName: string) => {
+      setIsMouseDown(true);
+      playNote(fileName, noteName);
+    },
+    [playNote]
+  );
 
-  const handleMouseEnter = useCallback((fileName: string, noteName: string) => {
-    if (isMouseDown) playNote(fileName, noteName);
-  }, [isMouseDown, playNote]);
+  const handleMouseEnter = useCallback(
+    (fileName: string, noteName: string) => {
+      if (isMouseDown) playNote(fileName, noteName);
+    },
+    [isMouseDown, playNote]
+  );
 
   useEffect(() => {
     const handleGlobalMouseUp = () => setIsMouseDown(false);
@@ -95,7 +111,10 @@ export default function Piano() {
   const getSharpKeyPosition = (note: Note) => {
     const base = note.name[0];
     const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(base));
-    return whiteIndex * DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM + DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM;
+    return (
+      whiteIndex * DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM +
+      DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM
+    );
   };
 
   // ----- RENDER -----
@@ -112,12 +131,18 @@ export default function Piano() {
       </h1>
 
       {/* --- CONTROLS --- */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8 items-center" style={{ color: "var(--foreground)" }}>
+      <div
+        className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8 items-center justify-center"
+        style={{ color: "var(--foreground)" }}
+      >
+        {/* Volume */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">Volume: {volume.toFixed(2)}</label>
           <input
             type="range"
-            min={0} max={1} step={0.01}
+            min={0}
+            max={1}
+            step={0.01}
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
             className="w-40"
@@ -139,10 +164,14 @@ export default function Piano() {
 
         {/* Piano Scale */}
         <div className="flex flex-col">
-          <label className="text-sm mb-1">Piano Scale: {pianoScale.toFixed(2)}</label>
+          <label className="text-sm mb-1">
+            Piano Scale: {pianoScale.toFixed(2)}
+          </label>
           <input
             type="range"
-            min={0.5} max={2.0} step={0.01}
+            min={0.5}
+            max={2.0}
+            step={0.01}
             value={pianoScale}
             onChange={(e) => setPianoScale(parseFloat(e.target.value))}
             className="w-40"
@@ -159,6 +188,22 @@ export default function Piano() {
             className="w-16 h-8 p-0 border-0"
           />
         </div>
+
+        {/* Sound Type Selector */}
+        <div className="flex flex-col">
+          <label className="text-sm mb-1">Sound Type:</label>
+          <select
+            value={soundType}
+            onChange={(e) => setSoundType(e.target.value as SoundType)}
+            className="px-2 py-1 border rounded-md bg-transparent"
+          >
+            {SOUND_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* --- PIANO --- */}
@@ -170,7 +215,7 @@ export default function Piano() {
           marginBottom: `${(pianoScale - 1) * 200}px`,
         }}
       >
-        {notes.map(note => (
+        {notes.map((note) => (
           <PianoKey
             key={note.name}
             note={note}
