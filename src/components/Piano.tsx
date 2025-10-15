@@ -35,18 +35,30 @@ export default function Piano() {
   const whiteNotes = useMemo(() => notes.filter(n => !n.isSharp), []);
 
   // ----- AUDIO PLAYBACK -----
-  const playNote = useCallback((fileName: string, noteName: string) => {
+const currentSoundRef = useRef<Howl | null>(null);
+
+const playNote = useCallback(
+  (fileName: string, noteName: string) => {
     const now = Date.now();
     const lastTime = lastPlayedTimes.current[noteName] ?? 0;
     if (now - lastTime < DEFAULT_CONFIG.NOTE_COOLDOWN_MS) return;
 
-    // Determine folder based on sound type
     const folder = soundType.toLowerCase();
 
-    new Howl({
+    // Stop previous sound if in solfege (monophonic) mode
+    if (soundType === "Solfege" && currentSoundRef.current) {
+      currentSoundRef.current.stop();
+    }
+
+    const sound = new Howl({
       src: [`/samples/${folder}/${fileName}.mp3`],
       volume,
-    }).play();
+    });
+
+    // Store reference to current sound (for solfege mode)
+    currentSoundRef.current = sound;
+
+    sound.play();
 
     lastPlayedTimes.current[noteName] = now;
     setActiveNote(noteName);
@@ -55,7 +67,10 @@ export default function Piano() {
       () => setActiveNote(a => (a === noteName ? null : a)),
       DEFAULT_CONFIG.NOTE_ACTIVE_DURATION_MS
     );
-  }, [volume, soundType]);
+  },
+  [volume, soundType]
+);
+
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
