@@ -99,11 +99,19 @@ export default function Piano() {
 
   // ----- RENDER -----
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 select-none">
-      <h1 className="text-white text-3xl font-semibold mb-6">🎹 Playable Piano</h1>
+    <main
+      className="flex flex-col items-center justify-center min-h-screen select-none"
+      style={{ background: "var(--background)" }}
+    >
+      <h1
+        className="text-3xl font-semibold mb-6"
+        style={{ color: "var(--foreground)" }}
+      >
+        🎹 Playable Piano
+      </h1>
 
       {/* --- CONTROLS --- */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8 items-center text-white">
+      <div className="flex flex-col sm:flex-row gap-4 mb-8 items-center" style={{ color: "var(--foreground)" }}>
         <div className="flex flex-col">
           <label className="text-sm mb-1">Volume: {volume.toFixed(2)}</label>
           <input
@@ -161,7 +169,7 @@ export default function Piano() {
         ))}
       </div>
 
-      <p className="text-gray-400 text-sm mt-10">
+      <p className="text-sm mt-10" style={{ color: "var(--foreground)" }}>
         Click, drag, or use your keyboard to play notes (C4–C5)
       </p>
     </main>

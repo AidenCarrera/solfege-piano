@@ -10,7 +10,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1f171d;
     --foreground: #ededed;
     --primary: #3b82f6;
     --slider-thumb: #60a5fa;
@@ -32,7 +32,7 @@ body {
   font-family: var(--font-sans);
 }
 
-/* ----- TAILWIND SLIDER CUSTOMIZATION ----- */
+/* ----- SLIDERS ----- */
 input[type="range"] {
   accent-color: var(--primary);
   appearance: none;
@@ -59,4 +59,10 @@ input[type="range"]::-moz-range-thumb {
   background: var(--slider-thumb);
   cursor: pointer;
   border: 2px solid var(--foreground);
+}
+
+/* ----- CHECKBOXES ----- */
+input[type="checkbox"] {
+  accent-color: var(--primary);
+  cursor: pointer;
 }
