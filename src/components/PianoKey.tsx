@@ -10,43 +10,37 @@ type PianoKeyProps = {
   getSharpKeyPosition: (note: Note) => number;
 };
 
-export default function PianoKey({
+function PianoKey({
   note,
   activeNote,
   onMouseDown,
   onMouseEnter,
   getSharpKeyPosition,
 }: PianoKeyProps) {
-  // Base key style
-  const baseStyle = note.isSharp
-    ? "absolute bg-black w-10 h-40 -mx-5 z-10 rounded-b-md"
-    : "bg-white w-16 h-60 border border-gray-800 rounded-b-md relative";
+  const isActive = activeNote === note.name;
 
-  // Active (pressed) state color
-  const activeStyle =
-    activeNote === note.name
-      ? note.isSharp
-        ? "bg-black shadow-inner shadow-blue-400"
-        : "bg-blue-100 shadow-inner shadow-blue-400"
-      : "";
+  const base = note.isSharp
+    ? "absolute w-10 h-40 -mx-5 z-10 rounded-b-md bg-black"
+    : "relative w-16 h-60 rounded-b-md border border-gray-800 bg-white";
 
+  const active = isActive
+    ? note.isSharp
+      ? "ring-2 ring-blue-400/50 shadow-inner"
+      : "bg-blue-100 shadow-inner shadow-blue-400"
+    : "";
 
-  // Inline style for sharp key positioning
-  const positionStyle = note.isSharp
-    ? { left: `${getSharpKeyPosition(note)}rem` }
-    : {};
+  const position = note.isSharp ? { left: `${getSharpKeyPosition(note)}rem` } : {};
 
   return (
     <button
-      key={note.name}
       onMouseDown={e => {
-        e.preventDefault(); // prevents focus highlight
+        e.preventDefault(); // prevents focus outline
         onMouseDown(note.fileName, note.name);
       }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
-      className={`${baseStyle} ${activeStyle} transition-colors duration-100`}
-      style={positionStyle}
-      tabIndex={-1} // optional: makes it not tabbable
+      className={`${base} ${active} transition-all duration-100`}
+      style={position}
+      tabIndex={-1}
     >
       <span
         className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono ${
@@ -58,3 +52,6 @@ export default function PianoKey({
     </button>
   );
 }
+
+// ✅ Prevent unnecessary re-renders
+export default React.memo(PianoKey);

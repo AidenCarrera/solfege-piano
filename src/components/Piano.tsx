@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Howl } from "howler";
 import { notes, type Note } from "@/lib/notes";
 import PianoKey from "./PianoKey";
 
 // ----- CONFIGURABLE SCALING -----
 const WHITE_KEY_WIDTH_REM = 4;
-const PIANO_SCALE = 1.5; // adjust this for size
+const PIANO_SCALE = 1.5; // adjust for size
+const NOTE_COOLDOWN = 50; // ms between retriggers
+const NOTE_ACTIVE_DURATION = 150; // ms key stays visually active
 
 export default function Piano() {
   // ----- STATE -----
@@ -15,6 +17,26 @@ export default function Piano() {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [lastPlayedTimes, setLastPlayedTimes] = useState<Record<string, number>>({});
+
+  // ----- MEMOIZED WHITE KEYS -----
+  const whiteNotes = useMemo(() => notes.filter(n => !n.isSharp), []);
+
+  // ----- AUDIO PLAYBACK -----
+  const playNote = (fileName: string, noteName: string) => {
+    const now = Date.now();
+    const lastTime = lastPlayedTimes[noteName] ?? 0;
+    if (now - lastTime < NOTE_COOLDOWN) return;
+
+    new Howl({
+      src: [`/samples/piano/${fileName}.mp3`],
+      volume: 0.2,
+    }).play();
+
+    setActiveNote(noteName);
+    setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
+
+    setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), NOTE_ACTIVE_DURATION);
+  };
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
@@ -25,11 +47,12 @@ export default function Piano() {
 
       e.preventDefault();
 
-      // Prevent holding a key from spamming infinitely fast
-      if (pressedKeys.has(key)) return;
-
-      setPressedKeys(prev => new Set(prev).add(key));
-      playNote(note.fileName, note.name);
+      setPressedKeys(prev => {
+        if (prev.has(key)) return prev; // prevent spam
+        const next = new Set(prev).add(key);
+        playNote(note.fileName, note.name);
+        return next;
+      });
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -48,30 +71,7 @@ export default function Piano() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [pressedKeys]);
-
-  // ----- AUDIO PLAYBACK -----
-  const playNote = (fileName: string, noteName: string) => {
-    const now = Date.now();
-    const cooldown = 50; // ms between retriggers for same note
-
-    if (lastPlayedTimes[noteName] && now - lastPlayedTimes[noteName] < cooldown) {
-      return;
-    }
-
-    const sound = new Howl({
-      src: [`/samples/piano/${fileName}.mp3`],
-      volume: 0.2,
-    });
-
-    sound.play();
-    setActiveNote(noteName);
-    setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
-
-    setTimeout(() => {
-      setActiveNote(current => (current === noteName ? null : current));
-    }, 150);
-  };
+  }, []); // ✅ stable event listeners
 
   // ----- MOUSE HANDLERS -----
   const handleMouseDown = (fileName: string, noteName: string) => {
@@ -83,14 +83,15 @@ export default function Piano() {
     if (isMouseDown) playNote(fileName, noteName);
   };
 
-  const handleMouseUp = () => {
-    setIsMouseDown(false);
-  };
+  useEffect(() => {
+    const handleGlobalMouseUp = () => setIsMouseDown(false);
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+  }, []);
 
-  // ----- KEY POSITIONING -----
+  // ----- POSITIONING -----
   const getSharpKeyPosition = (note: Note) => {
     const baseNote = note.name[0];
-    const whiteNotes = notes.filter(n => !n.isSharp);
     const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(baseNote));
     return whiteIndex * WHITE_KEY_WIDTH_REM + WHITE_KEY_WIDTH_REM;
   };
@@ -99,12 +100,9 @@ export default function Piano() {
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 select-none"
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       <h1 className="text-white text-3xl font-semibold mb-8">🎹 Playable Piano</h1>
 
-      {/* Wrapper that visually scales piano but keeps layout correct */}
       <div
         className="relative flex"
         style={{
