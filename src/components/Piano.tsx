@@ -1,45 +1,46 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Howl } from "howler";
 import { notes, type Note } from "@/lib/notes";
 import PianoKey from "./PianoKey";
 
-// ----- CONFIGURABLE SCALING -----
-const WHITE_KEY_WIDTH_REM = 4;
-const PIANO_SCALE = 1.5;
-const NOTE_COOLDOWN = 50; // ms between retriggers
-const NOTE_ACTIVE_DURATION = 150; // ms key stays visually active
+// ----- CONFIGURATION -----
+const CONFIG = {
+  WHITE_KEY_WIDTH_REM: 4,
+  PIANO_SCALE: 1.5,
+  NOTE_COOLDOWN_MS: 50,          // Minimum time between triggering same note
+  NOTE_ACTIVE_DURATION_MS: 150,  // How long key stays visually active
+  VOLUME: 0.2,                   // Playback volume (0.0 - 1.0)
+  LABELS_ENABLED: true,          // Show note labels under keys
+};
 
 export default function Piano() {
   // ----- STATE -----
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
-  const [lastPlayedTimes, setLastPlayedTimes] = useState<Record<string, number>>({});
+  const pressedKeys = useRef<Set<string>>(new Set());
+  const lastPlayedTimes = useRef<Record<string, number>>({});
 
-  // ----- MEMOIZED WHITE KEYS -----
+  // ----- MEMOIZED WHITE NOTES -----
   const whiteNotes = useMemo(() => notes.filter(n => !n.isSharp), []);
 
   // ----- AUDIO PLAYBACK -----
-  const playNote = useCallback(
-    (fileName: string, noteName: string) => {
-      const now = Date.now();
-      const lastTime = lastPlayedTimes[noteName] ?? 0;
-      if (now - lastTime < NOTE_COOLDOWN) return;
+  const playNote = useCallback((fileName: string, noteName: string) => {
+    const now = Date.now();
+    const lastTime = lastPlayedTimes.current[noteName] ?? 0;
+    if (now - lastTime < CONFIG.NOTE_COOLDOWN_MS) return;
 
-      new Howl({
-        src: [`/samples/piano/${fileName}.mp3`],
-        volume: 0.2,
-      }).play();
+    new Howl({
+      src: [`/samples/piano/${fileName}.mp3`],
+      volume: CONFIG.VOLUME,
+    }).play();
 
-      setActiveNote(noteName);
-      setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
+    lastPlayedTimes.current[noteName] = now;
+    setActiveNote(noteName);
 
-      setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), NOTE_ACTIVE_DURATION);
-    },
-    [lastPlayedTimes]
-  );
+    setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), CONFIG.NOTE_ACTIVE_DURATION_MS);
+  }, []);
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
@@ -50,31 +51,24 @@ export default function Piano() {
 
       e.preventDefault();
 
-      setPressedKeys(prev => {
-        if (prev.has(key)) return prev; // prevent spam
-        const next = new Set(prev).add(key);
+      if (!pressedKeys.current.has(key)) {
+        pressedKeys.current.add(key);
         playNote(note.fileName, note.name);
-        return next;
-      });
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      setPressedKeys(prev => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
+      pressedKeys.current.delete(key);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [playNote]); // ✅ add dependency to satisfy eslint
+  }, [playNote]);
 
   // ----- MOUSE HANDLERS -----
   const handleMouseDown = useCallback((fileName: string, noteName: string) => {
@@ -92,11 +86,11 @@ export default function Piano() {
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, []);
 
-  // ----- POSITIONING -----
+  // ----- SHARP KEY POSITIONING -----
   const getSharpKeyPosition = (note: Note) => {
-    const baseNote = note.name[0];
-    const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(baseNote));
-    return whiteIndex * WHITE_KEY_WIDTH_REM + WHITE_KEY_WIDTH_REM;
+    const base = note.name[0];
+    const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(base));
+    return whiteIndex * CONFIG.WHITE_KEY_WIDTH_REM + CONFIG.WHITE_KEY_WIDTH_REM;
   };
 
   // ----- RENDER -----
@@ -107,9 +101,9 @@ export default function Piano() {
       <div
         className="relative flex"
         style={{
-          transform: `scale(${PIANO_SCALE})`,
+          transform: `scale(${CONFIG.PIANO_SCALE})`,
           transformOrigin: "top center",
-          marginBottom: `${(PIANO_SCALE - 1) * 200}px`,
+          marginBottom: `${(CONFIG.PIANO_SCALE - 1) * 200}px`,
         }}
       >
         {notes.map(note => (
@@ -120,6 +114,7 @@ export default function Piano() {
             onMouseDown={handleMouseDown}
             onMouseEnter={handleMouseEnter}
             getSharpKeyPosition={getSharpKeyPosition}
+            showLabel={CONFIG.LABELS_ENABLED}
           />
         ))}
       </div>

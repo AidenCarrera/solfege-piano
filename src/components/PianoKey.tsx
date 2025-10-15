@@ -8,6 +8,7 @@ type PianoKeyProps = {
   onMouseDown: (fileName: string, noteName: string) => void;
   onMouseEnter: (fileName: string, noteName: string) => void;
   getSharpKeyPosition: (note: Note) => number;
+  showLabel?: boolean; // optional, default true
 };
 
 function PianoKey({
@@ -16,6 +17,7 @@ function PianoKey({
   onMouseDown,
   onMouseEnter,
   getSharpKeyPosition,
+  showLabel = true,
 }: PianoKeyProps) {
   const isActive = activeNote === note.name;
 
@@ -42,13 +44,15 @@ function PianoKey({
       style={position}
       tabIndex={-1}
     >
-      <span
-        className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono ${
-          note.isSharp ? "text-white" : "text-gray-400"
-        }`}
-      >
-        {note.key.toUpperCase()}
-      </span>
+      {showLabel && (
+        <span
+          className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono ${
+            note.isSharp ? "text-white" : "text-gray-400"
+          }`}
+        >
+          {note.key.toUpperCase()}
+        </span>
+      )}
     </button>
   );
 }
