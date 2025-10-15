@@ -22,6 +22,7 @@ export default function Piano() {
   const [volume, setVolume] = useState<number>(DEFAULT_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState<boolean>(DEFAULT_CONFIG.DEFAULT_LABELS_ENABLED);
   const [pianoScale, setPianoScale] = useState<number>(DEFAULT_CONFIG.DEFAULT_PIANO_SCALE);
+  const [bgColor, setBgColor] = useState<string>("var(--background)");
 
   const pressedKeys = useRef<Set<string>>(new Set());
   const lastPlayedTimes = useRef<Record<string, number>>({});
@@ -101,7 +102,7 @@ export default function Piano() {
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen select-none"
-      style={{ background: "var(--background)" }}
+      style={{ background: bgColor }}
     >
       <h1
         className="text-3xl font-semibold mb-6"
@@ -123,6 +124,7 @@ export default function Piano() {
           />
         </div>
 
+        {/* Labels Enabled */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">
             <input
@@ -135,6 +137,7 @@ export default function Piano() {
           </label>
         </div>
 
+        {/* Piano Scale */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">Piano Scale: {pianoScale.toFixed(2)}</label>
           <input
@@ -143,6 +146,17 @@ export default function Piano() {
             value={pianoScale}
             onChange={(e) => setPianoScale(parseFloat(e.target.value))}
             className="w-40"
+          />
+        </div>
+
+        {/* Background Color Picker */}
+        <div className="flex flex-col">
+          <label className="text-sm mb-1">Background Color:</label>
+          <input
+            type="color"
+            value={bgColor}
+            onChange={(e) => setBgColor(e.target.value)}
+            className="w-16 h-8 p-0 border-0"
           />
         </div>
       </div>
