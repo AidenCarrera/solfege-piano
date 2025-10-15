@@ -92,7 +92,7 @@ export default function Piano() {
         ))}
       </div>
 
-      <p className="text-sm mt-10 text-foreground">
+      <p className="text-sm font-medium mb-1 mt-10 text-foreground">
         Click, drag, or use your keyboard to play notes (C4–C5)
       </p>
     </main>
