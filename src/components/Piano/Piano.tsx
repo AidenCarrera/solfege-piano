@@ -21,9 +21,18 @@ export default function Piano() {
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [pianoScale, setPianoScale] = useState(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
-  const [bgColor, setBgColor] = useState("var(--background)");
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
   const [isMouseDown, setIsMouseDown] = useState(false);
+  // Initialize background color from actual CSS variable
+  const [bgColor, setBgColor] = useState(() => {
+    if (typeof window !== "undefined") {
+      const initial = getComputedStyle(document.documentElement)
+        .getPropertyValue("--background")
+        .trim();
+      return initial || "#1d1522"; // fallback to dark purple
+    }
+    return "#1d1522"; // fallback for SSR
+  });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
   const playNote = useNotePlayer(volume, soundType);
@@ -70,6 +79,11 @@ export default function Piano() {
     [isMouseDown, handleMouseDown]
   );
 
+  // ----- Update global background variable when bgColor changes -----
+  useEffect(() => {
+    document.documentElement.style.setProperty("--background", bgColor);
+  }, [bgColor]);
+
   // Reset mouse state on release for consistent drag behavior
   useEffect(() => {
     const handleMouseUp = () => setIsMouseDown(false);
@@ -79,10 +93,7 @@ export default function Piano() {
 
   /* ----- RENDER ----- */
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen select-none"
-      style={{ background: bgColor }}
-    >
+    <main className="flex flex-col items-center justify-center min-h-screen select-none">
       <h1 className="text-3xl font-semibold mb-6 text-foreground">
         🎹 Playable Piano
       </h1>
