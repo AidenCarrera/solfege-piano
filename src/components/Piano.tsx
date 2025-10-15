@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Howl } from "howler";
 import { notes, type Note } from "@/lib/notes";
 import PianoKey from "./PianoKey";
 
 // ----- CONFIGURABLE SCALING -----
 const WHITE_KEY_WIDTH_REM = 4;
-const PIANO_SCALE = 1.5; // adjust for size
+const PIANO_SCALE = 1.5;
 const NOTE_COOLDOWN = 50; // ms between retriggers
 const NOTE_ACTIVE_DURATION = 150; // ms key stays visually active
 
@@ -22,21 +22,24 @@ export default function Piano() {
   const whiteNotes = useMemo(() => notes.filter(n => !n.isSharp), []);
 
   // ----- AUDIO PLAYBACK -----
-  const playNote = (fileName: string, noteName: string) => {
-    const now = Date.now();
-    const lastTime = lastPlayedTimes[noteName] ?? 0;
-    if (now - lastTime < NOTE_COOLDOWN) return;
+  const playNote = useCallback(
+    (fileName: string, noteName: string) => {
+      const now = Date.now();
+      const lastTime = lastPlayedTimes[noteName] ?? 0;
+      if (now - lastTime < NOTE_COOLDOWN) return;
 
-    new Howl({
-      src: [`/samples/piano/${fileName}.mp3`],
-      volume: 0.2,
-    }).play();
+      new Howl({
+        src: [`/samples/piano/${fileName}.mp3`],
+        volume: 0.2,
+      }).play();
 
-    setActiveNote(noteName);
-    setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
+      setActiveNote(noteName);
+      setLastPlayedTimes(prev => ({ ...prev, [noteName]: now }));
 
-    setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), NOTE_ACTIVE_DURATION);
-  };
+      setTimeout(() => setActiveNote(a => (a === noteName ? null : a)), NOTE_ACTIVE_DURATION);
+    },
+    [lastPlayedTimes]
+  );
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
@@ -71,17 +74,17 @@ export default function Piano() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []); // ✅ stable event listeners
+  }, [playNote]); // ✅ add dependency to satisfy eslint
 
   // ----- MOUSE HANDLERS -----
-  const handleMouseDown = (fileName: string, noteName: string) => {
+  const handleMouseDown = useCallback((fileName: string, noteName: string) => {
     setIsMouseDown(true);
     playNote(fileName, noteName);
-  };
+  }, [playNote]);
 
-  const handleMouseEnter = (fileName: string, noteName: string) => {
+  const handleMouseEnter = useCallback((fileName: string, noteName: string) => {
     if (isMouseDown) playNote(fileName, noteName);
-  };
+  }, [isMouseDown, playNote]);
 
   useEffect(() => {
     const handleGlobalMouseUp = () => setIsMouseDown(false);
@@ -98,9 +101,7 @@ export default function Piano() {
 
   // ----- RENDER -----
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 select-none"
-    >
+    <main className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 select-none">
       <h1 className="text-white text-3xl font-semibold mb-8">🎹 Playable Piano</h1>
 
       <div
