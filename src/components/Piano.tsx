@@ -8,64 +8,110 @@ import PianoKey from "./PianoKey";
 // ----- CONFIGURATION -----
 const DEFAULT_CONFIG = {
   WHITE_KEY_WIDTH_REM: 4,
-  NOTE_COOLDOWN_MS: 50,          // Minimum time between triggering same note
-  NOTE_ACTIVE_DURATION_MS: 150,  // How long key stays visually active
-  DEFAULT_VOLUME: 0.2,           // Playback volume (0.0 - 1.0)
-  DEFAULT_LABELS_ENABLED: true,  // Show note labels under keys
-  DEFAULT_PIANO_SCALE: 1.5,      // Default scale
+  NOTE_COOLDOWN_MS: 50,
+  NOTE_ACTIVE_DURATION_MS: 150,
+  DEFAULT_VOLUME: 0.5,
+  DEFAULT_LABELS_ENABLED: true,
+  DEFAULT_PIANO_SCALE: 1.5,
 };
 
 const SOUND_OPTIONS = ["Piano", "Solfege"] as const;
 type SoundType = (typeof SOUND_OPTIONS)[number];
 
 export default function Piano() {
-  // ----- STATE -----
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [volume, setVolume] = useState<number>(DEFAULT_CONFIG.DEFAULT_VOLUME);
-  const [labelsEnabled, setLabelsEnabled] = useState<boolean>(DEFAULT_CONFIG.DEFAULT_LABELS_ENABLED);
-  const [pianoScale, setPianoScale] = useState<number>(DEFAULT_CONFIG.DEFAULT_PIANO_SCALE);
+  const [labelsEnabled, setLabelsEnabled] = useState<boolean>(
+    DEFAULT_CONFIG.DEFAULT_LABELS_ENABLED
+  );
+  const [pianoScale, setPianoScale] = useState<number>(
+    DEFAULT_CONFIG.DEFAULT_PIANO_SCALE
+  );
   const [bgColor, setBgColor] = useState<string>("var(--background)");
   const [soundType, setSoundType] = useState<SoundType>("Piano");
 
   const pressedKeys = useRef<Set<string>>(new Set());
   const lastPlayedTimes = useRef<Record<string, number>>({});
+  const currentSoundRef = useRef<Howl | null>(null);
+  const currentSoundIdRef = useRef<number | null>(null);
 
-  // ----- MEMOIZED WHITE NOTES -----
-  const whiteNotes = useMemo(() => notes.filter(n => !n.isSharp), []);
+  const CROSSFADE_MS = 10;
+  const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), []);
 
-  // ----- AUDIO PLAYBACK -----
-  const playNote = useCallback((fileName: string, noteName: string) => {
-    const now = Date.now();
-    const lastTime = lastPlayedTimes.current[noteName] ?? 0;
-    if (now - lastTime < DEFAULT_CONFIG.NOTE_COOLDOWN_MS) return;
+  const playNote = useCallback(
+    (fileName: string, noteName: string) => {
+      const now = Date.now();
+      const lastTime = lastPlayedTimes.current[noteName] ?? 0;
+      if (now - lastTime < DEFAULT_CONFIG.NOTE_COOLDOWN_MS) return;
 
-    // Determine folder based on sound type
-    const folder = soundType.toLowerCase();
+      const folder = soundType.toLowerCase();
 
-    new Howl({
-      src: [`/samples/${folder}/${fileName}.mp3`],
-      volume,
-    }).play();
+      const startNew = () => {
+        const sound = new Howl({
+          src: [`/samples/${folder}/${fileName}.mp3`],
+          volume,
+        });
 
-    lastPlayedTimes.current[noteName] = now;
-    setActiveNote(noteName);
+        const id = sound.play();
 
-    setTimeout(
-      () => setActiveNote(a => (a === noteName ? null : a)),
-      DEFAULT_CONFIG.NOTE_ACTIVE_DURATION_MS
-    );
-  }, [volume, soundType]);
+        // Fade in
+        sound.volume(0.001, id);
+        sound.fade(0.001, Math.max(0.001, volume), Math.max(10, CROSSFADE_MS), id);
+
+        currentSoundRef.current = sound;
+        currentSoundIdRef.current = id;
+      };
+
+      // If Solfege, crossfade between notes
+      if (soundType === "Solfege" && currentSoundRef.current) {
+        const oldSound = currentSoundRef.current;
+        const oldId = currentSoundIdRef.current ?? null;
+
+        let fromVol = volume;
+        const currentVol = oldId !== null ? oldSound.volume(oldId) : undefined;
+        if (typeof currentVol === "number") fromVol = currentVol;
+
+        if (oldId !== null) {
+          oldSound.fade(fromVol, 0, Math.max(20, CROSSFADE_MS), oldId);
+        }
+
+        // After fade, stop and unload
+        window.setTimeout(() => {
+          if (oldId !== null) {
+            oldSound.stop(oldId);
+          }
+          oldSound.unload?.();
+
+          if (currentSoundRef.current === oldSound) {
+            currentSoundRef.current = null;
+            currentSoundIdRef.current = null;
+          }
+
+          startNew();
+        }, Math.max(30, CROSSFADE_MS + 2));
+      } else {
+        startNew();
+      }
+
+      lastPlayedTimes.current[noteName] = now;
+      setActiveNote(noteName);
+      setTimeout(
+        () => setActiveNote((a) => (a === noteName ? null : a)),
+        DEFAULT_CONFIG.NOTE_ACTIVE_DURATION_MS
+      );
+    },
+    [volume, soundType]
+  );
 
   // ----- KEYBOARD HANDLERS -----
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      const note = notes.find(n => n.key === key);
+      const note = notes.find((n) => n.key === key);
       if (!note) return;
 
       e.preventDefault();
-
       if (!pressedKeys.current.has(key)) {
         pressedKeys.current.add(key);
         playNote(note.fileName, note.name);
@@ -107,17 +153,15 @@ export default function Piano() {
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, []);
 
-  // ----- SHARP KEY POSITIONING -----
   const getSharpKeyPosition = (note: Note) => {
     const base = note.name[0];
-    const whiteIndex = whiteNotes.findIndex(n => n.name.startsWith(base));
+    const whiteIndex = whiteNotes.findIndex((n) => n.name.startsWith(base));
     return (
       whiteIndex * DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM +
       DEFAULT_CONFIG.WHITE_KEY_WIDTH_REM
     );
   };
 
-  // ----- RENDER -----
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen select-none"
@@ -130,7 +174,7 @@ export default function Piano() {
         🎹 Playable Piano
       </h1>
 
-      {/* --- CONTROLS --- */}
+      {/* Controls */}
       <div
         className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8 items-center justify-center"
         style={{ color: "var(--foreground)" }}
@@ -149,7 +193,7 @@ export default function Piano() {
           />
         </div>
 
-        {/* Labels Enabled */}
+        {/* Labels */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">
             <input
@@ -162,7 +206,7 @@ export default function Piano() {
           </label>
         </div>
 
-        {/* Piano Scale */}
+        {/* Scale */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">
             Piano Scale: {pianoScale.toFixed(2)}
@@ -178,7 +222,7 @@ export default function Piano() {
           />
         </div>
 
-        {/* Background Color Picker */}
+        {/* Background */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">Background Color:</label>
           <input
@@ -189,7 +233,7 @@ export default function Piano() {
           />
         </div>
 
-        {/* Sound Type Selector */}
+        {/* Sound Type */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">Sound Type:</label>
           <select
@@ -206,7 +250,7 @@ export default function Piano() {
         </div>
       </div>
 
-      {/* --- PIANO --- */}
+      {/* Piano Keys */}
       <div
         className="relative flex"
         style={{
