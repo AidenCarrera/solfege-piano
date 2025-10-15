@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+/* ----- COLOR VARIABLES ----- */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --primary: #3b82f6; /* Tailwind blue-500 fallback for sliders/check */
+  --slider-thumb: #2563eb; /* Tailwind blue-600 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: #3b82f6;
+    --slider-thumb: #60a5fa;
   }
 }
 
+/* ----- FONT VARIABLES ----- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, monospace);
+}
+
+/* ----- BASE BODY ----- */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* ----- TAILWIND SLIDER CUSTOMIZATION ----- */
+input[type="range"] {
+  accent-color: var(--primary);
+  appearance: none;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 9999px;
+  background: var(--slider-thumb);
+  cursor: pointer;
+  border: 2px solid var(--foreground);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 9999px;
+  background: var(--slider-thumb);
+  cursor: pointer;
+  border: 2px solid var(--foreground);
 }
