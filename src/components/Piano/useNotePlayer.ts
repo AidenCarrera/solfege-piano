@@ -1,19 +1,62 @@
 "use client";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { Howl } from "howler";
 import { PIANO_CONFIG } from "./config";
 
 /**
  * useNotePlayer Hook
- * 
+ *
  * Handles playback of piano or solfege audio samples using Howler.js.
+ * Supports sustain pedal toggling (Spacebar) with robust cleanup to prevent hanging notes.
  */
 export function useNotePlayer(volume: number, soundType: string) {
-  /* ----- References to track playback state ----- */
-  const lastPlayedTimes = useRef<Record<string, number>>({}); // Prevent rapid retriggering of same note
-  const currentSoundRef = useRef<Howl | null>(null);          // Currently playing sound instance
-  const currentSoundIdRef = useRef<number | null>(null);      // ID of active Howl sound
-  const CROSSFADE_MS = 10;                                    // Fade duration (ms) between Solfege sounds
+  const lastPlayedTimes = useRef<Record<string, number>>({});
+  const activeNotes = useRef<Map<string, Howl>>(new Map());
+  const sustainWasActiveRef = useRef(false);
+  const [sustainActive, setSustainActive] = useState(false);
+  const cleanupLock = useRef(false); // prevents notes being added right after pedal drop
+  const CROSSFADE_MS = 10;
+
+  /* ----- SPACEBAR Sustain Toggle ----- */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+
+        setSustainActive((prev) => {
+          const newState = !prev;
+          sustainWasActiveRef.current = newState;
+
+          // ----- If turning sustain OFF -----
+          if (!newState) {
+            cleanupLock.current = true;
+
+            // Fade out all active sustained notes
+            activeNotes.current.forEach((sound, noteName) => {
+              if (sound.playing()) {
+                sound.fade(volume, 0, 400);
+                setTimeout(() => {
+                  sound.stop();
+                  sound.unload();
+                  activeNotes.current.delete(noteName);
+                }, 400);
+              }
+            });
+
+            // Small lockout window (prevents notes sneaking in during cleanup)
+            setTimeout(() => {
+              cleanupLock.current = false;
+            }, 150);
+          }
+
+          return newState;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [volume]);
 
   /* ----- Play Note Function ----- */
   const playNote = useCallback(
@@ -21,49 +64,37 @@ export function useNotePlayer(volume: number, soundType: string) {
       const now = Date.now();
       const lastTime = lastPlayedTimes.current[noteName] ?? 0;
 
-      // Prevents notes from being retriggered too quickly
       if (now - lastTime < PIANO_CONFIG.NOTE_COOLDOWN_MS) return;
 
-      // Choose audio folder based on sound type
       const folder = soundType.toLowerCase();
 
-      /* ----- Start a New Note ----- */
-      const startNew = () => {
-        const sound = new Howl({
-          src: [`/samples/${folder}/${fileName}.mp3`],
-          volume,
-        });
+      const sound = new Howl({
+        src: [`/samples/${folder}/${fileName}.mp3`],
+        volume,
+      });
 
-        const id = sound.play();
-        sound.fade(0.001, volume, CROSSFADE_MS, id); // Smooth fade-in for natural attack
-        currentSoundRef.current = sound;
-        currentSoundIdRef.current = id;
-      };
-
-      /* ----- Crossfade Between Solfege Notes ----- */
-      if (soundType === "Solfege" && currentSoundRef.current) {
-        const old = currentSoundRef.current;
-        const oldId = currentSoundIdRef.current;
-
-        // Fade out old sound and replace it after short delay
-        if (oldId != null) old.fade(volume, 0, CROSSFADE_MS, oldId);
-        setTimeout(() => {
-          old.stop();
-          old.unload();
-          startNew();
-        }, CROSSFADE_MS + 10);
-      } 
-      /* ----- Standard Piano Playback ----- */
-      else {
-        startNew();
-      }
-
-      // Record time of last playback to prevent rapid retriggers
+      const id = sound.play();
       lastPlayedTimes.current[noteName] = now;
+
+      // Sustain logic
+      if (sustainWasActiveRef.current && !cleanupLock.current) {
+        // Pedal down → keep ringing
+        activeNotes.current.set(noteName, sound);
+      } else {
+        // Pedal off → short, dry note
+        setTimeout(() => {
+          if (sound.playing()) {
+            sound.fade(volume, 0, 200);
+            setTimeout(() => {
+              sound.stop();
+              sound.unload();
+            }, 200);
+          }
+        }, 330);
+      }
     },
     [volume, soundType]
   );
 
-  /* ----- Return Play Function ----- */
   return playNote;
 }
