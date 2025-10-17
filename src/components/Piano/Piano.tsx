@@ -23,6 +23,8 @@ export default function Piano() {
   const [pianoScale, setPianoScale] = useState(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [sustainActive, setSustainActive] = useState(false);
+
   // Initialize background color from actual CSS variable
   const [bgColor, setBgColor] = useState(() => {
     if (typeof window !== "undefined") {
@@ -35,22 +37,42 @@ export default function Piano() {
   });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
-  const playNote = useNotePlayer(volume, soundType);
+  const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainActive);
 
   // Handle keyboard-based note triggering
-  useKeyboardControls((file, note) => {
-    playNote(file, note);
-    setActiveNote(note);
-    setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
-  });
+  useKeyboardControls(
+    (fileName, note) => {
+      playNote(fileName, note, true); // true = keyboard input
+      setActiveNote(note);
+      setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
+    },
+    (note) => {
+      stopNote(note, true); // true = keyboard input
+    }
+  );
+
+  /* ----- SPACEBAR Sustain Toggle ----- */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        setSustainActive((prev) => {
+          const newState = !prev;
+          // If turning sustain OFF, stop all notes
+          if (!newState) {
+            stopAllNotes();
+          }
+          return newState;
+        });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [stopAllNotes]);
 
   /* ----- NOTE MAPPING + POSITIONING ----- */
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), []);
 
-  /**
-   * Calculates the horizontal position of a sharp key
-   * relative to its neighboring white keys.
-   */
   const getSharpKeyPosition = (note: Note) => {
     const base = note.name[0];
     const whiteIndex = whiteNotes.findIndex((n) => n.name.startsWith(base));
@@ -64,14 +86,13 @@ export default function Piano() {
   const handleMouseDown = useCallback(
     (file: string, name: string) => {
       setIsMouseDown(true);
-      playNote(file, name);
+      playNote(file, name, false); // false = mouse input
       setActiveNote(name);
       setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
     },
     [playNote]
   );
 
-  // Trigger notes while dragging across keys
   const handleMouseEnter = useCallback(
     (file: string, name: string) => {
       if (isMouseDown) handleMouseDown(file, name);
@@ -79,12 +100,19 @@ export default function Piano() {
     [isMouseDown, handleMouseDown]
   );
 
-  // ----- Update global background variable when bgColor changes -----
+  const handleMouseUp = useCallback(
+    (name: string) => {
+      stopNote(name, false); // false = mouse input
+      setIsMouseDown(false);
+    },
+    [stopNote]
+  );
+
+  /* ----- BACKGROUND + CLEANUP ----- */
   useEffect(() => {
     document.documentElement.style.setProperty("--background", bgColor);
   }, [bgColor]);
 
-  // Reset mouse state on release for consistent drag behavior
   useEffect(() => {
     const handleMouseUp = () => setIsMouseDown(false);
     window.addEventListener("mouseup", handleMouseUp);
@@ -112,31 +140,49 @@ export default function Piano() {
         setSoundType={setSoundType}
       />
 
-      {/* ----- Piano Keybed ----- */}
+      {/* ----- Piano Keybed + Sustain Indicator ----- */}
       <div
-        className="relative flex"
+        className="relative flex flex-col items-center"
         style={{
           transform: `scale(${pianoScale})`,
           transformOrigin: "top center",
           marginBottom: `${(pianoScale - 1) * 200}px`,
         }}
       >
-        {notes.map((note) => (
-          <PianoKey
-            key={note.name}
-            note={note}
-            activeNote={activeNote}
-            onMouseDown={handleMouseDown}
-            onMouseEnter={handleMouseEnter}
-            getSharpKeyPosition={getSharpKeyPosition}
-            showLabel={labelsEnabled}
-          />
-        ))}
-      </div>
+        {/* Piano Keys */}
+        <div className="relative flex">
+          {notes.map((note) => (
+            <PianoKey
+              key={note.name}
+              note={note}
+              activeNote={activeNote}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
+              onMouseUp={handleMouseUp}
+              getSharpKeyPosition={getSharpKeyPosition}
+              showLabel={labelsEnabled}
+            />
+          ))}
+        </div>
 
-      <p className="text-sm font-medium mb-1 mt-10 text-foreground">
-        Click, drag, or use your keyboard to play notes (C4–C5)
-      </p>
+        {/* Sustain Indicator (positioned relative to scaled piano) */}
+        <div className="flex flex-col items-center mt-6">
+          <div
+            className={`h-5 w-20 rounded-full transition-all duration-200 ${
+              sustainActive
+                ? "bg-green-500 shadow-lg shadow-green-700/40"
+                : "bg-gray-600"
+            }`}
+          />
+          <p className="text-sm font-medium mt-2 text-foreground text-center">
+            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Press{" "}
+            Spacebar to toggle
+          </p>
+          <p className="text-sm font-medium mb-1 mt-2 text-foreground">
+            Click, drag, or use your keyboard to play notes (C4–C5)
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
