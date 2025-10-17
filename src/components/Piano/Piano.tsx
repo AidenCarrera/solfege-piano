@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { notes, type Note } from "@/lib/notes";
 import PianoKey from "./PianoKey";
 import PianoControls from "./PianoControls";
 import { useNotePlayer } from "./useNotePlayer";
 import { useKeyboardControls } from "./useKeyboardControls";
+import { useMouseControls } from "./useMouseControls";
 import { PIANO_CONFIG } from "./config";
 
 /**
@@ -22,7 +23,6 @@ export default function Piano() {
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [pianoScale, setPianoScale] = useState(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
-  const [isMouseDown, setIsMouseDown] = useState(false);
   const [sustainActive, setSustainActive] = useState(false);
 
   // Initialize background color from CSS variable
@@ -39,6 +39,7 @@ export default function Piano() {
   /* ----- AUDIO + INPUT HOOKS ----- */
   const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainActive);
 
+  // Keyboard input (play / stop notes)
   useKeyboardControls(
     (fileName, note) => {
       playNote(fileName, note, true);
@@ -48,6 +49,14 @@ export default function Piano() {
     (note) => stopNote(note, true)
   );
 
+  // Mouse input via custom hook
+  const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
+    playNote,
+    stopNote,
+    setActiveNote,
+    PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS
+  );
+
   /* ----- SPACEBAR SUSTAIN TOGGLE ----- */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,7 +64,7 @@ export default function Piano() {
         e.preventDefault();
         setSustainActive((prev) => {
           const newState = !prev;
-          if (!newState) stopAllNotes();
+          if (!newState) stopAllNotes(); // stop all when pedal released
           return newState;
         });
       }
@@ -76,42 +85,10 @@ export default function Piano() {
     );
   };
 
-  /* ----- EVENT HANDLERS ----- */
-  const handleMouseDown = useCallback(
-    (file: string, name: string) => {
-      setIsMouseDown(true);
-      playNote(file, name, false);
-      setActiveNote(name);
-      setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
-    },
-    [playNote]
-  );
-
-  const handleMouseEnter = useCallback(
-    (file: string, name: string) => {
-      if (isMouseDown) handleMouseDown(file, name);
-    },
-    [isMouseDown, handleMouseDown]
-  );
-
-  const handleMouseUp = useCallback(
-    (name: string) => {
-      stopNote(name, false);
-      setIsMouseDown(false);
-    },
-    [stopNote]
-  );
-
-  /* ----- BACKGROUND + CLEANUP ----- */
+  /* ----- BACKGROUND ----- */
   useEffect(() => {
     document.documentElement.style.setProperty("--background", bgColor);
   }, [bgColor]);
-
-  useEffect(() => {
-    const handleMouseUp = () => setIsMouseDown(false);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => window.removeEventListener("mouseup", handleMouseUp);
-  }, []);
 
   /* ----- RENDER ----- */
   return (
