@@ -91,7 +91,7 @@ export function useNotePlayer(
         html5: false, // Use Web Audio for lowest latency
         volume: volume,
         onload: onLoaded,
-        onloaderror: (_id, _err) => {
+        onloaderror: () => {
           console.warn(`Failed to preload ${src}`);
           onLoaded();
         },
