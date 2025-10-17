@@ -37,9 +37,8 @@ export default function Piano() {
   });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
-  // inside your Piano component, after you call the hook:
-const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
-  useNotePlayer(volume, soundType, sustainActive);
+  const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
+    useNotePlayer(volume, soundType, sustainActive);
 
   // Keyboard input (play / stop notes)
   useKeyboardControls(
@@ -59,16 +58,21 @@ const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
     PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS
   );
 
+  /* ----- SUSTAIN TOGGLE HANDLER ----- */
+  const toggleSustain = () => {
+    setSustainActive((prev) => {
+      const newState = !prev;
+      if (!newState) stopAllNotes(); // stop all when pedal released
+      return newState;
+    });
+  };
+
   /* ----- SPACEBAR SUSTAIN TOGGLE ----- */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
-        setSustainActive((prev) => {
-          const newState = !prev;
-          if (!newState) stopAllNotes(); // stop all when pedal released
-          return newState;
-        });
+        toggleSustain();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -156,15 +160,17 @@ const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
           ))}
         </div>
 
-        {/* Sustain Indicator (unchanged) */}
+        {/* Sustain Indicator - Now clickable! */}
         <div className="flex flex-col items-center mt-6">
-          <div
-            className={`h-5 w-20 rounded-full transition-all duration-200 ${
-              sustainActive ? "bg-green-500 shadow-lg shadow-green-700/40" : "bg-gray-600"
+          <button
+            onClick={toggleSustain}
+            className={`h-5 w-20 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+              sustainActive ? "bg-green-500 shadow-lg shadow-green-700/40" : "bg-gray-600 hover:bg-gray-500"
             }`}
+            aria-label="Toggle sustain mode"
           />
           <p className="text-sm font-medium mt-2 text-foreground text-center">
-            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Press Spacebar
+            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click or press Spacebar
           </p>
           <p className="text-sm font-medium mb-1 mt-2 text-foreground">
             Click, drag, or use your keyboard to play notes (C4–C5)
