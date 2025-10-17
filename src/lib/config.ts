@@ -8,7 +8,7 @@ export const PIANO_CONFIG = {
   /* Playback & Interaction */
   DEFAULT_VOLUME: 0.75,
   NOTE_RETRIGGER_COOLDOWN_MS: 50,
-  KEY_HIGHLIGHT_DURATION_MS: 220,
+  KEY_HIGHLIGHT_DURATION_MS: 250,
   MAX_POLYPHONY: 128,
 
   /* Audio Envelope & Fade */
