@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,7 +43,6 @@ export const metadata: Metadata = {
   },
 };
 
-// ✅ New separate viewport export (required in Next.js 15+)
 export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
@@ -60,6 +60,7 @@ export default function RootLayout({
         <main className="min-h-screen flex flex-col items-center justify-center p-6">
           {children}
         </main>
+        <SpeedInsights />
       </body>
     </html>
   );

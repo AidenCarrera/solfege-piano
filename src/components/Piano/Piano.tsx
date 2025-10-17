@@ -25,43 +25,37 @@ export default function Piano() {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [sustainActive, setSustainActive] = useState(false);
 
-  // Initialize background color from actual CSS variable
+  // Initialize background color from CSS variable
   const [bgColor, setBgColor] = useState(() => {
     if (typeof window !== "undefined") {
       const initial = getComputedStyle(document.documentElement)
         .getPropertyValue("--background")
         .trim();
-      return initial || "#1d1522"; // fallback to dark purple
+      return initial || "#1d1522";
     }
-    return "#1d1522"; // fallback for SSR
+    return "#1d1522";
   });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
   const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainActive);
 
-  // Handle keyboard-based note triggering
   useKeyboardControls(
     (fileName, note) => {
-      playNote(fileName, note, true); // true = keyboard input
+      playNote(fileName, note, true);
       setActiveNote(note);
       setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
     },
-    (note) => {
-      stopNote(note, true); // true = keyboard input
-    }
+    (note) => stopNote(note, true)
   );
 
-  /* ----- SPACEBAR Sustain Toggle ----- */
+  /* ----- SPACEBAR SUSTAIN TOGGLE ----- */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
         setSustainActive((prev) => {
           const newState = !prev;
-          // If turning sustain OFF, stop all notes
-          if (!newState) {
-            stopAllNotes();
-          }
+          if (!newState) stopAllNotes();
           return newState;
         });
       }
@@ -86,7 +80,7 @@ export default function Piano() {
   const handleMouseDown = useCallback(
     (file: string, name: string) => {
       setIsMouseDown(true);
-      playNote(file, name, false); // false = mouse input
+      playNote(file, name, false);
       setActiveNote(name);
       setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
     },
@@ -102,7 +96,7 @@ export default function Piano() {
 
   const handleMouseUp = useCallback(
     (name: string) => {
-      stopNote(name, false); // false = mouse input
+      stopNote(name, false);
       setIsMouseDown(false);
     },
     [stopNote]
@@ -122,11 +116,9 @@ export default function Piano() {
   /* ----- RENDER ----- */
   return (
     <main className="flex flex-col items-center justify-center min-h-screen select-none">
-      <h1 className="text-3xl font-semibold mb-6 text-foreground">
-        🎹 Playable Piano
-      </h1>
+      <h1 className="text-3xl font-semibold mb-6 text-foreground">🎹 Playable Piano</h1>
 
-      {/* ----- UI Controls ----- */}
+      {/* Controls */}
       <PianoControls
         volume={volume}
         setVolume={setVolume}
@@ -140,7 +132,7 @@ export default function Piano() {
         setSoundType={setSoundType}
       />
 
-      {/* ----- Piano Keybed + Sustain Indicator ----- */}
+      {/* Piano + Sustain */}
       <div
         className="relative flex flex-col items-center"
         style={{
@@ -149,7 +141,7 @@ export default function Piano() {
           marginBottom: `${(pianoScale - 1) * 200}px`,
         }}
       >
-        {/* Piano Keys */}
+        {/* Keys */}
         <div className="relative flex">
           {notes.map((note) => (
             <PianoKey
@@ -165,7 +157,7 @@ export default function Piano() {
           ))}
         </div>
 
-        {/* Sustain Indicator (positioned relative to scaled piano) */}
+        {/* Sustain Indicator */}
         <div className="flex flex-col items-center mt-6">
           <div
             className={`h-5 w-20 rounded-full transition-all duration-200 ${
@@ -175,8 +167,7 @@ export default function Piano() {
             }`}
           />
           <p className="text-sm font-medium mt-2 text-foreground text-center">
-            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Press{" "}
-            Spacebar to toggle
+            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Press Spacebar
           </p>
           <p className="text-sm font-medium mb-1 mt-2 text-foreground">
             Click, drag, or use your keyboard to play notes (C4–C5)
