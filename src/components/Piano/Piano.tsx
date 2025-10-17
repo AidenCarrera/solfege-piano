@@ -37,7 +37,9 @@ export default function Piano() {
   });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
-  const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainActive);
+  // inside your Piano component, after you call the hook:
+const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
+  useNotePlayer(volume, soundType, sustainActive);
 
   // Keyboard input (play / stop notes)
   useKeyboardControls(
@@ -118,6 +120,26 @@ export default function Piano() {
           marginBottom: `${(pianoScale - 1) * 200}px`,
         }}
       >
+        {/* Preload progress (scales with piano) */}
+        {isPreloading && (
+          <div className="mb-4 w-full flex justify-center pointer-events-none">
+            <div className="w-72 max-w-full bg-[rgba(0,0,0,0.15)] rounded-md p-2 flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-xs font-medium text-foreground/90 mb-1">Loading samples…</div>
+                <div className="h-2 w-full bg-foreground/10 rounded overflow-hidden">
+                  <div
+                    className="h-full bg-foreground rounded"
+                    style={{ width: `${Math.round(preloadProgress * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-xs font-mono text-foreground/80 w-12 text-right">
+                {Math.round(preloadProgress * 100)}%
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Keys */}
         <div className="relative flex">
           {notes.map((note) => (
@@ -134,13 +156,11 @@ export default function Piano() {
           ))}
         </div>
 
-        {/* Sustain Indicator */}
+        {/* Sustain Indicator (unchanged) */}
         <div className="flex flex-col items-center mt-6">
           <div
             className={`h-5 w-20 rounded-full transition-all duration-200 ${
-              sustainActive
-                ? "bg-green-500 shadow-lg shadow-green-700/40"
-                : "bg-gray-600"
+              sustainActive ? "bg-green-500 shadow-lg shadow-green-700/40" : "bg-gray-600"
             }`}
           />
           <p className="text-sm font-medium mt-2 text-foreground text-center">
