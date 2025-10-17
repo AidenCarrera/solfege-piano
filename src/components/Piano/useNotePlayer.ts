@@ -4,156 +4,213 @@ import { Howl } from "howler";
 import { PIANO_CONFIG } from "./config";
 
 /**
- * useNotePlayer Hook
+ * Robust useNotePlayer
+ * - Tracks voices (Howl + id) per note (allowing retriggering while old voice decays)
+ * - Uses Howler play ids for fades/stops
+ * - Handles pedal (space) sustain reliably
+ * - Evicts oldest voices when max polyphony reached
  *
- * Handles polyphonic playback of piano or solfege samples using Howler.js.
- * Notes sustain while held, support pedal (Spacebar), and fade out naturally on release.
+ * API: const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainMode, maxVoices)
+ * playNote(fileName, noteName, isKeyboard)
+ * stopNote(noteName, isKeyboard)
  */
+type Voice = {
+  noteName: string;
+  howl: Howl;
+  id: number;
+  createdAt: number;
+  released: boolean; // whether key has been released for this voice
+  killed?: boolean; // whether cleanup initiated
+};
+
 export function useNotePlayer(
-  volume: number, 
-  soundType: string, 
+  volume: number,
+  soundType: string,
   sustainMode: boolean,
   maxVoices = PIANO_CONFIG.MAX_POLYPHONY
 ) {
-  const activeNotes = useRef<Map<string, Howl>>(new Map());
-  const heldKeys = useRef<Set<string>>(new Set());
-  const pedalActive = useRef(false); // Renamed for clarity
-  const pedalSustainedNotes = useRef<Set<string>>(new Set()); // notes released while pedal is on
-
+  const voices = useRef<Voice[]>([]); // active voices across all notes (ordered roughly by creation time)
+  const voicesByNote = useRef<Map<string, Voice[]>>(new Map()); // quick lookup
+  const heldKeys = useRef<Set<string>>(new Set()); // currently held note names (keyboard)
+  const pedalActive = useRef(false); // spacebar pedal state (if using pedal when sustainMode === false)
   const FADE_OUT_MS = 300;
+  const KILL_TIMEOUT_MS = FADE_OUT_MS + 250;
 
-  /* ----- SPACEBAR Sustain Pedal (only in non-sustain mode) ----- */
+  /* --- helper: create voice and add bookkeeping --- */
+  const addVoice = useCallback((noteName: string, howl: Howl, id: number) => {
+    const v: Voice = {
+      noteName,
+      howl,
+      id,
+      createdAt: Date.now(),
+      released: false,
+    };
+    voices.current.push(v);
+    const arr = voicesByNote.current.get(noteName) ?? [];
+    arr.push(v);
+    voicesByNote.current.set(noteName, arr);
+
+    // cleanup when sample ends naturally
+    const onEnd = () => {
+      // remove voice
+      v.killed = true;
+      // remove from arrays
+      voices.current = voices.current.filter((x) => x !== v);
+      const arr2 = (voicesByNote.current.get(noteName) || []).filter((x) => x !== v);
+      if (arr2.length) voicesByNote.current.set(noteName, arr2);
+      else voicesByNote.current.delete(noteName);
+      try { howl.off("end", onEnd, id); } catch {}
+    };
+    try {
+      howl.once("end", onEnd, id);
+    } catch {
+      // Howler variants might not support the id param for once in some versions; we keep the handler general
+      howl.once("end", onEnd);
+    }
+  }, []);
+
+  /* --- helper: fade and remove voice safely --- */
+  const fadeAndRemoveVoice = useCallback((v: Voice) => {
+    if (v.killed) return;
+    v.killed = true;
+    try {
+      // fade using id
+      v.howl.fade(v.howl.volume(), 0, FADE_OUT_MS, v.id);
+    } catch {
+      // ignore if fade fails
+    }
+    // schedule cleanup after fade + buffer
+    setTimeout(() => {
+      try {
+        v.howl.stop(v.id);
+        v.howl.unload();
+      } catch {}
+      voices.current = voices.current.filter((x) => x !== v);
+      const arr = (voicesByNote.current.get(v.noteName) || []).filter((x) => x !== v);
+      if (arr.length) voicesByNote.current.set(v.noteName, arr);
+      else voicesByNote.current.delete(v.noteName);
+    }, KILL_TIMEOUT_MS);
+  }, []);
+
+  /* --- Evict oldest voices until there's room --- */
+  const ensurePolyphonyRoom = useCallback(() => {
+    while (voices.current.length >= maxVoices) {
+      // pick oldest by createdAt
+      voices.current.sort((a, b) => a.createdAt - b.createdAt);
+      const oldest = voices.current.shift();
+      if (!oldest) break;
+      fadeAndRemoveVoice(oldest);
+    }
+  }, [maxVoices, fadeAndRemoveVoice]);
+
+  /* --- Pedal handlers (space) only active when sustainMode === false (your existing design) --- */
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat && !sustainMode) {
         e.preventDefault();
         pedalActive.current = true;
       }
     };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space" && !sustainMode) {
         e.preventDefault();
         pedalActive.current = false;
-
-        // Fade out notes that were released while pedal was held
-        pedalSustainedNotes.current.forEach(noteName => {
-          const sound = activeNotes.current.get(noteName);
-          if (sound && sound.playing()) {
-            sound.fade(sound.volume(), 0, FADE_OUT_MS);
-            setTimeout(() => {
-              sound.stop();
-              sound.unload();
-              activeNotes.current.delete(noteName);
-            }, FADE_OUT_MS + 50); // Extra buffer to ensure fade completes
-          }
-        });
-        pedalSustainedNotes.current.clear();
+        // On pedal up: fade voices that were released while pedal was down
+        const toFade = voices.current.filter((v) => v.released && !v.killed);
+        toFade.forEach((v) => fadeAndRemoveVoice(v));
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
     };
-  }, [volume, sustainMode]);
+  }, [sustainMode, fadeAndRemoveVoice]);
 
-  /* ----- PLAY NOTE ----- */
+  /* ----------------- API: playNote -----------------
+     fileName, noteName are expected to be defined strings (caller must ensure)
+     isKeyboard: true if triggered by keyboard (so we track heldKeys)
+  --------------------------------------------------*/
   const playNote = useCallback(
     (fileName: string, noteName: string, isKeyboard = false) => {
-      // Prevent runaway polyphony
-      if (activeNotes.current.size >= maxVoices) {
-        const oldestNote = activeNotes.current.keys().next().value;
-        if (typeof oldestNote === "string") {
-          const oldestSound = activeNotes.current.get(oldestNote);
-          if (oldestSound) {
-            oldestSound.stop();
-            oldestSound.unload();
-            activeNotes.current.delete(oldestNote);
-          }
-        }
-      }
+      if (!fileName || !noteName) return; // defensive
 
-      // If note already playing, fade it out before replaying
-      const existingSound = activeNotes.current.get(noteName);
-      if (existingSound && existingSound.playing()) {
-        existingSound.fade(existingSound.volume(), 0, FADE_OUT_MS);
-        setTimeout(() => {
-          existingSound.stop();
-          existingSound.unload();
-          activeNotes.current.delete(noteName);
-        }, FADE_OUT_MS + 50);
-      }
+      // prevent repeated keydown retriggers for the keyboard layer should be handled by keyboard handler (use e.repeat guard).
+      // Here we allow retriggers: pressing a key again will re-trigger (we remove old voice for the same note afterwards).
+      ensurePolyphonyRoom();
+
+      // If same note currently playing and we want an immediate re-strike, fade the existing instances (but keep them until fade done)
+      const existing = voicesByNote.current.get(noteName) ?? [];
+      existing.forEach((v) => {
+        // fade existing voice a bit (don't immediately delete—use fade helper)
+        if (!v.killed) fadeAndRemoveVoice(v);
+      });
 
       const folder = soundType.toLowerCase();
-      const sound = new Howl({
+      const howl = new Howl({
         src: [`/samples/${folder}/${fileName}.mp3`],
         volume,
       });
 
-      sound.play();
-      activeNotes.current.set(noteName, sound);
-      
-      // Only track as "held" if it's a keyboard press or if in sustain mode
-      if (isKeyboard) {
-        heldKeys.current.add(noteName);
-      }
+      // play and track id
+      const id = howl.play();
+      // Some Howler versions return undefined for id synchronously — coerce to number (fallback 0)
+      const voiceId = typeof id === "number" ? id : 0;
+      addVoice(noteName, howl, voiceId);
+
+      // If triggered by keyboard, mark held
+      if (isKeyboard) heldKeys.current.add(noteName);
+      // If pedal is active (and not in sustainMode), we treat releases differently later
     },
-    [volume, soundType, maxVoices]
+    [addVoice, ensurePolyphonyRoom, fadeAndRemoveVoice, volume, soundType]
   );
 
-  /* ----- STOP NOTE ----- */
+  /* ----------------- API: stopNote -----------------
+     When key/mouse releases call stopNote(noteName, isKeyboard)
+     If sustainMode is true -> don't stop (instrument plays full sample)
+     If pedal active -> mark voice released (fade later on pedal up)
+     Otherwise fade immediate for voices belonging to that note that are not already released
+  --------------------------------------------------*/
   const stopNote = useCallback(
     (noteName: string, isKeyboard = false) => {
-      const sound = activeNotes.current.get(noteName);
-      if (!sound) return;
+      if (!noteName) return;
+      // If keyboard, remove from held
+      if (isKeyboard) heldKeys.current.delete(noteName);
 
-      // Remove from held keys if it was a keyboard release
-      if (isKeyboard) {
-        heldKeys.current.delete(noteName);
-      }
+      // If sustainMode (global behavior), do nothing on release: samples play full length
+      if (sustainMode) return;
 
-      // In sustain mode, never stop notes automatically
-      if (sustainMode) {
-        return;
-      }
+      // Find voices for that note
+      const arr = voicesByNote.current.get(noteName);
+      if (!arr || arr.length === 0) return;
 
-      // If pedal is active (spacebar held), defer fade out until pedal release
-      if (pedalActive.current) {
-        pedalSustainedNotes.current.add(noteName);
-        return;
-      }
-
-      // Otherwise, fade out immediately
-      if (sound.playing()) {
-        sound.fade(sound.volume(), 0, FADE_OUT_MS);
-        setTimeout(() => {
-          sound.stop();
-          sound.unload();
-          activeNotes.current.delete(noteName);
-        }, FADE_OUT_MS + 50); // Extra buffer to ensure fade completes
-      }
+      // For each active voice for that note:
+      arr.forEach((v) => {
+        // If pedal active (space down when sustainMode false), mark for later
+        if (pedalActive.current) {
+          v.released = true;
+          return;
+        }
+        // Otherwise fade right now (but only those not already released/killed)
+        if (!v.killed) {
+          v.released = true;
+          fadeAndRemoveVoice(v);
+        }
+      });
     },
-    [volume, sustainMode]
+    [sustainMode, fadeAndRemoveVoice]
   );
 
-  /* ----- STOP ALL NOTES (for when sustain mode is toggled off) ----- */
+  /* ----------------- API: stopAll ----------------- */
   const stopAllNotes = useCallback(() => {
-    activeNotes.current.forEach((sound) => {
-      if (sound.playing()) {
-        sound.fade(sound.volume(), 0, FADE_OUT_MS);
-        setTimeout(() => {
-          sound.stop();
-          sound.unload();
-        }, FADE_OUT_MS + 50);
-      }
+    voices.current.slice().forEach((v) => {
+      if (!v.killed) fadeAndRemoveVoice(v);
     });
-    activeNotes.current.clear();
+    voicesByNote.current.clear();
     heldKeys.current.clear();
-    pedalSustainedNotes.current.clear();
-  }, []);
+    pedalActive.current = false;
+  }, [fadeAndRemoveVoice]);
 
   return { playNote, stopNote, stopAllNotes };
 }
