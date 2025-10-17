@@ -21,7 +21,16 @@ export default function Piano() {
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
-  const [pianoScale, setPianoScale] = useState(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
+  const [pianoScale, setPianoScale] = useState(() => {
+    if (typeof window !== "undefined") {
+      const width = window.innerWidth;
+      if (width < 640) return 0.5; // Mobile (sm breakpoint)
+      if (width < 768) return 0.75; // Small tablets (md breakpoint)
+      if (width < 1024) return 1.0; // Tablets (lg breakpoint)
+      return PIANO_CONFIG.DEFAULT_PIANO_SCALE; // Desktop: 1.5
+    }
+    return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
+  });
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
   const [sustainActive, setSustainActive] = useState(false);
 
