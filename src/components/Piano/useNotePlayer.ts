@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Howl } from "howler";
 import { notes } from "@/lib/notes";
-import { PIANO_CONFIG } from "./config";
+import { PIANO_CONFIG } from "../../lib/config";
 
 type Voice = {
   noteName: string;

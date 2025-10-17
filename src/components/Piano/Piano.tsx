@@ -8,7 +8,7 @@ import { useNotePlayer } from "./useNotePlayer";
 import { useKeyboardControls } from "./useKeyboardControls";
 import { useMouseControls } from "./useMouseControls";
 import { useTouchControls } from "./useTouchControls";
-import { PIANO_CONFIG } from "./config";
+import { PIANO_CONFIG } from "../../lib/config";
 
 export default function Piano() {
   /* ----- STATE ----- */
@@ -26,9 +26,11 @@ export default function Piano() {
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
   const [sustainActive, setSustainActive] = useState(false);
   const [bgColor, setBgColor] = useState(() => {
-    if (typeof window === "undefined") return "#1d1522";
-    const initial = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
-    return initial || "#1d1522";
+    if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_BG_COLOR;
+    const initial = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background")
+      .trim();
+    return initial || PIANO_CONFIG.DEFAULT_BG_COLOR;
   });
 
   /* ----- AUDIO HOOKS ----- */
@@ -49,7 +51,7 @@ export default function Piano() {
           copy.delete(note);
           return copy;
         });
-      }, PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
+      }, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
     },
     (note) => {
       stopNote(note, true);

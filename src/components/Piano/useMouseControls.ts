@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
+import { PIANO_CONFIG } from "@/lib/config";
 
 /**
  * useMouseControls Hook
@@ -21,7 +22,7 @@ export function useMouseControls(
   playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
   stopNote: (noteName: string, isKeyboard: boolean) => void,
   setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
-  noteActiveDuration = 150
+  noteActiveDuration = PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS
 ) {
   /* ----- Track if the mouse is currently pressed ----- */
   const isMouseDown = useRef(false);

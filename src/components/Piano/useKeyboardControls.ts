@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { notes } from "@/lib/notes";
+import { PIANO_CONFIG } from "@/lib/config";
 
 /**
  * useKeyboardControls Hook
@@ -22,7 +23,7 @@ export function useKeyboardControls(
   playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
   stopNote: (note: string, isKeyboard: boolean) => void,
   setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
-  noteActiveDuration = 150
+  noteActiveDuration = PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS
 ) {
   /* ----- Track keys currently pressed to prevent repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
