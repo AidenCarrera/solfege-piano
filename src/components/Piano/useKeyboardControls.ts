@@ -1,66 +1,117 @@
 "use client";
-import { useEffect, useRef } from "react";
+
+import { useEffect, useRef, useCallback } from "react";
 import { notes } from "@/lib/notes";
 
 /**
- * useKeyboardControls Hook  
- * 
- * Handles keyboard input for triggering piano notes with correct sustain and retrigger behavior.
- * Adds safeguards for key repeat events and integrates seamlessly with useNotePlayer.
+ * useKeyboardControls Hook
+ *
+ * Handles keyboard input for a piano component:
+ * - Triggers notes on key press and stops them on key release
+ * - Prevents repeated triggers from held-down keys
+ * - Optionally manages visual highlighting of active notes
+ *
+ * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
+ * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
+ * @param setActiveNotes - Optional state setter to highlight currently active notes.
+ * @param noteActiveDuration - Duration (ms) for which a note is visually highlighted.
+ *
+ * @returns void
  */
 export function useKeyboardControls(
   playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
-  stopNote: (note: string, isKeyboard: boolean) => void
+  stopNote: (note: string, isKeyboard: boolean) => void,
+  setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
+  noteActiveDuration = 150
 ) {
-  /* ----- Track currently pressed keys to avoid repeated triggers ----- */
+  /* ----- Track keys currently pressed to prevent repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
 
+  /**
+   * Trigger a note if it is not already pressed
+   * - Plays the note
+   * - Optionally highlights the note for a short duration
+   */
+  const triggerNote = useCallback(
+    (noteObj: typeof notes[0]) => {
+      if (!pressedKeys.current.has(noteObj.key)) {
+        pressedKeys.current.add(noteObj.key);
+        playNote(noteObj.fileName, noteObj.name, true);
+
+        if (setActiveNotes) {
+          setActiveNotes((prev) => new Set(prev).add(noteObj.name));
+
+          setTimeout(() => {
+            setActiveNotes((prev) => {
+              const copy = new Set(prev);
+              copy.delete(noteObj.name);
+              return copy;
+            });
+          }, noteActiveDuration);
+        }
+      }
+    },
+    [playNote, setActiveNotes, noteActiveDuration]
+  );
+
+  /**
+   * Stop a note if it is currently pressed
+   * - Stops playback
+   * - Removes optional visual highlight immediately
+   */
+  const stopNoteIfPressed = useCallback(
+    (noteObj: typeof notes[0]) => {
+      if (pressedKeys.current.has(noteObj.key)) {
+        pressedKeys.current.delete(noteObj.key);
+        stopNote(noteObj.name, true);
+
+        if (setActiveNotes) {
+          setActiveNotes((prev) => {
+            const copy = new Set(prev);
+            copy.delete(noteObj.name);
+            return copy;
+          });
+        }
+      }
+    },
+    [stopNote, setActiveNotes]
+  );
+
+  /* ----- Set up event listeners for keyboard input ----- */
   useEffect(() => {
-    /* ----- Key Down Handler ----- */
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore system modifiers and spacebar (pedal handled separately)
+      // Ignore system modifiers and spacebar (used for sustain)
       if (e.code === "Space" || e.metaKey || e.altKey || e.ctrlKey) return;
 
       const key = e.key.toLowerCase();
-      const note = notes.find((n) => n.key === key);
-      if (!note) return;
+      const noteObj = notes.find((n) => n.key === key);
+      if (!noteObj) return;
 
-      // Prevent browser shortcut interference
+      // Prevent browser default actions for shortcuts
       e.preventDefault();
 
-      // Ignore held-down repeats (super important for stable playback)
+      // Ignore repeated keydown events from holding the key
       if (e.repeat) return;
 
-      // Only trigger if not already pressed
-      if (!pressedKeys.current.has(key)) {
-        pressedKeys.current.add(key);
-        playNote(note.fileName, note.name, true);
-      }
+      triggerNote(noteObj);
     };
 
-    /* ----- Key Up Handler ----- */
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") return;
 
       const key = e.key.toLowerCase();
-      const note = notes.find((n) => n.key === key);
-      if (!note) return;
+      const noteObj = notes.find((n) => n.key === key);
+      if (!noteObj) return;
 
-      // Only trigger stop if key was marked as pressed
-      if (pressedKeys.current.has(key)) {
-        pressedKeys.current.delete(key);
-        stopNote(note.name, true);
-      }
+      stopNoteIfPressed(noteObj);
     };
 
-    /* ----- Register Event Listeners ----- */
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    /* ----- Cleanup on Unmount ----- */
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [playNote, stopNote]);
+  }, [triggerNote, stopNoteIfPressed]);
 }

@@ -1,51 +1,120 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+
+import { useRef, useCallback, useEffect } from "react";
 
 /**
  * useMouseControls Hook
+ *
+ * Handles mouse interactions for a piano component:
+ * - Supports click, drag, and release
+ * - Plays/stops notes via provided callbacks
+ * - Optionally manages visual highlighting of active notes
+ *
+ * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
+ * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
+ * @param setActiveNotes - Optional state setter to highlight currently active notes.
+ * @param noteActiveDuration - Duration (ms) for which a note is visually highlighted.
  * 
- * Handles mouse interactions for piano note playback.
- * Returns event handlers and a flag for mouseDown state.
+ * @returns Object with handlers: handleMouseDown, handleMouseEnter, handleMouseUp
  */
 export function useMouseControls(
-  playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
-  stopNote: (note: string, isKeyboard: boolean) => void,
-  setActiveNote: (note: string | null) => void,
-  noteActiveDuration: number
+  playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
+  stopNote: (noteName: string, isKeyboard: boolean) => void,
+  setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
+  noteActiveDuration = 150
 ) {
-  const [isMouseDown, setIsMouseDown] = useState(false);
+  /* ----- Track if the mouse is currently pressed ----- */
+  const isMouseDown = useRef(false);
 
+  /* ----- Track the note currently being played ----- */
+  const currentNote = useRef<string | null>(null);
+
+  /**
+   * Trigger a note
+   * - Stops the previous note if a new one is triggered
+   * - Plays the current note
+   * - Optionally highlights the note for a short duration
+   */
+  const triggerNote = useCallback(
+    (file: string, name: string) => {
+      // Stop previous note to prevent overlapping playback
+      if (currentNote.current && currentNote.current !== name) {
+        stopNote(currentNote.current, false);
+      }
+
+      // Update current note
+      currentNote.current = name;
+
+      // Trigger playback
+      playNote(file, name, false);
+
+      // Handle momentary visual highlight
+      if (setActiveNotes) {
+        setActiveNotes((prev) => new Set(prev).add(name));
+
+        setTimeout(() => {
+          setActiveNotes((prev) => {
+            const copy = new Set(prev);
+            copy.delete(name);
+            return copy;
+          });
+        }, noteActiveDuration);
+      }
+    },
+    [playNote, stopNote, setActiveNotes, noteActiveDuration]
+  );
+
+  /**
+   * Handle mouse down on a key
+   */
   const handleMouseDown = useCallback(
     (file: string, name: string) => {
-      setIsMouseDown(true);
-      playNote(file, name, false);
-      setActiveNote(name);
-      setTimeout(() => setActiveNote(null), noteActiveDuration);
+      isMouseDown.current = true;
+      triggerNote(file, name);
     },
-    [playNote, noteActiveDuration, setActiveNote]
+    [triggerNote]
   );
 
+  /**
+   * Handle mouse entering a key while mouse is pressed (dragging)
+   */
   const handleMouseEnter = useCallback(
     (file: string, name: string) => {
-      if (isMouseDown) handleMouseDown(file, name);
+      if (!isMouseDown.current) return;
+      triggerNote(file, name);
     },
-    [isMouseDown, handleMouseDown]
+    [triggerNote]
   );
 
-  const handleMouseUp = useCallback(
-    (name: string) => {
-      stopNote(name, false);
-      setIsMouseDown(false);
-    },
-    [stopNote]
-  );
+  /**
+   * Handle mouse release
+   */
+  const handleMouseUp = useCallback(() => {
+    if (currentNote.current) {
+      stopNote(currentNote.current, false);
+      currentNote.current = null;
+    }
+    isMouseDown.current = false;
+  }, [stopNote]);
 
-  // Global mouse-up listener to prevent stuck notes
+  /**
+   * Global mouse-up listener
+   * Ensures notes are released even if mouse is released outside a key
+   */
   useEffect(() => {
-    const handleGlobalMouseUp = () => setIsMouseDown(false);
+    const handleGlobalMouseUp = () => {
+      if (currentNote.current) stopNote(currentNote.current, false);
+      currentNote.current = null;
+      isMouseDown.current = false;
+
+      // Clear all highlights
+      if (setActiveNotes) setActiveNotes(new Set());
+    };
+
     window.addEventListener("mouseup", handleGlobalMouseUp);
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
-  }, []);
+  }, [stopNote, setActiveNotes]);
 
-  return { handleMouseDown, handleMouseEnter, handleMouseUp, isMouseDown };
+  /* ----- Return handlers for use in components ----- */
+  return { handleMouseDown, handleMouseEnter, handleMouseUp };
 }
