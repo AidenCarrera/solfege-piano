@@ -24,9 +24,9 @@ export default function Piano() {
   const [pianoScale, setPianoScale] = useState(() => {
     if (typeof window !== "undefined") {
       const width = window.innerWidth;
-      if (width < 640) return 0.5; // Mobile (sm breakpoint)
-      if (width < 768) return 0.75; // Small tablets (md breakpoint)
-      if (width < 1024) return 1.0; // Tablets (lg breakpoint)
+      if (width < 640) return 1.0; // Mobile (sm breakpoint)
+      if (width < 768) return 1.25; // Small tablets (md breakpoint)
+      if (width < 1024) return 1.4; // Tablets (lg breakpoint)
       return PIANO_CONFIG.DEFAULT_PIANO_SCALE; // Desktop: 1.5
     }
     return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
