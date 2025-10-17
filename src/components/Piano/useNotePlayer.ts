@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Howl } from "howler";
 import { notes } from "@/lib/notes";
-import { PIANO_CONFIG } from "./config";
+import { PIANO_CONFIG } from "../../lib/config";
 
 type Voice = {
   noteName: string;
@@ -91,7 +91,7 @@ export function useNotePlayer(
         html5: false, // Use Web Audio for lowest latency
         volume: volume,
         onload: onLoaded,
-        onloaderror: (_id, _err) => {
+        onloaderror: () => {
           console.warn(`Failed to preload ${src}`);
           onLoaded();
         },

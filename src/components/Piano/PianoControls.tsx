@@ -1,5 +1,5 @@
 "use client";
-import { SOUND_OPTIONS, type SoundType } from "./config";
+import { SOUND_OPTIONS, type SoundType } from "../../lib/config";
 
 /**
  * PianoControls Component
