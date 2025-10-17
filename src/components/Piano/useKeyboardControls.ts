@@ -7,21 +7,28 @@ import { notes } from "@/lib/notes";
  * 
  * Handles keyboard input for triggering piano notes.
  * Prevents duplicate triggers by tracking currently pressed keys.
+ * Calls both playNote and stopNote for proper sustain behavior.
  */
-export function useKeyboardControls(playNote: (file: string, note: string) => void) {
+export function useKeyboardControls(
+  playNote: (fileName: string, note: string) => void,
+  stopNote: (note: string) => void
+) {
   /* ----- Track currently pressed keys to avoid repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     /* ----- Key Down Handler ----- */
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore spacebar (used for sustain toggle)
+      if (e.code === "Space") return;
+
       const key = e.key.toLowerCase();
       const note = notes.find((n) => n.key === key);
       if (!note) return; // Skip if key doesn't map to a note
 
-      e.preventDefault(); // Prevent browser default shortcuts (e.g. space, arrows)
+      e.preventDefault(); // Prevent browser default shortcuts
 
-      // Only trigger note if key wasn’t already pressed
+      // Only trigger note if key wasn't already pressed
       if (!pressedKeys.current.has(key)) {
         pressedKeys.current.add(key);
         playNote(note.fileName, note.name);
@@ -30,7 +37,15 @@ export function useKeyboardControls(playNote: (file: string, note: string) => vo
 
     /* ----- Key Up Handler ----- */
     const handleKeyUp = (e: KeyboardEvent) => {
-      pressedKeys.current.delete(e.key.toLowerCase());
+      if (e.code === "Space") return;
+
+      const key = e.key.toLowerCase();
+      const note = notes.find((n) => n.key === key);
+      
+      if (note && pressedKeys.current.has(key)) {
+        pressedKeys.current.delete(key);
+        stopNote(note.name);
+      }
     };
 
     /* ----- Register Event Listeners ----- */
@@ -42,5 +57,5 @@ export function useKeyboardControls(playNote: (file: string, note: string) => vo
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [playNote]);
+  }, [playNote, stopNote]);
 }

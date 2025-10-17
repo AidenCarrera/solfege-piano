@@ -13,6 +13,7 @@ type PianoKeyProps = {
   activeNote: string | null;
   onMouseDown: (fileName: string, noteName: string) => void;
   onMouseEnter: (fileName: string, noteName: string) => void;
+  onMouseUp: (noteName: string) => void;
   getSharpKeyPosition: (note: Note) => number;
   showLabel?: boolean; // Optional: controls key label visibility
 };
@@ -22,6 +23,7 @@ function PianoKey({
   activeNote,
   onMouseDown,
   onMouseEnter,
+  onMouseUp,
   getSharpKeyPosition,
   showLabel = true,
 }: PianoKeyProps) {
@@ -46,11 +48,13 @@ function PianoKey({
   /* ----- Render key element ----- */
   return (
     <button
-      onMouseDown={e => {
+      onMouseDown={(e) => {
         e.preventDefault(); // Prevent focus outline on click
         onMouseDown(note.fileName, note.name);
       }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
+      onMouseUp={() => onMouseUp(note.name)}
+      onMouseLeave={() => onMouseUp(note.name)} // release when dragging off
       className={`${base} ${active} transition-all duration-100`}
       style={position}
       tabIndex={-1}

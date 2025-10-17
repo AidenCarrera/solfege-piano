@@ -23,7 +23,7 @@ export default function Piano() {
   const [pianoScale, setPianoScale] = useState(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
   const [soundType, setSoundType] = useState<"Piano" | "Solfege">("Piano");
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [sustainActive, setSustainActive] = useState(false); // Visual sustain state
+  const [sustainActive, setSustainActive] = useState(false);
 
   // Initialize background color from actual CSS variable
   const [bgColor, setBgColor] = useState(() => {
@@ -37,26 +37,38 @@ export default function Piano() {
   });
 
   /* ----- AUDIO + INPUT HOOKS ----- */
-  const playNote = useNotePlayer(volume, soundType);
+  const { playNote, stopNote, stopAllNotes } = useNotePlayer(volume, soundType, sustainActive);
 
   // Handle keyboard-based note triggering
-  useKeyboardControls((file, note) => {
-    playNote(file, note);
-    setActiveNote(note);
-    setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
-  });
+  useKeyboardControls(
+    (fileName, note) => {
+      playNote(fileName, note, true); // true = keyboard input
+      setActiveNote(note);
+      setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
+    },
+    (note) => {
+      stopNote(note, true); // true = keyboard input
+    }
+  );
 
-  /* ----- SPACEBAR Sustain Visual Sync ----- */
+  /* ----- SPACEBAR Sustain Toggle ----- */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
+      if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
-        setSustainActive((prev) => !prev);
+        setSustainActive((prev) => {
+          const newState = !prev;
+          // If turning sustain OFF, stop all notes
+          if (!newState) {
+            stopAllNotes();
+          }
+          return newState;
+        });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [stopAllNotes]);
 
   /* ----- NOTE MAPPING + POSITIONING ----- */
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), []);
@@ -74,7 +86,7 @@ export default function Piano() {
   const handleMouseDown = useCallback(
     (file: string, name: string) => {
       setIsMouseDown(true);
-      playNote(file, name);
+      playNote(file, name, false); // false = mouse input
       setActiveNote(name);
       setTimeout(() => setActiveNote(null), PIANO_CONFIG.NOTE_ACTIVE_DURATION_MS);
     },
@@ -86,6 +98,14 @@ export default function Piano() {
       if (isMouseDown) handleMouseDown(file, name);
     },
     [isMouseDown, handleMouseDown]
+  );
+
+  const handleMouseUp = useCallback(
+    (name: string) => {
+      stopNote(name, false); // false = mouse input
+      setIsMouseDown(false);
+    },
+    [stopNote]
   );
 
   /* ----- BACKGROUND + CLEANUP ----- */
@@ -138,6 +158,7 @@ export default function Piano() {
               activeNote={activeNote}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
+              onMouseUp={handleMouseUp}
               getSharpKeyPosition={getSharpKeyPosition}
               showLabel={labelsEnabled}
             />
@@ -154,8 +175,8 @@ export default function Piano() {
             }`}
           />
           <p className="text-sm font-medium mt-2 text-foreground text-center">
-            Sustain Pedal {sustainActive ? "(Active)" : "(Off)"} — Press{" "}
-            <kbd>Spacebar</kbd> to toggle
+            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Press{" "}
+            Spacebar to toggle
           </p>
           <p className="text-sm font-medium mb-1 mt-2 text-foreground">
             Click, drag, or use your keyboard to play notes (C4–C5)
