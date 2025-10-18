@@ -52,10 +52,26 @@ export function useNotePlayer(
   useEffect(() => {
     let mounted = true;
     const folder = soundType.toLowerCase();
-    const sampleKeys = notes.map((n) => `${folder}/${n.fileName}`);
+
+    const range = PIANO_CONFIG.SAMPLE_RANGES[soundType as keyof typeof PIANO_CONFIG.SAMPLE_RANGES];
+    const [start, end] = [range.minOctave, range.maxOctave];
+
+
+    // Filter notes based on octave range
+    const filteredNotes = notes.filter((n) => {
+      const octave = parseInt(n.name.match(/\d+$/)?.[0] || "0", 10);
+      return octave >= start && octave <= end;
+    });
+
+    console.log(`[Preload] Sound type: ${soundType}`);
+    console.log(`[Preload] Octave range: ${start}–${end}`);
+    console.log(`[Preload] Notes to preload:`, filteredNotes.map(n => n.name));
+
+    const sampleKeys = filteredNotes.map((n) => `${folder}/${n.fileName}`);
     const total = sampleKeys.length;
-    
+
     if (total === 0) {
+      console.log("[Preload] No notes to preload, skipping.");
       setPreloadProgress(1);
       setIsPreloading(false);
       return;
@@ -70,40 +86,47 @@ export function useNotePlayer(
       loadedCount += 1;
       if (!mounted) return;
       setPreloadProgress(loadedCount / total);
+      console.log(`[Preload] Loaded ${loadedCount}/${total}`);
       if (loadedCount >= total) {
+        console.log("[Preload] All samples loaded.");
         setIsPreloading(false);
       }
     };
 
     sampleKeys.forEach((key) => {
-      // Skip if already cached
       if (howlCache.current.has(key)) {
+        console.log(`[Preload] Already cached: ${key}`);
         onLoaded();
         return;
       }
-      
+
       const [folderPart, fileName] = key.split("/");
       const src = `/samples/${folderPart}/${fileName}.mp3`;
-      
+
       const h = new Howl({
         src: [src],
         preload: true,
-        html5: false, // Use Web Audio for lowest latency
-        volume: volume,
-        onload: onLoaded,
-        onloaderror: () => {
-          console.warn(`Failed to preload ${src}`);
+        html5: false,
+        volume,
+        onload: () => {
+          console.log(`[Preload] Loaded sample: ${src}`);
+          onLoaded();
+        },
+        onloaderror: (_, err) => {
+          console.warn(`[Preload] Failed to load sample: ${src}`, err);
           onLoaded();
         },
       });
-      
+
       howlCache.current.set(key, h);
     });
 
     return () => {
       mounted = false;
     };
-  }, [soundType, volume]);
+  }, [soundType, volume, notes]);
+
+
 
   // ----- Voice helpers -----
   const addVoice = useCallback((noteName: string, howl: Howl, id: number) => {

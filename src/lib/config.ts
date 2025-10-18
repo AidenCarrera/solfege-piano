@@ -7,6 +7,12 @@ export const PIANO_CONFIG = {
   DEFAULT_SOLFEGE_ENABLED: false,
   DEFAULT_BG_COLOR: "#1d1522",
 
+  /* Sample Ranges */
+  SAMPLE_RANGES: {
+    Piano: { minOctave: 2, maxOctave: 6 },
+    Solfege: { minOctave: 4, maxOctave: 5 },
+  } as const,
+
   /* Playback & Interaction */
   DEFAULT_VOLUME: 0.75,
   NOTE_RETRIGGER_COOLDOWN_MS: 50,
