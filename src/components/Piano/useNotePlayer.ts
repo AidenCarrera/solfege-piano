@@ -57,10 +57,16 @@ export function useNotePlayer(
     const [start, end] = [range.minOctave, range.maxOctave];
 
 
-    // Filter notes based on octave range
+    // Filter notes based on octave range (C to C)
     const filteredNotes = notes.filter((n) => {
       const octave = parseInt(n.name.match(/\d+$/)?.[0] || "0", 10);
-      return octave >= start && octave <= end;
+      
+      // Include if in range, but for end octave only include C
+      if (octave > start && octave < end) return true; // Middle octaves: all notes
+      if (octave === start) return true; // Start octave: all notes
+      if (octave === end) return n.name.startsWith('C'); // End octave: only C
+      
+      return false;
     });
 
     console.log(`[Preload] Sound type: ${soundType}`);

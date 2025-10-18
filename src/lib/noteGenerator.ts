@@ -14,9 +14,9 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
 
       // Assign keys
       let key = "";
-      if (octave === 4) {
+      if (octave === 3) {
         key = KEYBOARD_MAP_C4_C5[i]; // C4–B4
-      } else if (octave === 5 && n.base === "C") {
+      } else if (octave === 4 && n.base === "C") {
         key = KEYBOARD_MAP_C4_C5[KEYBOARD_MAP_C4_C5.length - 1]; // C5 gets last key
       }
 

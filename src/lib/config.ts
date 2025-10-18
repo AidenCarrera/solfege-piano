@@ -2,7 +2,7 @@ export const PIANO_CONFIG = {
   /* Layout & Visual */
   WHITE_KEY_WIDTH_REM: 4,
   DEFAULT_PIANO_SCALE: 1.5,
-  DEFAULT_OCTAVE_RANGE: [4, 5], // <== start and end octaves
+  DEFAULT_OCTAVE_RANGE: [3, 4], // <== start and end octaves
   DEFAULT_LABELS_ENABLED: true,
   DEFAULT_SOLFEGE_ENABLED: false,
   DEFAULT_BG_COLOR: "#1d1522",
@@ -10,7 +10,7 @@ export const PIANO_CONFIG = {
   /* Sample Ranges */
   SAMPLE_RANGES: {
     Piano: { minOctave: 2, maxOctave: 6 },
-    Solfege: { minOctave: 4, maxOctave: 5 },
+    Solfege: { minOctave: 3, maxOctave: 4 },
   } as const,
 
   /* Playback & Interaction */

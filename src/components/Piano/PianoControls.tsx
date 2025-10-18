@@ -21,9 +21,9 @@ type Props = {
 };
 
 const OCTAVE_MAP: Record<number, [number, number]> = {
-  1: [4, 5],
+  1: [3, 4],
   2: [3, 5],
-  3: [3, 6],
+  3: [2, 5],
   4: [2, 6],
 };
 
@@ -125,7 +125,15 @@ export default function PianoControls({
         <label className="text-sm font-medium mb-1">Sound Type:</label>
         <select
           value={soundType}
-          onChange={(e) => setSoundType(e.target.value as SoundType)}
+          onChange={(e) => {
+            const newSoundType = e.target.value as SoundType;
+            setSoundType(newSoundType);
+            
+            // Lock Solfege to one octave (C3-C4)
+            if (newSoundType === "Solfege") {
+              onOctaveChange(3, 4);
+            }
+          }}
           className="px-2 py-1 border rounded-md"
         >
           {SOUND_OPTIONS.map((s) => (
@@ -147,7 +155,13 @@ export default function PianoControls({
           value={parseInt(sliderValue)}
           onChange={(e) => handleSliderChange(parseInt(e.target.value))}
           className="w-40"
+          disabled={soundType === "Solfege"} // Disable slider for Solfege
         />
+        {soundType === "Solfege" && (
+          <span className="text-xs text-gray-500 mt-1">
+            Solfege is locked to one octave
+          </span>
+        )}
       </div>
     </div>
   );
