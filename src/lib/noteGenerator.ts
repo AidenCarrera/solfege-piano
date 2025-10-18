@@ -23,7 +23,7 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
       notes.push({
         name: `${n.base}${octave}`,
         isSharp: n.isSharp,
-        fileName: `${n.base.replace("#", "s")}${octave}`,
+        fileName: `${n.base}${octave}`,
         key,
         solfege: n.solfege,
       });

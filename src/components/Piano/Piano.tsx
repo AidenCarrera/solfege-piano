@@ -110,9 +110,9 @@ export default function Piano() {
   /* ----- NOTE MAPPING ----- */
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
   const getSharpKeyPosition = (note: Note) => {
-    const match = note.name.match(/^([A-G]#?)(\d+)$/);
+    const match = note.name.match(/^([A-G]s?)(\d+)$/);
     if (!match) return 0;
-    const base = match[1].replace("#", "");
+    const base = match[1].replace("s", "");
     const octave = match[2];
     const whiteIndex = whiteNotes.findIndex((n) => n.name === `${base}${octave}`);
     if (whiteIndex === -1) return 0;
