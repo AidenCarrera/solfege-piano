@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { notes, type Note } from "@/lib/notes";
+import { notes } from "@/lib/defaultPianoNotes";
+import type { Note } from "@/lib/note";
 import PianoKey from "./PianoKey";
 import PianoControls from "./PianoControls";
 import { useNotePlayer } from "./useNotePlayer";

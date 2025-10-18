@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import type { Note } from "@/lib/notes";
+import type { Note } from "@/lib/note";
 
 type PianoKeyProps = {
   note: Note;

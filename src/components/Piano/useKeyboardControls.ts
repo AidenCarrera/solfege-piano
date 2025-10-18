@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { notes } from "@/lib/notes";
+import { notes } from "@/lib/defaultPianoNotes";
 import { PIANO_CONFIG } from "@/lib/config";
 
 /**
