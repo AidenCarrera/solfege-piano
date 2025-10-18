@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Howl } from "howler";
-import { notes } from "@/lib/defaultPianoNotes";
+import { Note } from "@/lib/note";  // Add this import
 import { PIANO_CONFIG } from "../../lib/config";
 
 type Voice = {
@@ -17,6 +17,7 @@ export function useNotePlayer(
   volume: number,
   soundType: string,
   sustainMode: boolean,
+  notes: Note[],
   maxVoices = PIANO_CONFIG.MAX_POLYPHONY
 ) {
   const voices = useRef<Voice[]>([]);

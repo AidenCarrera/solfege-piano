@@ -39,6 +39,16 @@ export default function Piano() {
   const [startOctave, setStartOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]);
   const [endOctave, setEndOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1]);
 
+  // Wrapper to handle sound type changes with automatic octave locking
+  const handleSoundTypeChange = useCallback((newSoundType: SoundType) => {
+    // Lock Solfege to one octave BEFORE changing sound type
+    if (newSoundType === "Solfege") {
+      setStartOctave(3);
+      setEndOctave(4);
+    }
+    setSoundType(newSoundType);
+  }, []);
+
   // Regenerate notes when octaves change
   const notes: Note[] = useMemo(() => generateNotes(startOctave, endOctave), [startOctave, endOctave]);
 
@@ -46,7 +56,8 @@ export default function Piano() {
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
     volume,
     soundType,
-    sustainActive
+    sustainActive,
+    notes
   );
 
   /* ----- KEYBOARD ----- */
@@ -141,7 +152,7 @@ export default function Piano() {
         bgColor={bgColor}
         setBgColor={setBgColor}
         soundType={soundType}
-        setSoundType={setSoundType}
+        setSoundType={handleSoundTypeChange}
         startOctave={startOctave}
         endOctave={endOctave}
         onOctaveChange={(start, end) => {

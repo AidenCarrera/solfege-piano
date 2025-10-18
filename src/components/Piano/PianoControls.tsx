@@ -125,15 +125,7 @@ export default function PianoControls({
         <label className="text-sm font-medium mb-1">Sound Type:</label>
         <select
           value={soundType}
-          onChange={(e) => {
-            const newSoundType = e.target.value as SoundType;
-            setSoundType(newSoundType);
-            
-            // Lock Solfege to one octave (C3-C4)
-            if (newSoundType === "Solfege") {
-              onOctaveChange(3, 4);
-            }
-          }}
+          onChange={(e) => setSoundType(e.target.value as SoundType)}
           className="px-2 py-1 border rounded-md"
         >
           {SOUND_OPTIONS.map((s) => (
