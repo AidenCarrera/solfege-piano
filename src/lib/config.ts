@@ -2,6 +2,7 @@ export const PIANO_CONFIG = {
   /* Layout & Visual */
   WHITE_KEY_WIDTH_REM: 4,
   DEFAULT_PIANO_SCALE: 1.5,
+  DEFAULT_OCTAVE_RANGE: [4, 5], // <== start and end octaves
   DEFAULT_LABELS_ENABLED: true,
   DEFAULT_SOLFEGE_ENABLED: false,
   DEFAULT_BG_COLOR: "#1d1522",

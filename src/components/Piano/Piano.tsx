@@ -16,7 +16,6 @@ export default function Piano() {
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
-  
   const [pianoScale, setPianoScale] = useState(() => {
     if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
     const width = window.innerWidth;
@@ -100,12 +99,29 @@ export default function Piano() {
   }, [toggleSustain]);
 
   /* ----- NOTE MAPPING ----- */
-  const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), []);
-  const getSharpKeyPosition = (note: Note) => {
-    const base = note.name[0];
-    const whiteIndex = whiteNotes.findIndex((n) => n.name.startsWith(base));
-    return whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM + PIANO_CONFIG.WHITE_KEY_WIDTH_REM;
-  };
+const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), []);
+
+const getSharpKeyPosition = (note: Note) => {
+  const match = note.name.match(/^([A-G]#?)(\d+)$/);
+  if (!match) return 0;
+
+  const base = match[1].replace("#", ""); // e.g. C#4 -> C
+  const octave = match[2];                // e.g. 4
+
+  // Find the white key *in the same octave* that this sharp follows
+  const whiteIndex = whiteNotes.findIndex(
+    (n) => n.name === `${base}${octave}`
+  );
+
+  // If not found (shouldn’t happen), just fallback to 0
+  if (whiteIndex === -1) return 0;
+
+  // Offset the black key 1 white key width ahead (same logic as your working version)
+  return (
+    whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM +
+    PIANO_CONFIG.WHITE_KEY_WIDTH_REM
+  );
+};
 
   /* ----- BACKGROUND ----- */
   useEffect(() => {
