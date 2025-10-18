@@ -1,11 +1,6 @@
 "use client";
 import { SOUND_OPTIONS, type SoundType } from "../../lib/config";
 
-/**
- * PianoControls Component
- *
- * Provides UI controls for piano configuration
- */
 type Props = {
   volume: number;
   setVolume: (v: number) => void;
@@ -19,6 +14,17 @@ type Props = {
   setBgColor: (v: string) => void;
   soundType: SoundType;
   setSoundType: (s: SoundType) => void;
+
+  startOctave: number;
+  endOctave: number;
+  onOctaveChange: (start: number, end: number) => void;
+};
+
+const OCTAVE_MAP: Record<number, [number, number]> = {
+  1: [4, 5],
+  2: [3, 5],
+  3: [3, 6],
+  4: [2, 6],
 };
 
 export default function PianoControls({
@@ -34,7 +40,20 @@ export default function PianoControls({
   setBgColor,
   soundType,
   setSoundType,
+  startOctave,
+  endOctave,
+  onOctaveChange,
 }: Props) {
+  // Determine the current slider value based on the start/end octave
+  const sliderValue = Object.entries(OCTAVE_MAP).find(
+    ([, range]) => range[0] === startOctave && range[1] === endOctave
+  )?.[0] ?? "2"; // default to 2 if no exact match
+
+  const handleSliderChange = (val: number) => {
+    const [start, end] = OCTAVE_MAP[val];
+    onOctaveChange(start, end);
+  };
+
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
       {/* ----- Volume Control ----- */}
@@ -113,6 +132,22 @@ export default function PianoControls({
             <option key={s}>{s}</option>
           ))}
         </select>
+      </div>
+
+      {/* ----- Octave Range Slider ----- */}
+      <div className="flex flex-col items-start">
+        <label className="text-sm font-medium mb-1">
+          Octave Range: C{startOctave} - C{endOctave}
+        </label>
+        <input
+          type="range"
+          min={1}
+          max={4}
+          step={1}
+          value={parseInt(sliderValue)}
+          onChange={(e) => handleSliderChange(parseInt(e.target.value))}
+          className="w-40"
+        />
       </div>
     </div>
   );
