@@ -27,7 +27,7 @@ export function useKeyboardControls(
 ) {
   /* ----- Track keys currently pressed to prevent repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
-
+  
   /**
    * Trigger a note if it is not already pressed
    * - Plays the note
