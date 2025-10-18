@@ -34,6 +34,7 @@ export default function Piano() {
   });
   const [soundType, setSoundType] = useState<SoundType>("Piano");
   const [sustainActive, setSustainActive] = useState(false);
+  const [enablePreload, setEnablePreload] = useState(false);  // <-- Add this line
 
   /* ----- Dynamic Octaves ----- */
   const [startOctave, setStartOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]);
@@ -52,12 +53,35 @@ export default function Piano() {
   // Regenerate notes when octaves change
   const notes: Note[] = useMemo(() => generateNotes(startOctave, endOctave), [startOctave, endOctave]);
 
+  /* ----- Preload on First Interaction ----- */
+  useEffect(() => {
+    // Preload after 500ms OR on first interaction (whichever comes first)
+    const timer = setTimeout(() => setEnablePreload(true), 500);
+    
+    const handleInteraction = () => {
+      clearTimeout(timer);
+      setEnablePreload(true);
+    };
+    
+    window.addEventListener('mousemove', handleInteraction, { once: true });
+    window.addEventListener('click', handleInteraction, { once: true });
+    window.addEventListener('keydown', handleInteraction, { once: true });
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('mousemove', handleInteraction);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
+
   /* ----- AUDIO HOOKS ----- */
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
     volume,
     soundType,
     sustainActive,
-    notes
+    notes,
+    enablePreload
   );
 
   /* ----- KEYBOARD ----- */

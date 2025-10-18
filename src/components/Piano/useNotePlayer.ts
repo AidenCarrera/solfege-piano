@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Howl } from "howler";
-import { Note } from "@/lib/note";  // Add this import
+import { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "../../lib/config";
 
 type Voice = {
@@ -18,6 +18,7 @@ export function useNotePlayer(
   soundType: string,
   sustainMode: boolean,
   notes: Note[],
+  enablePreload: boolean,
   maxVoices = PIANO_CONFIG.MAX_POLYPHONY
 ) {
   const voices = useRef<Voice[]>([]);
@@ -51,12 +52,13 @@ export function useNotePlayer(
 
   // ----- Preload samples -----
   useEffect(() => {
+    if (!enablePreload) return; // Don't preload until interaction
+
     let mounted = true;
     const folder = soundType.toLowerCase();
 
     const range = PIANO_CONFIG.SAMPLE_RANGES[soundType as keyof typeof PIANO_CONFIG.SAMPLE_RANGES];
     const [start, end] = [range.minOctave, range.maxOctave];
-
 
     // Filter notes based on octave range (C to C)
     const filteredNotes = notes.filter((n) => {
@@ -131,9 +133,7 @@ export function useNotePlayer(
     return () => {
       mounted = false;
     };
-  }, [soundType, volume, notes]);
-
-
+  }, [enablePreload, soundType, volume, notes]);
 
   // ----- Voice helpers -----
   const addVoice = useCallback((noteName: string, howl: Howl, id: number) => {
@@ -289,7 +289,6 @@ export function useNotePlayer(
     },
     [sustainMode, fadeAndRemoveVoice]
   );
-
 
   // ----- API: stopAllNotes -----
   const stopAllNotes = useCallback(() => {
