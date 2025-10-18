@@ -3,6 +3,7 @@ export const PIANO_CONFIG = {
   WHITE_KEY_WIDTH_REM: 4,
   DEFAULT_PIANO_SCALE: 1.5,
   DEFAULT_LABELS_ENABLED: true,
+  DEFAULT_SOLFEGE_ENABLED: false,
   DEFAULT_BG_COLOR: "#1d1522",
 
   /* Playback & Interaction */

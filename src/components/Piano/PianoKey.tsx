@@ -13,6 +13,7 @@ type PianoKeyProps = {
   onTouchEnd?: (e: React.TouchEvent<HTMLButtonElement>) => void;
   getSharpKeyPosition: (note: Note) => number;
   showLabel?: boolean;
+  showSolfege?: boolean;
 };
 
 function PianoKey({
@@ -26,6 +27,7 @@ function PianoKey({
   onTouchEnd,
   getSharpKeyPosition,
   showLabel = true,
+  showSolfege = true,
 }: PianoKeyProps) {
   const isActive = activeNotes.has(note.name);
 
@@ -44,7 +46,10 @@ function PianoKey({
   return (
     <button
       type="button"
-      onMouseDown={(e) => { e.preventDefault(); onMouseDown(note.fileName, note.name); }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onMouseDown(note.fileName, note.name);
+      }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
       onMouseUp={() => onMouseUp(note.name)}
       className={`${base} ${activeClass} transition-all duration-100`}
@@ -62,10 +67,20 @@ function PianoKey({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
+      {showSolfege && (
+        <span
+          className={`absolute bottom-7 left-1/2 -translate-x-1/2 text-base font-semibold pointer-events-none ${
+            note.isSharp ? "text-white" : "text-black"
+          }`}
+        >
+          {note.solfege}
+        </span>
+      )}
+
       {showLabel && (
         <span
           className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono pointer-events-none ${
-            note.isSharp ? "text-white" : "text-gray-400"
+            note.isSharp ? "text-white/80" : "text-gray-500"
           }`}
         >
           {note.key.toUpperCase()}

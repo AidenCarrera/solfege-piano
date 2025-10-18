@@ -11,6 +11,8 @@ type Props = {
   setVolume: (v: number) => void;
   labelsEnabled: boolean;
   setLabelsEnabled: (b: boolean) => void;
+  solfegeEnabled: boolean;
+  setSolfegeEnabled: (b: boolean) => void;
   pianoScale: number;
   setPianoScale: (v: number) => void;
   bgColor: string;
@@ -24,6 +26,8 @@ export default function PianoControls({
   setVolume,
   labelsEnabled,
   setLabelsEnabled,
+  solfegeEnabled,
+  setSolfegeEnabled,
   pianoScale,
   setPianoScale,
   bgColor,
@@ -49,15 +53,26 @@ export default function PianoControls({
         />
       </div>
 
-      {/* ----- Label Visibility Toggle ----- */}
-      <label className="flex items-center gap-2 text-sm font-medium">
-        <input
-          type="checkbox"
-          checked={labelsEnabled}
-          onChange={(e) => setLabelsEnabled(e.target.checked)}
-        />
-        Labels Enabled
-      </label>
+      {/* ----- Label Toggles ----- */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={labelsEnabled}
+            onChange={(e) => setLabelsEnabled(e.target.checked)}
+          />
+          Keyboard Labels
+        </label>
+
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={solfegeEnabled}
+            onChange={(e) => setSolfegeEnabled(e.target.checked)}
+          />
+          Solfege Labels
+        </label>
+      </div>
 
       {/* ----- Piano Scale (Zoom) ----- */}
       <div className="flex flex-col items-start">

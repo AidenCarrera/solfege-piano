@@ -15,6 +15,8 @@ export default function Piano() {
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
+  const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
+  
   const [pianoScale, setPianoScale] = useState(() => {
     if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
     const width = window.innerWidth;
@@ -120,6 +122,8 @@ export default function Piano() {
         setVolume={setVolume}
         labelsEnabled={labelsEnabled}
         setLabelsEnabled={setLabelsEnabled}
+        solfegeEnabled={solfegeEnabled}
+        setSolfegeEnabled={setSolfegeEnabled}
         pianoScale={pianoScale}
         setPianoScale={setPianoScale}
         bgColor={bgColor}
@@ -169,6 +173,7 @@ export default function Piano() {
               onTouchEnd={handleTouchEnd}
               getSharpKeyPosition={getSharpKeyPosition}
               showLabel={labelsEnabled}
+              showSolfege={solfegeEnabled}
             />
           ))}
         </div>
