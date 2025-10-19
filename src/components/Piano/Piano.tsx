@@ -13,6 +13,7 @@ import PreloadProgress from "./PreloadProgress";
 import { PIANO_CONFIG, SoundType } from "@/lib/config";
 import { generateNotes } from "@/lib/noteGenerator";
 import { useDeferredPreload } from "./useDeferredPreload";
+import { useBackgroundColor } from "./useBackgroundColor";
 
 export default function Piano() {
   /* ----- STATE ----- */
@@ -21,13 +22,7 @@ export default function Piano() {
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
   const [pianoScale, setPianoScale] = usePianoScale();
-  const [bgColor, setBgColor] = useState(() => {
-    if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_BG_COLOR;
-    const initial = getComputedStyle(document.documentElement)
-      .getPropertyValue("--background")
-      .trim();
-    return initial || PIANO_CONFIG.DEFAULT_BG_COLOR;
-  });
+  const [bgColor, setBgColor] = useBackgroundColor();
   const [soundType, setSoundType] = useState<SoundType>("Piano");
   const [sustainActive, setSustainActive] = useState(false);
   const [enablePreload, setEnablePreload] = useState(false);
