@@ -12,6 +12,7 @@ import { useTouchControls } from "./useTouchControls";
 import PreloadProgress from "./PreloadProgress";
 import { PIANO_CONFIG, SoundType } from "@/lib/config";
 import { generateNotes } from "@/lib/noteGenerator";
+import { useDeferredPreload } from "./useDeferredPreload";
 
 export default function Piano() {
   /* ----- STATE ----- */
@@ -48,27 +49,8 @@ export default function Piano() {
   // Regenerate notes when octaves change
   const notes: Note[] = useMemo(() => generateNotes(startOctave, endOctave), [startOctave, endOctave]);
 
-  /* ----- Preload on First Interaction ----- */
-  useEffect(() => {
-    // Preload after 500ms OR on first interaction (whichever comes first)
-    const timer = setTimeout(() => setEnablePreload(true), 500);
-    
-    const handleInteraction = () => {
-      clearTimeout(timer);
-      setEnablePreload(true);
-    };
-    
-    window.addEventListener('mousemove', handleInteraction, { once: true });
-    window.addEventListener('click', handleInteraction, { once: true });
-    window.addEventListener('keydown', handleInteraction, { once: true });
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('mousemove', handleInteraction);
-      window.removeEventListener('click', handleInteraction);
-      window.removeEventListener('keydown', handleInteraction);
-    };
-  }, []);
+  /* ----- Deferred Preload ----- */
+  useDeferredPreload(() => setEnablePreload(true), 500);
 
   /* ----- AUDIO HOOKS ----- */
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
