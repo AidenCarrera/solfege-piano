@@ -6,6 +6,7 @@ import PianoKey from "./PianoKey";
 import PianoControls from "./PianoControls";
 import { useNotePlayer } from "./useNotePlayer";
 import { useKeyboardControls } from "./useKeyboardControls";
+import { usePianoScale } from "./usePianoScale";
 import { useMouseControls } from "./useMouseControls";
 import { useTouchControls } from "./useTouchControls";
 import PreloadProgress from "./PreloadProgress";
@@ -18,14 +19,7 @@ export default function Piano() {
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
-  const [pianoScale, setPianoScale] = useState(() => {
-    if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
-    const width = window.innerWidth;
-    if (width < 640) return 1.0;
-    if (width < 768) return 1.25;
-    if (width < 1024) return 1.4;
-    return PIANO_CONFIG.DEFAULT_PIANO_SCALE;
-  });
+  const [pianoScale, setPianoScale] = usePianoScale();
   const [bgColor, setBgColor] = useState(() => {
     if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_BG_COLOR;
     const initial = getComputedStyle(document.documentElement)
