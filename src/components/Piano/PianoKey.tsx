@@ -42,7 +42,7 @@ function PianoKey({
   // Active state animation: only color & shadow
   const activeClass = isActive
     ? note.isSharp
-      ? "bg-gray-800 shadow-inner ring-2 ring-blue-400/50"
+      ? "ring-2 ring-blue-400/50 shadow-inner"
       : "bg-blue-100 shadow-inner shadow-blue-400"
     : "";
 
