@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { SOUND_OPTIONS, type SoundType } from "../../lib/config";
 
 type Props = {
@@ -14,7 +15,6 @@ type Props = {
   setBgColor: (v: string) => void;
   soundType: SoundType;
   setSoundType: (s: SoundType) => void;
-
   startOctave: number;
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
@@ -49,6 +49,13 @@ export default function PianoControls({
     ([, range]) => range[0] === startOctave && range[1] === endOctave
   )?.[0] ?? "2"; // default to 2 if no exact match
 
+  // Auto-adjust scale when Solfege is selected
+  useEffect(() => {
+    if (soundType === "Solfege") {
+      setPianoScale(1.5);
+    }
+  }, [soundType, setPianoScale]);
+
   const handleSliderChange = (val: number) => {
     const [start, end] = OCTAVE_MAP[val];
     onOctaveChange(start, end);
@@ -77,7 +84,6 @@ export default function PianoControls({
 
     setPianoScale(newScale);
   };
-
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
