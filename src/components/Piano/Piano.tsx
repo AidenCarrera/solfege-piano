@@ -15,10 +15,18 @@ import { generateNotes } from "@/lib/noteGenerator";
 import { useDeferredPreload } from "./useDeferredPreload";
 import { useBackgroundColor } from "./useBackgroundColor";
 import { useSustainToggle } from "./useSustainToggle";
+import { useActiveNotes } from "./useActiveNotes";
 
 export default function Piano() {
   /* ----- STATE ----- */
-  const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
+  const { 
+    activeNotes, 
+    activateNote, 
+    deactivateNote, 
+    flashNote,
+    clearAllNotes,
+    setActiveNotes 
+  } = useActiveNotes();
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
@@ -47,7 +55,8 @@ export default function Piano() {
   /* ----- Deferred Preload ----- */
   useDeferredPreload(() => setEnablePreload(true), 500);
 
-  /* ----- SUSTAIN ----- */
+  /* ----- SUSTAIN (must be before useNotePlayer) ----- */
+  // Use a temporary reference
   const [sustainActive, setSustainActive] = useState(false);
   
   /* ----- AUDIO HOOKS ----- */
@@ -59,45 +68,31 @@ export default function Piano() {
     enablePreload
   );
 
-  // Connect the sustain toggle hook with stopAllNotes
+  // Connects the sustain toggle hook with stopAllNotes
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
   /* ----- KEYBOARD ----- */
   useKeyboardControls(
-    (fileName, note) => {
-      playNote(fileName, note, true);
-      setActiveNotes((prev) => new Set(prev).add(note));
-      setTimeout(() => {
-        setActiveNotes((prev) => {
-          const copy = new Set(prev);
-          copy.delete(note);
-          return copy;
-        });
-      }, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
-    },
-    (note) => {
-      stopNote(note, true);
-      setActiveNotes((prev) => {
-        const copy = new Set(prev);
-        copy.delete(note);
-        return copy;
-      });
-    },
-    setActiveNotes
+    playNote,
+    stopNote,
+    (note) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),
+    deactivateNote
   );
 
   /* ----- MOUSE ----- */
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
     playNote,
     stopNote,
-    setActiveNotes
+    flashNote,
+    clearAllNotes
   );
 
   /* ----- TOUCH ----- */
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchControls(
     playNote,
     stopNote,
-    setActiveNotes
+    activateNote,
+    deactivateNote
   );
 
   /* ----- NOTE MAPPING ----- */

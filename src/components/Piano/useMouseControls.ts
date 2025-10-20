@@ -13,16 +13,16 @@ import { PIANO_CONFIG } from "@/lib/config";
  *
  * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
  * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
- * @param setActiveNotes - Optional state setter to highlight currently active notes.
- * @param noteActiveDuration - Duration (ms) for which a note is visually highlighted.
+ * @param flashNote - Optional callback to temporarily highlight a note.
+ * @param clearAllNotes - Optional callback to clear all visual highlights.
  * 
  * @returns Object with handlers: handleMouseDown, handleMouseEnter, handleMouseUp
  */
 export function useMouseControls(
   playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
   stopNote: (noteName: string, isKeyboard: boolean) => void,
-  setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
-  noteActiveDuration = PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS
+  flashNote?: (note: string, duration: number) => void,
+  clearAllNotes?: () => void
 ) {
   /* ----- Track if the mouse is currently pressed ----- */
   const isMouseDown = useRef(false);
@@ -50,19 +50,11 @@ export function useMouseControls(
       playNote(file, name, false);
 
       // Handle momentary visual highlight
-      if (setActiveNotes) {
-        setActiveNotes((prev) => new Set(prev).add(name));
-
-        setTimeout(() => {
-          setActiveNotes((prev) => {
-            const copy = new Set(prev);
-            copy.delete(name);
-            return copy;
-          });
-        }, noteActiveDuration);
+      if (flashNote) {
+        flashNote(name, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
       }
     },
-    [playNote, stopNote, setActiveNotes, noteActiveDuration]
+    [playNote, stopNote, flashNote]
   );
 
   /**
@@ -109,12 +101,12 @@ export function useMouseControls(
       isMouseDown.current = false;
 
       // Clear all highlights
-      if (setActiveNotes) setActiveNotes(new Set());
+      if (clearAllNotes) clearAllNotes();
     };
 
     window.addEventListener("mouseup", handleGlobalMouseUp);
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
-  }, [stopNote, setActiveNotes]);
+  }, [stopNote, clearAllNotes]);
 
   /* ----- Return handlers for use in components ----- */
   return { handleMouseDown, handleMouseEnter, handleMouseUp };

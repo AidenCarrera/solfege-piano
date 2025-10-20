@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { notes } from "@/lib/defaultPianoNotes";
-import { PIANO_CONFIG } from "@/lib/config";
 
 /**
  * useKeyboardControls Hook
@@ -10,20 +9,19 @@ import { PIANO_CONFIG } from "@/lib/config";
  * Handles keyboard input for a piano component:
  * - Triggers notes on key press and stops them on key release
  * - Prevents repeated triggers from held-down keys
- * - Optionally manages visual highlighting of active notes
  *
  * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
  * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
- * @param setActiveNotes - Optional state setter to highlight currently active notes.
- * @param noteActiveDuration - Duration (ms) for which a note is visually highlighted.
+ * @param activateNote - Optional callback to visually activate a note.
+ * @param deactivateNote - Optional callback to visually deactivate a note.
  *
  * @returns void
  */
 export function useKeyboardControls(
   playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
   stopNote: (note: string, isKeyboard: boolean) => void,
-  setActiveNotes?: React.Dispatch<React.SetStateAction<Set<string>>>,
-  noteActiveDuration = PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS
+  activateNote?: (note: string) => void,
+  deactivateNote?: (note: string) => void
 ) {
   /* ----- Track keys currently pressed to prevent repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
@@ -31,7 +29,7 @@ export function useKeyboardControls(
   /**
    * Trigger a note if it is not already pressed
    * - Plays the note
-   * - Optionally highlights the note for a short duration
+   * - Optionally highlights the note visually
    */
   const triggerNote = useCallback(
     (noteObj: typeof notes[0]) => {
@@ -39,20 +37,12 @@ export function useKeyboardControls(
         pressedKeys.current.add(noteObj.key);
         playNote(noteObj.fileName, noteObj.name, true);
 
-        if (setActiveNotes) {
-          setActiveNotes((prev) => new Set(prev).add(noteObj.name));
-
-          setTimeout(() => {
-            setActiveNotes((prev) => {
-              const copy = new Set(prev);
-              copy.delete(noteObj.name);
-              return copy;
-            });
-          }, noteActiveDuration);
+        if (activateNote) {
+          activateNote(noteObj.name);
         }
       }
     },
-    [playNote, setActiveNotes, noteActiveDuration]
+    [playNote, activateNote]
   );
 
   /**
@@ -66,16 +56,12 @@ export function useKeyboardControls(
         pressedKeys.current.delete(noteObj.key);
         stopNote(noteObj.name, true);
 
-        if (setActiveNotes) {
-          setActiveNotes((prev) => {
-            const copy = new Set(prev);
-            copy.delete(noteObj.name);
-            return copy;
-          });
+        if (deactivateNote) {
+          deactivateNote(noteObj.name);
         }
       }
     },
-    [stopNote, setActiveNotes]
+    [stopNote, deactivateNote]
   );
 
   /* ----- Set up event listeners for keyboard input ----- */
