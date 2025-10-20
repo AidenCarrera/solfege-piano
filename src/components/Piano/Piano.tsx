@@ -109,7 +109,8 @@ export default function Piano() {
 
   /* ----- RENDER ----- */
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen select-none">
+    <main className="flex flex-col items-center justify-center min-h-screen select-none -mt-12">
+
       <h1 className="text-3xl font-semibold mb-6 text-foreground">🎹 Playable Piano</h1>
 
       <PianoControls

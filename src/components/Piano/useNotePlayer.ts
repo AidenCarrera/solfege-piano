@@ -13,12 +13,21 @@ type Voice = {
   killed?: boolean;
 };
 
+/**
+ * Hook to manage audio playback for piano notes
+ * @param volume - Master volume (0-1)
+ * @param soundType - Current sound type ("Piano", "Solfege", etc.)
+ * @param sustainMode - Whether sustain mode is active
+ * @param notes - Array of Note objects to preload (only visible notes)
+ * @param enablePreload - Whether to start preloading (deferred to avoid blocking initial render)
+ * @param maxVoices - Maximum polyphony limit
+ */
 export function useNotePlayer(
   volume: number,
   soundType: string,
   sustainMode: boolean,
   notes: Note[],
-  enablePreload: boolean,
+  enablePreload: boolean = true,
   maxVoices = PIANO_CONFIG.MAX_POLYPHONY
 ) {
   const voices = useRef<Voice[]>([]);
@@ -52,33 +61,14 @@ export function useNotePlayer(
 
   // ----- Preload samples -----
   useEffect(() => {
-    if (!enablePreload) return; // Don't preload until interaction
+    // Don't preload until explicitly enabled (deferred preload)
+    if (!enablePreload) return;
 
     let mounted = true;
     const folder = soundType.toLowerCase();
-
-    const range = PIANO_CONFIG.SAMPLE_RANGES[soundType as keyof typeof PIANO_CONFIG.SAMPLE_RANGES];
-    const [start, end] = [range.minOctave, range.maxOctave];
-
-    // Filter notes based on octave range (C to C)
-    const filteredNotes = notes.filter((n) => {
-      const octave = parseInt(n.name.match(/\d+$/)?.[0] || "0", 10);
-      
-      // Include if in range, but for end octave only include C
-      if (octave > start && octave < end) return true; // Middle octaves: all notes
-      if (octave === start) return true; // Start octave: all notes
-      if (octave === end) return n.name.startsWith('C'); // End octave: only C
-      
-      return false;
-    });
-
-    console.log(`[Preload] Sound type: ${soundType}`);
-    console.log(`[Preload] Octave range: ${start}–${end}`);
-    console.log(`[Preload] Notes to preload:`, filteredNotes.map(n => n.name));
-
-    const sampleKeys = filteredNotes.map((n) => `${folder}/${n.fileName}`);
+    const sampleKeys = notes.map((n) => `${folder}/${n.fileName}`);
     const total = sampleKeys.length;
-
+    
     if (total === 0) {
       console.log("[Preload] No notes to preload, skipping.");
       setPreloadProgress(1);
@@ -103,37 +93,35 @@ export function useNotePlayer(
     };
 
     sampleKeys.forEach((key) => {
+      // Skip if already cached
       if (howlCache.current.has(key)) {
         console.log(`[Preload] Already cached: ${key}`);
         onLoaded();
         return;
       }
-
+      
       const [folderPart, fileName] = key.split("/");
       const src = `/samples/${folderPart}/${fileName}.mp3`;
-
+      
       const h = new Howl({
         src: [src],
         preload: true,
-        html5: false,
-        volume,
-        onload: () => {
-          console.log(`[Preload] Loaded sample: ${src}`);
-          onLoaded();
-        },
-        onloaderror: (_, err) => {
-          console.warn(`[Preload] Failed to load sample: ${src}`, err);
+        html5: false, // Use Web Audio for lowest latency
+        volume: volume,
+        onload: onLoaded,
+        onloaderror: () => {
+          console.warn(`Failed to preload ${src}`);
           onLoaded();
         },
       });
-
+      
       howlCache.current.set(key, h);
     });
 
     return () => {
       mounted = false;
     };
-  }, [enablePreload, soundType, volume, notes]);
+  }, [soundType, notes, enablePreload, volume]);
 
   // ----- Voice helpers -----
   const addVoice = useCallback((noteName: string, howl: Howl, id: number) => {
