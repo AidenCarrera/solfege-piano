@@ -102,5 +102,5 @@ export function useKeyboardControls(
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [triggerNote, stopNoteIfPressed]);
+  }, [triggerNote, stopNoteIfPressed, notes]);
 }

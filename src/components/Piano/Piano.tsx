@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Note } from "@/lib/note";
 import PianoKey from "./PianoKey";
 import PianoControls from "./PianoControls";
@@ -25,7 +25,6 @@ export default function Piano() {
     deactivateNote, 
     flashNote,
     clearAllNotes,
-    setActiveNotes 
   } = useActiveNotes();
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
@@ -107,11 +106,6 @@ export default function Piano() {
     if (whiteIndex === -1) return 0;
     return whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM + PIANO_CONFIG.WHITE_KEY_WIDTH_REM;
   };
-
-  /* ----- BACKGROUND ----- */
-  useEffect(() => {
-    document.documentElement.style.setProperty("--background", bgColor);
-  }, [bgColor]);
 
   /* ----- RENDER ----- */
   return (
