@@ -135,7 +135,7 @@ export default function Piano() {
       />
 
       <div
-        className="relative flex flex-col items-center transition-transform duration-[500ms] ease-in-out"
+        className="relative flex flex-col items-center piano-scale-transition"
         style={{
           transform: `scale(${pianoScale})`,
           transformOrigin: "top center",

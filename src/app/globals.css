@@ -107,3 +107,11 @@ option {
   background-color: var(--input-bg);
   color: var(--input-text);
 }
+
+/* =========================================================
+   PIANO SCALE TRANSITION
+   ========================================================= */
+.piano-scale-transition {
+  transition: transform 0.6s ease-in-out;
+  will-change: transform;
+}
