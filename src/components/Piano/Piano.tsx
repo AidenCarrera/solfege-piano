@@ -14,6 +14,7 @@ import { PIANO_CONFIG, SoundType } from "@/lib/config";
 import { generateNotes } from "@/lib/noteGenerator";
 import { useDeferredPreload } from "./useDeferredPreload";
 import { useBackgroundColor } from "./useBackgroundColor";
+import { useSustainToggle } from "./useSustainToggle";
 
 export default function Piano() {
   /* ----- STATE ----- */
@@ -24,7 +25,6 @@ export default function Piano() {
   const [pianoScale, setPianoScale] = usePianoScale();
   const [bgColor, setBgColor] = useBackgroundColor();
   const [soundType, setSoundType] = useState<SoundType>("Piano");
-  const [sustainActive, setSustainActive] = useState(false);
   const [enablePreload, setEnablePreload] = useState(false);
 
   /* ----- Dynamic Octaves ----- */
@@ -47,6 +47,9 @@ export default function Piano() {
   /* ----- Deferred Preload ----- */
   useDeferredPreload(() => setEnablePreload(true), 500);
 
+  /* ----- SUSTAIN ----- */
+  const [sustainActive, setSustainActive] = useState(false);
+  
   /* ----- AUDIO HOOKS ----- */
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
     volume,
@@ -55,6 +58,9 @@ export default function Piano() {
     notes,
     enablePreload
   );
+
+  // Connect the sustain toggle hook with stopAllNotes
+  const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
   /* ----- KEYBOARD ----- */
   useKeyboardControls(
@@ -93,26 +99,6 @@ export default function Piano() {
     stopNote,
     setActiveNotes
   );
-
-  /* ----- SUSTAIN ----- */
-  const toggleSustain = useCallback(() => {
-    setSustainActive((prev) => {
-      const newState = !prev;
-      if (!newState) stopAllNotes();
-      return newState;
-    });
-  }, [stopAllNotes]);
-
-  useEffect(() => {
-    const handleSpace = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !e.repeat) {
-        e.preventDefault();
-        toggleSustain();
-      }
-    };
-    window.addEventListener("keydown", handleSpace);
-    return () => window.removeEventListener("keydown", handleSpace);
-  }, [toggleSustain]);
 
   /* ----- NOTE MAPPING ----- */
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
