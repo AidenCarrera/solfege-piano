@@ -31,16 +31,22 @@ function PianoKey({
 }: PianoKeyProps) {
   const isActive = activeNotes.has(note.name);
 
-  const base = note.isSharp
-    ? "absolute w-10 h-40 -mx-5 z-10 rounded-b-md bg-black"
-    : "relative w-16 h-60 rounded-b-md border border-gray-800 bg-white";
+  // Base styles
+  const baseWhite =
+    "relative w-16 h-60 rounded-b-md border border-gray-800 bg-white";
+  const baseBlack =
+    "absolute w-10 h-40 -mx-5 z-10 rounded-b-md bg-black";
 
+  const base = note.isSharp ? baseBlack : baseWhite;
+
+  // Active state animation: only color & shadow
   const activeClass = isActive
     ? note.isSharp
-      ? "ring-2 ring-blue-400/50 shadow-inner"
+      ? "bg-gray-800 shadow-inner ring-2 ring-blue-400/50"
       : "bg-blue-100 shadow-inner shadow-blue-400"
     : "";
 
+  // Black key positioning
   const position = note.isSharp ? { left: `${getSharpKeyPosition(note)}rem` } : {};
 
   return (
@@ -52,7 +58,10 @@ function PianoKey({
       }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
       onMouseUp={() => onMouseUp(note.name)}
-      className={`${base} ${activeClass} transition-all duration-100`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className={`${base} ${activeClass} transition-colors transition-shadow duration-500 ease-in-out`}
       style={{
         ...position,
         touchAction: "none",
@@ -63,9 +72,6 @@ function PianoKey({
       data-note-name={note.name}
       data-file-name={note.fileName}
       tabIndex={-1}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       {showSolfege && (
         <span
