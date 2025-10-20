@@ -52,7 +52,32 @@ export default function PianoControls({
   const handleSliderChange = (val: number) => {
     const [start, end] = OCTAVE_MAP[val];
     onOctaveChange(start, end);
+
+    // Calculate number of octaves
+    const numOctaves = end - start + 1;
+
+    // Map number of octaves to scale
+    let newScale = 1;
+    switch (numOctaves) {
+      case 2:
+        newScale = 1.5;
+        break;
+      case 3:
+        newScale = 1.4;
+        break;
+      case 4:
+        newScale = 1.0;
+        break;
+      case 5:
+        newScale = 0.8;
+        break;
+      default:
+        newScale = 1.5;
+    }
+
+    setPianoScale(newScale);
   };
+
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
