@@ -73,6 +73,7 @@ export default function Piano() {
 
   /* ----- KEYBOARD ----- */
   useKeyboardControls(
+    notes,
     playNote,
     stopNote,
     (note) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),

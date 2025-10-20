@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { notes } from "@/lib/defaultPianoNotes";
+import { Note } from "@/lib/note";
 
 /**
  * useKeyboardControls Hook
@@ -10,6 +10,7 @@ import { notes } from "@/lib/defaultPianoNotes";
  * - Triggers notes on key press and stops them on key release
  * - Prevents repeated triggers from held-down keys
  *
+ * @param notes - Array of Note objects with keyboard mappings
  * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
  * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
  * @param activateNote - Optional callback to visually activate a note.
@@ -18,6 +19,7 @@ import { notes } from "@/lib/defaultPianoNotes";
  * @returns void
  */
 export function useKeyboardControls(
+  notes: Note[],
   playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
   stopNote: (note: string, isKeyboard: boolean) => void,
   activateNote?: (note: string) => void,
@@ -32,7 +34,7 @@ export function useKeyboardControls(
    * - Optionally highlights the note visually
    */
   const triggerNote = useCallback(
-    (noteObj: typeof notes[0]) => {
+    (noteObj: Note) => {
       if (!pressedKeys.current.has(noteObj.key)) {
         pressedKeys.current.add(noteObj.key);
         playNote(noteObj.fileName, noteObj.name, true);
@@ -51,7 +53,7 @@ export function useKeyboardControls(
    * - Removes optional visual highlight immediately
    */
   const stopNoteIfPressed = useCallback(
-    (noteObj: typeof notes[0]) => {
+    (noteObj: Note) => {
       if (pressedKeys.current.has(noteObj.key)) {
         pressedKeys.current.delete(noteObj.key);
         stopNote(noteObj.name, true);
