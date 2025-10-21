@@ -7,9 +7,9 @@ import { PIANO_CONFIG } from "@/lib/config";
  * useMouseControls Hook
  *
  * Handles mouse interactions for a piano component:
- * - Supports click, drag, and release
- * - Plays/stops notes via provided callbacks
- * - Optionally manages visual highlighting of active notes
+ * Supports click, drag, and release
+ * Plays/stops notes via provided callbacks
+ * Optionally manages visual highlighting of active notes
  *
  * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
  * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
@@ -32,9 +32,9 @@ export function useMouseControls(
 
   /**
    * Trigger a note
-   * - Stops the previous note if a new one is triggered
-   * - Plays the current note
-   * - Optionally highlights the note for a short duration
+   * Stops the previous note if a new one is triggered
+   * Plays the current note
+   * Optionally highlights the note for a short duration
    */
   const triggerNote = useCallback(
     (file: string, name: string) => {

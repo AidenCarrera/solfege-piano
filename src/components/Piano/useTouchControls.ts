@@ -6,9 +6,9 @@ import { PIANO_CONFIG } from "@/lib/config";
  * useTouchControls Hook
  *
  * Handles multi-touch interactions for a piano component:
- * - Supports simultaneous multiple finger touches
- * - Handles touch drag across keys
- * - Manages visual highlighting with auto-cleanup
+ * Supports simultaneous multiple finger touches
+ * Handles touch drag across keys
+ * Manages visual highlighting with auto-cleanup
  *
  * @param playNote - Callback to trigger note playback
  * @param stopNote - Callback to stop note playback

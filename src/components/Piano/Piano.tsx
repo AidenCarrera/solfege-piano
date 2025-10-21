@@ -1,24 +1,27 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+
 import { Note } from "@/lib/note";
-import PianoKey from "./PianoKey";
-import PianoControls from "./PianoControls";
+import { generateNotes } from "@/lib/noteGenerator";
+import { PIANO_CONFIG, SoundType } from "@/lib/config";
+
+import { usePianoScale } from "./usePianoScale";
 import { useNotePlayer } from "./useNotePlayer";
 import { useKeyboardControls } from "./useKeyboardControls";
-import { usePianoScale } from "./usePianoScale";
 import { useMouseControls } from "./useMouseControls";
 import { useTouchControls } from "./useTouchControls";
-import PreloadProgress from "./PreloadProgress";
-import { PIANO_CONFIG, SoundType } from "@/lib/config";
-import { generateNotes } from "@/lib/noteGenerator";
 import { useDeferredPreload } from "./useDeferredPreload";
 import { useBackgroundColor } from "./useBackgroundColor";
 import { useSustainToggle } from "./useSustainToggle";
 import { useActiveNotes } from "./useActiveNotes";
 
+import PianoKey from "./PianoKey";
+import PianoControls from "./PianoControls";
+import PreloadProgress from "./PreloadProgress";
+
 export default function Piano() {
-  /* ----- STATE ----- */
+  /* ------------------ State ------------------ */
   const { 
     activeNotes, 
     activateNote, 
@@ -26,6 +29,7 @@ export default function Piano() {
     flashNote,
     clearAllNotes,
   } = useActiveNotes();
+
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
   const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
@@ -34,31 +38,29 @@ export default function Piano() {
   const [soundType, setSoundType] = useState<SoundType>("Piano");
   const [enablePreload, setEnablePreload] = useState(false);
 
-  /* ----- Dynamic Octaves ----- */
+  // Octave range (updates note set when changed)
   const [startOctave, setStartOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]);
   const [endOctave, setEndOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1]);
 
-  // Wrapper to handle sound type changes with automatic octave locking
+  // Handle sound type switching (locks Solfege to one octave)
   const handleSoundTypeChange = useCallback((newSoundType: SoundType) => {
-    // Lock Solfege to one octave BEFORE changing sound type
     if (newSoundType === "Solfege") {
       setStartOctave(3);
       setEndOctave(4);
+      setPianoScale(1.5); // lock scale to 1.5 in Solfege mode
     }
     setSoundType(newSoundType);
-  }, []);
+  }, [setPianoScale]);
 
-  // Regenerate notes when octaves change
+  // Generate piano notes based on the current octave range
   const notes: Note[] = useMemo(() => generateNotes(startOctave, endOctave), [startOctave, endOctave]);
 
-  /* ----- Deferred Preload ----- */
+  /* ------------------ Audio ------------------ */
+  // Delays sample preloading slightly after render for smoother UX
   useDeferredPreload(() => setEnablePreload(true), 500);
 
-  /* ----- SUSTAIN (must be before useNotePlayer) ----- */
-  // Use a temporary reference
   const [sustainActive, setSustainActive] = useState(false);
-  
-  /* ----- AUDIO HOOKS ----- */
+
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
     volume,
     soundType,
@@ -67,10 +69,11 @@ export default function Piano() {
     enablePreload
   );
 
-  // Connects the sustain toggle hook with stopAllNotes
+  // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
-  /* ----- KEYBOARD ----- */
+  /* ------------------ Input Handlers ------------------ */
+  // Keyboard controls
   useKeyboardControls(
     notes,
     playNote,
@@ -79,7 +82,7 @@ export default function Piano() {
     deactivateNote
   );
 
-  /* ----- MOUSE ----- */
+  // Mouse and touch handlers
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
     playNote,
     stopNote,
@@ -87,7 +90,6 @@ export default function Piano() {
     clearAllNotes
   );
 
-  /* ----- TOUCH ----- */
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchControls(
     playNote,
     stopNote,
@@ -95,7 +97,8 @@ export default function Piano() {
     deactivateNote
   );
 
-  /* ----- NOTE MAPPING ----- */
+  /* ------------------ Layout ------------------ */
+  // Compute layout position for sharp keys
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
   const getSharpKeyPosition = (note: Note) => {
     const match = note.name.match(/^([A-G]s?)(\d+)$/);
@@ -107,10 +110,9 @@ export default function Piano() {
     return whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM + PIANO_CONFIG.WHITE_KEY_WIDTH_REM;
   };
 
-  /* ----- RENDER ----- */
+  /* ------------------ Render ------------------ */
   return (
     <main className="flex flex-col items-center justify-center min-h-screen select-none -mt-12">
-
       <h1 className="text-3xl font-semibold mb-6 text-foreground">🎹 Playable Piano</h1>
 
       <PianoControls

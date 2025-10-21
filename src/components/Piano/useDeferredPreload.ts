@@ -6,14 +6,14 @@ import { useEffect, useRef } from "react";
  * useDeferredPreload
  *
  * Defers a preload function until either:
- * - the first user interaction (click, keypress, touch), or
- * - a timeout (default: 500ms)
+ * the first user interaction (click, keypress, touch), or
+ * a timeout (default: 500ms)
  *
  * Great for loading audio or heavy assets after initial render,
  * improving FCP and LCP metrics.
  *
- * @param preloadFn The function to execute once the trigger occurs
- * @param delay The delay before auto-triggering (ms). Defaults to 500ms
+ * @param preloadFn - The function to execute once the trigger occurs
+ * @param delay - The delay before auto-triggering (ms). Defaults to 500ms
  */
 export function useDeferredPreload(preloadFn: () => void, delay = 500) {
   const hasPreloaded = useRef(false);

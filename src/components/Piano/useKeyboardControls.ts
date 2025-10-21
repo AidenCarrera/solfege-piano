@@ -7,8 +7,8 @@ import { Note } from "@/lib/note";
  * useKeyboardControls Hook
  *
  * Handles keyboard input for a piano component:
- * - Triggers notes on key press and stops them on key release
- * - Prevents repeated triggers from held-down keys
+ * Triggers notes on key press and stops them on key release
+ * Prevents repeated triggers from held-down keys
  *
  * @param notes - Array of Note objects with keyboard mappings
  * @param playNote - Callback to trigger note playback. Receives fileName, noteName, and isKeyboard flag.
@@ -30,8 +30,8 @@ export function useKeyboardControls(
   
   /**
    * Trigger a note if it is not already pressed
-   * - Plays the note
-   * - Optionally highlights the note visually
+   * Plays the note
+   * Optionally highlights the note visually
    */
   const triggerNote = useCallback(
     (noteObj: Note) => {
@@ -49,8 +49,8 @@ export function useKeyboardControls(
 
   /**
    * Stop a note if it is currently pressed
-   * - Stops playback
-   * - Removes optional visual highlight immediately
+   * Stops playback
+   * Removes optional visual highlight immediately
    */
   const stopNoteIfPressed = useCallback(
     (noteObj: Note) => {

@@ -5,9 +5,9 @@ import { PIANO_CONFIG } from "@/lib/config";
 
 /**
  * Handles the piano background color.
- * - Initializes from CSS variable `--background` if present
- * - Falls back to default piano config color
- * - Automatically updates document background when changed
+ * Initializes from CSS variable `--background` if present
+ * Falls back to default piano config color
+ * Automatically updates document background when changed
  */
 export function useBackgroundColor() {
   const [bgColor, setBgColor] = useState(() => {

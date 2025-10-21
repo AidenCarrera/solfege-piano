@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect } from "react";
 import { SOUND_OPTIONS, type SoundType } from "../../lib/config";
 
@@ -20,6 +21,7 @@ type Props = {
   onOctaveChange: (start: number, end: number) => void;
 };
 
+// Maps slider positions to octave ranges
 const OCTAVE_MAP: Record<number, [number, number]> = {
   1: [3, 4],
   2: [3, 5],
@@ -44,27 +46,27 @@ export default function PianoControls({
   endOctave,
   onOctaveChange,
 }: Props) {
-  // Determine the current slider value based on the start/end octave
+  // Determine slider position based on current octave range
   const sliderValue = Object.entries(OCTAVE_MAP).find(
     ([, range]) => range[0] === startOctave && range[1] === endOctave
   )?.[0] ?? "2"; // default to 2 if no exact match
 
-  // Auto-adjust scale when Solfege is selected
+  // Auto-set piano scale when Solfege mode is enabled
   useEffect(() => {
     if (soundType === "Solfege") {
       setPianoScale(1.5);
     }
   }, [soundType, setPianoScale]);
 
+  // Handle octave range slider changes
   const handleSliderChange = (val: number) => {
     const [start, end] = OCTAVE_MAP[val];
     onOctaveChange(start, end);
 
-    // Calculate number of octaves
+    // Calculate number of octaves and map to piano scale
     const numOctaves = end - start + 1;
-
-    // Map number of octaves to scale
     let newScale = 1;
+
     switch (numOctaves) {
       case 2:
         newScale = 1.5;
@@ -87,6 +89,7 @@ export default function PianoControls({
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
+      
       {/* ----- Volume Control ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
@@ -103,7 +106,7 @@ export default function PianoControls({
         />
       </div>
 
-      {/* ----- Label Toggles ----- */}
+      {/* ----- Label Toggles (Keyboard / Solfege) ----- */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
@@ -178,7 +181,7 @@ export default function PianoControls({
           value={parseInt(sliderValue)}
           onChange={(e) => handleSliderChange(parseInt(e.target.value))}
           className="w-40"
-          disabled={soundType === "Solfege"} // Disable slider for Solfege
+          disabled={soundType === "Solfege"} // Disable slider for Solfege mode
         />
         {soundType === "Solfege" && (
           <span className="text-xs text-gray-500 mt-1">

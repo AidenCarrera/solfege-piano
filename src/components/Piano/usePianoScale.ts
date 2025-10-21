@@ -5,7 +5,6 @@ import { PIANO_CONFIG } from "@/lib/config";
 
 /**
  * usePianoScale
- * 
  * Dynamically adjusts the piano's visual scale based on screen width.
  * Returns the current scale value and a setter to manually override it if needed.
  */
