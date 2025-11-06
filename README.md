@@ -50,10 +50,11 @@ git clone https://github.com/AidenCarrera/solfege-piano.git
 cd solfege-piano
 
 # Install dependencies
-npm install
+# (Install pnpm globally if you don’t have it: npm install -g pnpm)
+pnpm install
 
 # Run the app
-npm run dev
+pnpm dev
 ```
 ------------------------------------------------------------
 Playing The Piano
