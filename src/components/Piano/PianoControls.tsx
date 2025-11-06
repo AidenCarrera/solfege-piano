@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { SOUND_OPTIONS, type SoundType } from "../../lib/config";
+import { SOUND_OPTIONS, type SoundType } from "@/lib/config";
 
 type Props = {
   volume: number;
