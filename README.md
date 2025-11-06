@@ -47,6 +47,8 @@ pnpm install
 
 # Run the app
 pnpm dev
+
+# Open your browser at http://localhost:3000 to view the app
 ```
 
 ## Playing The Piano
