@@ -42,12 +42,11 @@ git clone https://github.com/AidenCarrera/solfege-piano.git
 cd solfege-piano
 
 # Install dependencies
-npm install
+# (Install pnpm globally if you don’t have it: npm install -g pnpm)
+pnpm install
 
 # Run the app
-npm run dev
-
-# Open your browser at http://localhost:3000 to view the app
+pnpm dev
 ```
 
 ## Playing The Piano
