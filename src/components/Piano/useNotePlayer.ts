@@ -214,8 +214,14 @@ export function useNotePlayer(
       const key = `${folder}/${fileName}`;
       let howl = howlCache.current.get(key);
 
-      if (!howl) {
-        howl = new Howl({ src: [`/samples/${folder}/${fileName}.mp3`], volume, preload: true, html5: false });
+      // Recreate Howl if it doesn't exist or is in a broken/unloaded state
+      if (!howl || howl.state() === "unloaded") {
+        howl = new Howl({
+          src: [`/samples/${folder}/${fileName}.mp3`],
+          volume,
+          preload: true,
+          html5: false,
+        });
         howlCache.current.set(key, howl);
       }
 

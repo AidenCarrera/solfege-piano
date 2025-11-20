@@ -21,8 +21,8 @@ export const PIANO_CONFIG = {
 
   /* Audio Envelope & Fade */
   ATTACK_MS: 5,
-  FADE_OUT_MS: 500,
-  FADE_OUT_BUFFER_MS: 50,
+  FADE_OUT_MS: 550,
+  FADE_OUT_BUFFER_MS: 20,
 
   /* Metadata */
   APP_TITLE: "Playable Piano",
