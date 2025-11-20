@@ -84,3 +84,34 @@ export function adjustColor(hex: string, amount: number): string {
 
     return '#' + (b | (g << 8) | (r << 16)).toString(16).padStart(6, '0');
 }
+
+/**
+ * Converts a hex color to an RGBA string with specified opacity.
+ * @param hex - Hex color string
+ * @param alpha - Opacity (0-1)
+ * @returns RGBA string
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
+/**
+ * Generates a glass panel color based on the background color.
+ * @param bgColor - Background color in hex
+ * @returns RGBA string for the panel background
+ */
+export function getGlassPanelColor(bgColor: string): string {
+    const contrast = getContrastColor(bgColor);
+    const isDarkBg = contrast === "#ffffff";
+    
+    // If background is dark, make panel slightly lighter.
+    // If background is light, make panel slightly darker.
+    // But keep it subtle.
+    const adjustment = isDarkBg ? 20 : -20;
+    const adjustedHex = adjustColor(bgColor, adjustment);
+    
+    // Use low opacity for glass effect
+    return hexToRgba(adjustedHex, 0.3); 
+}

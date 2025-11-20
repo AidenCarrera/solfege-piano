@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { SOUND_OPTIONS, type SoundType } from "@/lib/config";
+import { getGlassPanelColor } from "@/lib/colorUtils";
 
 type Props = {
   volume: number;
@@ -47,9 +48,10 @@ export default function PianoControls({
   textColor,
 }: Props) {
   // Determine slider position based on current octave range
-  const sliderValue = Object.entries(OCTAVE_MAP).find(
-    ([, range]) => range[0] === startOctave && range[1] === endOctave
-  )?.[0] ?? "2"; // default to 2 if no exact match
+  const sliderValue =
+    Object.entries(OCTAVE_MAP).find(
+      ([, range]) => range[0] === startOctave && range[1] === endOctave
+    )?.[0] ?? "2"; // default to 2 if no exact match
 
   // Auto-set piano scale when Solfege mode is enabled
   useEffect(() => {
@@ -85,14 +87,21 @@ export default function PianoControls({
     }
 
     setPianoScale(newScale);
+    setPianoScale(newScale);
   };
 
+  const panelBg = useMemo(() => getGlassPanelColor(bgColor), [bgColor]);
+
   return (
-    <div 
+    <div
       className="glass-panel rounded-2xl p-6 mb-10 flex flex-col sm:flex-row flex-wrap gap-8 items-center justify-center transition-all duration-300"
-      style={{ color: textColor }}
+      style={{
+        color: textColor,
+        backgroundColor: panelBg,
+        borderColor:
+          textColor === "#ffffff" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+      }}
     >
-      
       {/* ----- Volume Control ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
