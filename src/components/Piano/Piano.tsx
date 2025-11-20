@@ -178,7 +178,13 @@ export default function Piano() {
           isPreloading={isPreloading}
         />
 
-        <div className="relative flex">
+        <div
+          className="relative flex transform-gpu"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
           {notes.map((note) => (
             <PianoKey
               key={note.name}
@@ -199,7 +205,13 @@ export default function Piano() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center mt-8">
+        <div
+          className="flex flex-col items-center mt-8 transform-gpu"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
           <button
             onClick={toggleSustain}
             className={`h-6 w-24 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center shadow-lg ${
