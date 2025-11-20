@@ -69,7 +69,7 @@ function PianoKey({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className={`${base} ${activeClass} transition-all duration-100 ease-out`}
+      className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
       style={{
         ...position,
         touchAction: "none", // Prevent default scrolling on touch
