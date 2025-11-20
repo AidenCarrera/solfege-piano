@@ -20,8 +20,9 @@ export const PIANO_CONFIG = {
   MAX_POLYPHONY: 128,
 
   /* Audio Envelope & Fade */
-  FADE_OUT_MS: 450,
-  FADE_OUT_BUFFER_MS: 20,
+  ATTACK_MS: 5,
+  FADE_OUT_MS: 500,
+  FADE_OUT_BUFFER_MS: 50,
 
   /* Metadata */
   APP_TITLE: "Playable Piano",
