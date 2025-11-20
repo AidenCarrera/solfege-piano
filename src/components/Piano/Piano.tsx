@@ -23,38 +23,52 @@ import PreloadProgress from "./PreloadProgress";
 
 export default function Piano() {
   /* ------------------ State ------------------ */
-  const { 
-    activeNotes, 
-    activateNote, 
-    deactivateNote, 
+  const {
+    activeNotes,
+    activateNote,
+    deactivateNote,
     flashNote,
     clearAllNotes,
   } = useActiveNotes();
 
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
-  const [labelsEnabled, setLabelsEnabled] = useState(PIANO_CONFIG.DEFAULT_LABELS_ENABLED);
-  const [solfegeEnabled, setSolfegeEnabled] = useState(PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED);
+  const [labelsEnabled, setLabelsEnabled] = useState(
+    PIANO_CONFIG.DEFAULT_LABELS_ENABLED
+  );
+  const [solfegeEnabled, setSolfegeEnabled] = useState(
+    PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED
+  );
   const [pianoScale, setPianoScale] = usePianoScale();
   const [bgColor, setBgColor] = useBackgroundColor();
   const [soundType, setSoundType] = useState<SoundType>("Piano");
   const [enablePreload, setEnablePreload] = useState(false);
 
   // Octave range (updates note set when changed)
-  const [startOctave, setStartOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]);
-  const [endOctave, setEndOctave] = useState(PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1]);
+  const [startOctave, setStartOctave] = useState(
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]
+  );
+  const [endOctave, setEndOctave] = useState(
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1]
+  );
 
   // Handle sound type switching (locks Solfege to one octave)
-  const handleSoundTypeChange = useCallback((newSoundType: SoundType) => {
-    if (newSoundType === "Solfege") {
-      setStartOctave(3);
-      setEndOctave(4);
-      setPianoScale(1.5); // lock scale to 1.5 in Solfege mode
-    }
-    setSoundType(newSoundType);
-  }, [setPianoScale]);
+  const handleSoundTypeChange = useCallback(
+    (newSoundType: SoundType) => {
+      if (newSoundType === "Solfege") {
+        setStartOctave(3);
+        setEndOctave(4);
+        setPianoScale(1.5); // lock scale to 1.5 in Solfege mode
+      }
+      setSoundType(newSoundType);
+    },
+    [setPianoScale]
+  );
 
   // Generate piano notes based on the current octave range
-  const notes: Note[] = useMemo(() => generateNotes(startOctave, endOctave), [startOctave, endOctave]);
+  const notes: Note[] = useMemo(
+    () => generateNotes(startOctave, endOctave),
+    [startOctave, endOctave]
+  );
 
   /* ------------------ Audio ------------------ */
   // Delays sample preloading slightly after render for smoother UX
@@ -62,13 +76,8 @@ export default function Piano() {
 
   const [sustainActive, setSustainActive] = useState(false);
 
-  const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } = useNotePlayer(
-    volume,
-    soundType,
-    sustainActive,
-    notes,
-    enablePreload
-  );
+  const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
+    useNotePlayer(volume, soundType, sustainActive, notes, enablePreload);
 
   // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
@@ -91,12 +100,8 @@ export default function Piano() {
     clearAllNotes
   );
 
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchControls(
-    playNote,
-    stopNote,
-    activateNote,
-    deactivateNote
-  );
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } =
+    useTouchControls(playNote, stopNote, activateNote, deactivateNote);
 
   /* ------------------ Layout ------------------ */
   // Compute layout position for sharp keys
@@ -106,9 +111,14 @@ export default function Piano() {
     if (!match) return 0;
     const base = match[1].replace("s", "");
     const octave = match[2];
-    const whiteIndex = whiteNotes.findIndex((n) => n.name === `${base}${octave}`);
+    const whiteIndex = whiteNotes.findIndex(
+      (n) => n.name === `${base}${octave}`
+    );
     if (whiteIndex === -1) return 0;
-    return whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM + PIANO_CONFIG.WHITE_KEY_WIDTH_REM;
+    return (
+      whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM +
+      PIANO_CONFIG.WHITE_KEY_WIDTH_REM
+    );
   };
 
   /* ------------------ Render ------------------ */
@@ -117,14 +127,16 @@ export default function Piano() {
   const shadowColor = useMemo(() => getShadowColor(bgColor), [bgColor]);
 
   return (
-    <main 
+    <main
       className="flex flex-col items-center justify-center min-h-screen select-none transition-colors duration-500"
-      style={{ 
-        color: textColor,
-        "--foreground": textColor,
-      } as React.CSSProperties}
+      style={
+        {
+          color: textColor,
+          "--foreground": textColor,
+        } as React.CSSProperties
+      }
     >
-      <h1 
+      <h1
         className="text-4xl font-bold mb-8 tracking-tight"
         style={{ textShadow: `0 4px 12px ${shadowColor}` }}
       >
@@ -161,7 +173,10 @@ export default function Piano() {
           marginBottom: `${(pianoScale - 1) * 200}px`,
         }}
       >
-        <PreloadProgress progress={preloadProgress} isPreloading={isPreloading} />
+        <PreloadProgress
+          progress={preloadProgress}
+          isPreloading={isPreloading}
+        />
 
         <div className="relative flex">
           {notes.map((note) => (
@@ -172,7 +187,9 @@ export default function Piano() {
               onMouseDown={() => handleMouseDown(note.fileName, note.name)}
               onMouseEnter={() => handleMouseEnter(note.fileName, note.name)}
               onMouseUp={handleMouseUp}
-              onTouchStart={(e) => handleTouchStart(e, note.fileName, note.name)}
+              onTouchStart={(e) =>
+                handleTouchStart(e, note.fileName, note.name)
+              }
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               getSharpKeyPosition={getSharpKeyPosition}
@@ -192,12 +209,13 @@ export default function Piano() {
             }`}
             aria-label="Toggle sustain mode"
           >
-             <span className="text-xs font-bold text-white uppercase tracking-wider">
-                {sustainActive ? "Sustain" : "Normal"}
-             </span>
+            <span className="text-xs font-bold text-white uppercase tracking-wider">
+              {sustainActive ? "Sustain" : "Dry"}
+            </span>
           </button>
           <p className="text-sm font-medium mt-3 opacity-80 text-center">
-            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click or press Spacebar
+            Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click or press
+            Spacebar
           </p>
           <p className="text-sm font-medium mb-1 mt-2 opacity-60">
             Click, drag, touch, or use your keyboard to play notes
