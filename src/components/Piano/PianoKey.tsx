@@ -35,10 +35,10 @@ function PianoKey({
   // ----- Base Styles -----
   // White key base styling
   const baseWhite =
-    "relative w-16 h-64 rounded-b-lg border border-gray-300/20 bg-gradient-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5";
+    "relative w-16 h-64 rounded-b-lg border-x border-b border-t-0 border-gray-300/20 bg-gradient-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 transform-gpu";
   // Black key base styling
   const baseBlack =
-    "absolute w-10 h-40 -mx-5 z-20 rounded-b-lg bg-gradient-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5";
+    "absolute w-10 h-40 -mx-5 z-20 -top-px rounded-b-lg bg-gradient-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5 transform-gpu";
 
   const base = note.isSharp ? baseBlack : baseWhite;
 
@@ -76,6 +76,8 @@ function PianoKey({
         userSelect: "none", // Disable text selection
         WebkitUserSelect: "none", // Safari-specific
         WebkitTouchCallout: "none", // Disable long-press menu
+        backfaceVisibility: "hidden", // Prevent text blurring/shifting
+        WebkitBackfaceVisibility: "hidden",
       }}
       data-note-name={note.name}
       data-file-name={note.fileName}
