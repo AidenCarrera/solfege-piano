@@ -55,11 +55,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-neutral-950 text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <main className="min-h-screen flex flex-col items-center justify-center p-6">
-          {children}
-        </main>
+        {children}
         <SpeedInsights />
       </body>
     </html>

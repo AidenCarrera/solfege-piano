@@ -120,7 +120,6 @@ export default function Piano() {
     <main 
       className="flex flex-col items-center justify-center min-h-screen select-none transition-colors duration-500"
       style={{ 
-        backgroundColor: bgColor,
         color: textColor,
         "--foreground": textColor,
       } as React.CSSProperties}
