@@ -17,6 +17,7 @@ type Props = {
   startOctave: number;
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
+  textColor: string;
 };
 
 // Maps slider positions to octave ranges
@@ -43,6 +44,7 @@ export default function PianoControls({
   startOctave,
   endOctave,
   onOctaveChange,
+  textColor,
 }: Props) {
   // Determine slider position based on current octave range
   const sliderValue = Object.entries(OCTAVE_MAP).find(
@@ -86,7 +88,10 @@ export default function PianoControls({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8 items-center justify-center text-foreground">
+    <div 
+      className="glass-panel rounded-2xl p-6 mb-10 flex flex-col sm:flex-row flex-wrap gap-8 items-center justify-center transition-all duration-300"
+      style={{ color: textColor }}
+    >
       
       {/* ----- Volume Control ----- */}
       <div className="flex flex-col items-start">
@@ -106,7 +111,7 @@ export default function PianoControls({
 
       {/* ----- Label Toggles (Keyboard / Solfege) ----- */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <label className="flex items-center gap-2 text-sm font-medium">
+        <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
           <input
             type="checkbox"
             checked={labelsEnabled}
@@ -115,7 +120,7 @@ export default function PianoControls({
           Keyboard Labels
         </label>
 
-        <label className="flex items-center gap-2 text-sm font-medium">
+        <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
           <input
             type="checkbox"
             checked={solfegeEnabled}
@@ -148,7 +153,7 @@ export default function PianoControls({
           type="color"
           value={bgColor}
           onChange={(e) => setBgColor(e.target.value)}
-          className="w-16 h-8 rounded-md border border-[var(--input-border)]"
+          className="w-16 h-8 rounded-md border border-[var(--input-border)] cursor-pointer shadow-sm"
         />
       </div>
 
@@ -158,7 +163,7 @@ export default function PianoControls({
         <select
           value={soundType}
           onChange={(e) => setSoundType(e.target.value as SoundType)}
-          className="px-2 py-1 border rounded-md"
+          className="px-3 py-1.5 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500"
         >
           {SOUND_OPTIONS.map((s) => (
             <option key={s}>{s}</option>
@@ -182,7 +187,7 @@ export default function PianoControls({
           disabled={soundType === "Solfege"} // Disable slider for Solfege mode
         />
         {soundType === "Solfege" && (
-          <span className="text-xs text-gray-500 mt-1">
+          <span className="text-xs opacity-70 mt-1">
             Solfege is locked to one octave
           </span>
         )}

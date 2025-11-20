@@ -15,6 +15,7 @@ import { useDeferredPreload } from "./useDeferredPreload";
 import { useBackgroundColor } from "./useBackgroundColor";
 import { useSustainToggle } from "./useSustainToggle";
 import { useActiveNotes } from "./useActiveNotes";
+import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
 
 import PianoKey from "./PianoKey";
 import PianoControls from "./PianoControls";
@@ -111,9 +112,25 @@ export default function Piano() {
   };
 
   /* ------------------ Render ------------------ */
+  // Calculate adaptive colors
+  const textColor = useMemo(() => getContrastColor(bgColor), [bgColor]);
+  const shadowColor = useMemo(() => getShadowColor(bgColor), [bgColor]);
+
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen select-none -mt-12">
-      <h1 className="text-3xl font-semibold mb-6 text-foreground">🎹 Playable Piano</h1>
+    <main 
+      className="flex flex-col items-center justify-center min-h-screen select-none transition-colors duration-500"
+      style={{ 
+        backgroundColor: bgColor,
+        color: textColor,
+        "--foreground": textColor,
+      } as React.CSSProperties}
+    >
+      <h1 
+        className="text-4xl font-bold mb-8 tracking-tight"
+        style={{ textShadow: `0 4px 12px ${shadowColor}` }}
+      >
+        🎹 Playable Piano
+      </h1>
 
       <PianoControls
         volume={volume}
@@ -134,6 +151,7 @@ export default function Piano() {
           setStartOctave(start);
           setEndOctave(end);
         }}
+        textColor={textColor}
       />
 
       <div
@@ -165,20 +183,24 @@ export default function Piano() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center mt-6">
+        <div className="flex flex-col items-center mt-8">
           <button
             onClick={toggleSustain}
-            className={`h-5 w-20 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+            className={`h-6 w-24 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center shadow-lg ${
               sustainActive
-                ? "bg-green-500 shadow-lg shadow-green-700/40"
+                ? "bg-green-500 shadow-green-500/40"
                 : "bg-gray-600 hover:bg-gray-500"
             }`}
             aria-label="Toggle sustain mode"
-          />
-          <p className="text-sm font-medium mt-2 text-foreground text-center">
+          >
+             <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {sustainActive ? "Sustain" : "Normal"}
+             </span>
+          </button>
+          <p className="text-sm font-medium mt-3 opacity-80 text-center">
             Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click or press Spacebar
           </p>
-          <p className="text-sm font-medium mb-1 mt-2 text-foreground">
+          <p className="text-sm font-medium mb-1 mt-2 opacity-60">
             Click, drag, touch, or use your keyboard to play notes
           </p>
         </div>
