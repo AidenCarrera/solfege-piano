@@ -5,7 +5,7 @@ export const PIANO_CONFIG = {
   DEFAULT_OCTAVE_RANGE: [3, 4], // <== start and end octaves
   DEFAULT_LABELS_ENABLED: true,
   DEFAULT_SOLFEGE_ENABLED: false,
-  DEFAULT_BG_COLOR: "#1d1522",
+  DEFAULT_BG_COLOR: "#0f172a",
 
   /* Sample Ranges */
   SAMPLE_RANGES: {
@@ -20,8 +20,9 @@ export const PIANO_CONFIG = {
   MAX_POLYPHONY: 128,
 
   /* Audio Envelope & Fade */
-  FADE_OUT_MS: 450,
-  FADE_OUT_BUFFER_MS: 20,
+  ATTACK_MS: 5,
+  FADE_OUT_MS: 500,
+  FADE_OUT_BUFFER_MS: 50,
 
   /* Metadata */
   APP_TITLE: "Playable Piano",

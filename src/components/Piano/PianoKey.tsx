@@ -34,23 +34,28 @@ function PianoKey({
 
   // ----- Base Styles -----
   // White key base styling
-  const baseWhite = "relative w-16 h-60 rounded-b-md border border-gray-800 bg-white";
+  const baseWhite =
+    "relative w-16 h-64 rounded-b-lg border-x border-b border-t-0 border-gray-300/20 bg-gradient-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 transform-gpu";
   // Black key base styling
-  const baseBlack = "absolute w-10 h-40 -mx-5 z-10 rounded-b-md bg-black";
+  const baseBlack =
+    "absolute w-10 h-40 -mx-5 z-20 -top-px rounded-b-lg bg-gradient-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5 transform-gpu";
 
   const base = note.isSharp ? baseBlack : baseWhite;
 
   // ----- Active State Styling -----
   // Applies color and shadow effects when the key is active
+  // Applies color and shadow effects when the key is active
   const activeClass = isActive
     ? note.isSharp
-      ? "ring-2 ring-blue-400/50 shadow-inner"
-      : "bg-blue-100 shadow-inner shadow-blue-400"
+      ? "from-gray-800 to-black ring-2 ring-blue-500/50 !shadow-none !translate-y-0.5"
+      : "!bg-blue-50 !from-blue-100 !to-white !shadow-none !translate-y-0.5 ring-2 ring-blue-400/30"
     : "";
 
   // ----- Black Key Positioning -----
   // Black keys are positioned dynamically relative to white keys
-  const position = note.isSharp ? { left: `${getSharpKeyPosition(note)}rem` } : {};
+  const position = note.isSharp
+    ? { left: `${getSharpKeyPosition(note)}rem` }
+    : {};
 
   return (
     <button
@@ -64,13 +69,15 @@ function PianoKey({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className={`${base} ${activeClass} transition-colors transition-shadow duration-500 ease-in-out`}
+      className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
       style={{
         ...position,
-        touchAction: "none",       // Prevent default scrolling on touch
-        userSelect: "none",        // Disable text selection
-        WebkitUserSelect: "none",  // Safari-specific
-        WebkitTouchCallout: "none" // Disable long-press menu
+        touchAction: "none", // Prevent default scrolling on touch
+        userSelect: "none", // Disable text selection
+        WebkitUserSelect: "none", // Safari-specific
+        WebkitTouchCallout: "none", // Disable long-press menu
+        backfaceVisibility: "hidden", // Prevent text blurring/shifting
+        WebkitBackfaceVisibility: "hidden",
       }}
       data-note-name={note.name}
       data-file-name={note.fileName}
@@ -80,7 +87,7 @@ function PianoKey({
       {showSolfege && (
         <span
           className={`absolute bottom-7 left-1/2 -translate-x-1/2 text-base font-semibold pointer-events-none ${
-            note.isSharp ? "text-white" : "text-black"
+            note.isSharp ? "text-white" : "text-gray-800"
           }`}
         >
           {note.solfege}

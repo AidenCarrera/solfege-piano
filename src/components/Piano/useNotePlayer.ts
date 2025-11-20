@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Howl } from "howler";
 import { Note } from "@/lib/note";
-import { PIANO_CONFIG } from "../../lib/config";
+import { PIANO_CONFIG } from "@/lib/config";
 
 type Voice = {
   noteName: string;
@@ -43,6 +43,7 @@ export function useNotePlayer(
 
   /** Fade durations and cleanup timeouts */
   const FADE_OUT_MS = PIANO_CONFIG.FADE_OUT_MS || 300;
+  const ATTACK_MS = PIANO_CONFIG.ATTACK_MS || 0;
   const KILL_TIMEOUT_MS = FADE_OUT_MS + (PIANO_CONFIG.FADE_OUT_BUFFER_MS || 250);
 
   /** Howl instance cache for efficient playback */
@@ -145,6 +146,8 @@ export function useNotePlayer(
     try {
       const currentVol = v.howl.volume(v.id);
       const vol = typeof currentVol === "number" ? currentVol : volume;
+      
+      // Always fade to 0 to ensure no discontinuity, even if volume is already low
       v.howl.fade(vol, 0, FADE_OUT_MS, v.id);
     } catch {}
 
@@ -220,12 +223,17 @@ export function useNotePlayer(
       existing.forEach((v) => { if (!v.killed) fadeAndRemoveVoice(v); });
 
       const id = howl.play();
-      if (typeof id === "number") try { howl.volume(volume, id); } catch {}
+      if (typeof id === "number") {
+        try {
+          howl.volume(0, id);
+          howl.fade(0, volume, ATTACK_MS, id);
+        } catch {}
+      }
       addVoice(noteName, howl, typeof id === "number" ? id : 0);
 
       if (isKeyboard || sustainMode) heldKeys.current.add(noteName);
     },
-    [addVoice, ensurePolyphonyRoom, fadeAndRemoveVoice, volume, soundType, sustainMode]
+    [addVoice, ensurePolyphonyRoom, fadeAndRemoveVoice, volume, soundType, sustainMode, ATTACK_MS]
   );
 
   /** 

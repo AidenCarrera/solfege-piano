@@ -10,13 +10,7 @@ import { PIANO_CONFIG } from "@/lib/config";
  * Automatically updates document background when changed
  */
 export function useBackgroundColor() {
-  const [bgColor, setBgColor] = useState(() => {
-    if (typeof window === "undefined") return PIANO_CONFIG.DEFAULT_BG_COLOR;
-    const initial = getComputedStyle(document.documentElement)
-      .getPropertyValue("--background")
-      .trim();
-    return initial || PIANO_CONFIG.DEFAULT_BG_COLOR;
-  });
+  const [bgColor, setBgColor] = useState(PIANO_CONFIG.DEFAULT_BG_COLOR);
 
   // Sync background color to CSS variable
   useEffect(() => {
