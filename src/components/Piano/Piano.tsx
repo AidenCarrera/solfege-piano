@@ -11,7 +11,6 @@ import { useNotePlayer } from "./useNotePlayer";
 import { useKeyboardControls } from "./useKeyboardControls";
 import { useMouseControls } from "./useMouseControls";
 import { useTouchControls } from "./useTouchControls";
-import { useDeferredPreload } from "./useDeferredPreload";
 import { useBackgroundColor } from "./useBackgroundColor";
 import { useSustainToggle } from "./useSustainToggle";
 import { useActiveNotes } from "./useActiveNotes";
@@ -41,7 +40,6 @@ export default function Piano() {
   const [pianoScale, setPianoScale] = usePianoScale();
   const [bgColor, setBgColor] = useBackgroundColor();
   const [soundType, setSoundType] = useState<SoundType>("Piano");
-  const [enablePreload, setEnablePreload] = useState(false);
 
   // Octave range (updates note set when changed)
   const [startOctave, setStartOctave] = useState(
@@ -71,8 +69,8 @@ export default function Piano() {
   );
 
   /* ------------------ Audio ------------------ */
-  // Delays sample preloading slightly after render for smoother UX
-  useDeferredPreload(() => setEnablePreload(true), 500);
+  // Immediate preloading to prevent latency in production
+  const enablePreload = true;
 
   const [sustainActive, setSustainActive] = useState(false);
 
