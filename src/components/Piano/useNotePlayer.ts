@@ -44,7 +44,6 @@ export function useNotePlayer(
   /** Fade durations and cleanup timeouts */
   const FADE_OUT_MS = PIANO_CONFIG.FADE_OUT_MS || 300;
   const ATTACK_MS = PIANO_CONFIG.ATTACK_MS || 0;
-  const KILL_TIMEOUT_MS = FADE_OUT_MS + (PIANO_CONFIG.FADE_OUT_BUFFER_MS || 250);
 
   /** Howl instance cache for efficient playback */
   const howlCache = useRef<Map<string, Howl>>(new Map());
@@ -147,18 +146,28 @@ export function useNotePlayer(
       const currentVol = v.howl.volume(v.id);
       const vol = typeof currentVol === "number" ? currentVol : volume;
       
-      // Always fade to 0 to ensure no discontinuity, even if volume is already low
+      // 1. Start the fade
       v.howl.fade(vol, 0, FADE_OUT_MS, v.id);
-    } catch {}
 
-    setTimeout(() => {
-      try { v.howl.stop(v.id); } catch {}
-      voices.current = voices.current.filter((x) => x !== v);
-      const arr = (voicesByNote.current.get(v.noteName) || []).filter((x) => x !== v);
-      if (arr.length) voicesByNote.current.set(v.noteName, arr);
-      else voicesByNote.current.delete(v.noteName);
-    }, KILL_TIMEOUT_MS);
-  }, [FADE_OUT_MS, KILL_TIMEOUT_MS, volume]);
+      // 2. Use Howler's 'fade' event to clean up after the fade completes
+      v.howl.once('fade', (id) => {
+        // Only run cleanup if the event ID matches our voice ID
+        if (id !== v.id) return;
+
+        // This logic now runs reliably after the fade
+        try { v.howl.stop(id); } catch {}
+        voices.current = voices.current.filter((x) => x !== v);
+        const arr = (voicesByNote.current.get(v.noteName) || []).filter((x) => x !== v);
+        if (arr.length) voicesByNote.current.set(v.noteName, arr);
+        else voicesByNote.current.delete(v.noteName);
+        
+      }, v.id); // Pass v.id to .once() to ensure it's the correct listener
+
+    } catch {}
+    
+    // 3. Remove the entire setTimeout block
+    
+  }, [FADE_OUT_MS, volume]); // KILL_TIMEOUT_MS is no longer needed in dependencies
 
   /** Ensure polyphony limit is respected */
   const ensurePolyphonyRoom = useCallback(() => {
