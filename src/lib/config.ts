@@ -20,7 +20,7 @@ export const PIANO_CONFIG = {
   MAX_POLYPHONY: 128,
 
   /* Audio Envelope & Fade */
-  ATTACK_MS: 5,
+  ATTACK_MS: 10,
   FADE_OUT_MS: 550,
   FADE_OUT_BUFFER_MS: 20,
 
