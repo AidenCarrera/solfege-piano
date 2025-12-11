@@ -24,10 +24,10 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
       let key = "";
       if (octave === 3) {
         // C4-B4 get mapped to keyboard
-        key = KEYBOARD_MAP_C4_C5[i];
+        key = KEYBOARD_MAP_C4_C5[i] ?? "";
       } else if (octave === 4 && n.base === "C") {
         // C5 gets the last key
-        key = KEYBOARD_MAP_C4_C5[KEYBOARD_MAP_C4_C5.length - 1];
+        key = KEYBOARD_MAP_C4_C5[KEYBOARD_MAP_C4_C5.length - 1] ?? "";
       }
 
       notes.push({

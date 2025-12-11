@@ -3,7 +3,7 @@
 import React from "react";
 
 type PreloadProgressProps = {
-  progress: number;      // Progress value (0.0 - 1.0)
+  progress: number; // Progress value (0.0 - 1.0)
   isPreloading: boolean; // Whether the preloader is active
 };
 
@@ -12,7 +12,10 @@ type PreloadProgressProps = {
  * Displays a horizontal loading bar indicating sample preloading progress.
  * Hidden when preloading is inactive.
  */
-export default function PreloadProgress({ progress, isPreloading }: PreloadProgressProps) {
+export default function PreloadProgress({
+  progress,
+  isPreloading,
+}: PreloadProgressProps) {
   // Hide component if not preloading
   if (!isPreloading) return null;
 
@@ -20,12 +23,13 @@ export default function PreloadProgress({ progress, isPreloading }: PreloadProgr
     <div className="mb-4 w-full flex justify-center pointer-events-none">
       {/* ----- Container ----- */}
       <div className="w-72 max-w-full bg-[rgba(0,0,0,0.15)] rounded-md p-2 flex items-center gap-3">
-        
         {/* ----- Progress Bar ----- */}
         <div className="flex-1">
           {/* Label */}
-          <div className="text-xs font-medium text-foreground/90 mb-1">Loading samples…</div>
-          
+          <div className="text-xs font-medium text-foreground/90 mb-1">
+            Loading samples…
+          </div>
+
           {/* Track */}
           <div className="h-2 w-full bg-foreground/10 rounded overflow-hidden">
             {/* Fill */}

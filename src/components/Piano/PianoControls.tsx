@@ -62,7 +62,9 @@ export default function PianoControls({
 
   // Handle octave range slider changes
   const handleSliderChange = (val: number) => {
-    const [start, end] = OCTAVE_MAP[val];
+    const range = OCTAVE_MAP[val];
+    if (!range) return;
+    const [start, end] = range;
     onOctaveChange(start, end);
 
     // Calculate number of octaves and map to piano scale
@@ -162,7 +164,7 @@ export default function PianoControls({
           type="color"
           value={bgColor}
           onChange={(e) => setBgColor(e.target.value)}
-          className="w-16 h-8 rounded-md border border-[var(--input-border)] cursor-pointer shadow-sm"
+          className="w-16 h-8 rounded-md border border-(--input-border) cursor-pointer shadow-sm"
         />
       </div>
 

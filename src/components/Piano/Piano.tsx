@@ -43,10 +43,10 @@ export default function Piano() {
 
   // Octave range (updates note set when changed)
   const [startOctave, setStartOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0]
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0] ?? 3
   );
   const [endOctave, setEndOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1]
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1] ?? 4
   );
 
   // Handle sound type switching (locks Solfege to one octave)
@@ -106,7 +106,7 @@ export default function Piano() {
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
   const getSharpKeyPosition = (note: Note) => {
     const match = note.name.match(/^([A-G]s?)(\d+)$/);
-    if (!match) return 0;
+    if (!match || !match[1] || !match[2]) return 0;
     const base = match[1].replace("s", "");
     const octave = match[2];
     const whiteIndex = whiteNotes.findIndex(
