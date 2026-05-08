@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -14,27 +15,69 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solfege Piano",
+  metadataBase: new URL("https://solfegepiano.vercel.app"),
+  title: {
+    default: "Solfege Piano | Interactive Music Learning",
+    template: "%s | Solfege Piano",
+  },
   description:
-    "An interactive browser-based piano that lets you play notes and hear solfege syllables (do, re, mi, etc.) or real piano tones. Built with Next.js, React, and Howler.js.",
+    "Play solfege or piano notes right in your browser. An interactive music education tool built for ear training and theory learning.",
   keywords: [
     "piano",
     "solfege",
     "music education",
     "ear training",
-    "Next.js",
-    "React",
-    "Howler.js",
-    "music app",
+    "nextjs piano",
+    "online piano",
+    "do re mi",
+    "music theory",
+    "browser piano",
   ],
   authors: [{ name: "Aiden Carrera" }],
+  creator: "Aiden Carrera",
+  publisher: "Aiden Carrera",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Solfege Piano",
+    title: "Solfege Piano | Interactive Music Learning",
     description:
-      "Play solfege solfege or piano notes right in your browser — an interactive music education tool built by Aiden Carrera.",
-    url: "https://solfege-piano.vercel.app",
+      "An interactive browser-based piano that lets you play notes and hear solfege syllables. Perfect for music students and teachers.",
+    url: "https://solfegepiano.vercel.app",
     siteName: "Solfege Piano",
+    locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Solfege Piano - Interactive Browser Piano",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Solfege Piano",
+    description: "Play solfege or piano notes right in your browser.",
+    creator: "@aidencarrera",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
     icon: "/favicon.ico",
@@ -52,11 +95,35 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Solfege Piano",
+    "description": "An interactive browser-based piano for learning solfege and music theory.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "author": {
+      "@type": "Person",
+      "name": "Aiden Carrera"
+    },
+    "url": "https://solfegepiano.vercel.app",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  };
+
   return (
     <html lang="en">
       <body
         className={`${inter.variable} ${robotoMono.variable} antialiased`}
       >
+        <Script
+          id="json-ld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {children}
         <SpeedInsights />
       </body>
