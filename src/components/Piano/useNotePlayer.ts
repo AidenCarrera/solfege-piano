@@ -12,8 +12,27 @@ function toToneNote(name: string): string {
   return name.replace("s", "#");
 }
 
+/**
+ * Generates a synthetic impulse response buffer for convolution reverb.
+ */
+function createImpulseResponse(context: AudioContext, duration: number, decay: number) {
+  const sampleRate = context.sampleRate;
+  const length = sampleRate * duration;
+  const impulse = context.createBuffer(2, length, sampleRate);
+  const left = impulse.getChannelData(0);
+  const right = impulse.getChannelData(1);
+  for (let i = 0; i < length; i++) {
+    // Exponential fade
+    const fade = Math.pow(1 - i / length, decay);
+    left[i] = (Math.random() * 2 - 1) * fade;
+    right[i] = (Math.random() * 2 - 1) * fade;
+  }
+  return impulse;
+}
+
 export function useNotePlayer(
   volume: number,
+  reverbMix: number,
   soundType: string,
   sustainMode: boolean,
   notes: Note[],
@@ -29,6 +48,8 @@ export function useNotePlayer(
   const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(null);
 
   const samplerRef = useRef<ToneType.Sampler | null>(null);
+  const convolverRef = useRef<ConvolverNode | null>(null);
+  const wetGainRef = useRef<GainNode | null>(null);
   const heldKeys = useRef<Set<string>>(new Set());
   const activeVoices = useRef<string[]>([]); // Track ringing notes for voice stealing
   const pedalActive = useRef(false);
@@ -47,6 +68,21 @@ export function useNotePlayer(
       t.setContext(freshContext);
       localContext = freshContext;
       
+      const nativeContext = freshContext.rawContext as AudioContext;
+      
+      // Initialize native WebAudio Convolution Reverb
+      const convolver = nativeContext.createConvolver();
+      convolver.buffer = createImpulseResponse(nativeContext, 2.5, 3.0);
+      
+      const wetGain = nativeContext.createGain();
+      wetGain.gain.value = PIANO_CONFIG.DEFAULT_REVERB_MIX;
+      
+      convolver.connect(wetGain);
+      wetGain.connect(nativeContext.destination);
+      
+      convolverRef.current = convolver;
+      wetGainRef.current = wetGain;
+      
       setTone(t);
     });
     
@@ -55,6 +91,14 @@ export function useNotePlayer(
       // Dispose context on unmount to prevent AudioContext exhaustion during development
       if (localContext) {
         localContext.dispose();
+      }
+      if (convolverRef.current) {
+        convolverRef.current.disconnect();
+        convolverRef.current = null;
+      }
+      if (wetGainRef.current) {
+        wetGainRef.current.disconnect();
+        wetGainRef.current = null;
       }
     };
   }, []);
@@ -109,6 +153,13 @@ export function useNotePlayer(
       samplerRef.current.volume.value = Tone.gainToDb(volume * 0.5);
     }
   }, [volume, Tone]);
+
+  // 4. Update reverb mix dynamically
+  useEffect(() => {
+    if (wetGainRef.current) {
+      wetGainRef.current.gain.value = reverbMix;
+    }
+  }, [reverbMix]);
 
   // ----- KEYBOARD PEDAL HANDLING -----
   useEffect(() => {
@@ -174,8 +225,13 @@ export function useNotePlayer(
           attack: PIANO_CONFIG.ATTACK_MS / 1000,
         });
         
-        // Connect directly to the WebAudio destination node
+        // Route audio directly to destination (Dry)
         samplerRef.current.connect(Tone.getContext().rawContext.destination);
+        
+        // Parallel route into the native Convolver (Wet)
+        if (convolverRef.current) {
+          samplerRef.current.connect(convolverRef.current);
+        }
         
         // Apply volume with -6dB headroom
         samplerRef.current.volume.value = Tone.gainToDb(volume * 0.5);
@@ -187,12 +243,11 @@ export function useNotePlayer(
 
       const toneNote = toToneNote(noteName);
       
-      // 1. Prevent Phase Stacking: On a real piano, striking a ringing string stops it first.
-      // This prevents 50 identical notes from summing their volume if you mash one key.
+      // Release existing instances of this note to prevent phase stacking
       samplerRef.current.triggerRelease(toneNote, Tone.now());
       activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
       
-      // 2. Voice Stealing: limit polyphony to MAX_POLYPHONY to prevent WebAudio clipping
+      // Implement voice stealing to enforce MAX_POLYPHONY limit
       activeVoices.current.push(toneNote);
       if (activeVoices.current.length > PIANO_CONFIG.MAX_POLYPHONY) {
         const oldestNote = activeVoices.current.shift();
@@ -206,7 +261,7 @@ export function useNotePlayer(
       // Trigger attack immediately
       samplerRef.current.triggerAttack(toneNote, Tone.now());
     },
-    [sustainMode, Tone, buffers, volume]
+    [sustainMode, Tone, buffers, volume, reverbMix]
   );
 
   const stopNote = useCallback(

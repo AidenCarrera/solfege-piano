@@ -31,6 +31,7 @@ export default function Piano() {
   } = useActiveNotes();
 
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
+  const [reverbMix, setReverbMix] = useState(PIANO_CONFIG.DEFAULT_REVERB_MIX);
   const [labelsEnabled, setLabelsEnabled] = useState(
     PIANO_CONFIG.DEFAULT_LABELS_ENABLED
   );
@@ -75,7 +76,7 @@ export default function Piano() {
   const [sustainActive, setSustainActive] = useState(false);
 
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
-    useNotePlayer(volume, soundType, sustainActive, notes, enablePreload);
+    useNotePlayer(volume, reverbMix, soundType, sustainActive, notes, enablePreload);
 
   // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
@@ -144,6 +145,8 @@ export default function Piano() {
       <PianoControls
         volume={volume}
         setVolume={setVolume}
+        reverbMix={reverbMix}
+        setReverbMix={setReverbMix}
         labelsEnabled={labelsEnabled}
         setLabelsEnabled={setLabelsEnabled}
         solfegeEnabled={solfegeEnabled}
