@@ -5,8 +5,6 @@ import { getGlassPanelColor } from "@/lib/colorUtils";
 type Props = {
   volume: number;
   setVolume: (v: number) => void;
-  reverbMix: number;
-  setReverbMix: (v: number) => void;
   labelsEnabled: boolean;
   setLabelsEnabled: (b: boolean) => void;
   solfegeEnabled: boolean;
@@ -34,8 +32,6 @@ const OCTAVE_MAP: Record<number, [number, number]> = {
 export default function PianoControls({
   volume,
   setVolume,
-  reverbMix,
-  setReverbMix,
   labelsEnabled,
   setLabelsEnabled,
   solfegeEnabled,
@@ -120,22 +116,6 @@ export default function PianoControls({
           step={0.01}
           value={volume}
           onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-40"
-        />
-      </div>
-
-      {/* ----- Reverb Control ----- */}
-      <div className="flex flex-col items-start">
-        <label className="text-sm font-medium mb-1">
-          Reverb: {Math.round(reverbMix * 100)}%
-        </label>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={reverbMix}
-          onChange={(e) => setReverbMix(parseFloat(e.target.value))}
           className="w-40"
         />
       </div>

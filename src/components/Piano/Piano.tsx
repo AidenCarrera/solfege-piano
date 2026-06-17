@@ -17,8 +17,9 @@ import { useActiveNotes } from "./useActiveNotes";
 import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
 
 import PianoKey from "./PianoKey";
-import PianoControls from "./PianoControls";
+import ControlPanel from "./ControlPanel";
 import PreloadProgress from "./PreloadProgress";
+import { EffectNode, createEffectNode } from "@/lib/effects";
 
 export default function Piano() {
   /* ------------------ State ------------------ */
@@ -31,7 +32,9 @@ export default function Piano() {
   } = useActiveNotes();
 
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
-  const [reverbMix, setReverbMix] = useState(PIANO_CONFIG.DEFAULT_REVERB_MIX);
+  const [effectChain, setEffectChain] = useState<EffectNode[]>(() => [
+    createEffectNode("Reverb")
+  ]);
   const [labelsEnabled, setLabelsEnabled] = useState(
     PIANO_CONFIG.DEFAULT_LABELS_ENABLED
   );
@@ -76,7 +79,7 @@ export default function Piano() {
   const [sustainActive, setSustainActive] = useState(false);
 
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
-    useNotePlayer(volume, reverbMix, soundType, sustainActive, notes, enablePreload);
+    useNotePlayer(volume, effectChain, soundType, sustainActive, notes, enablePreload);
 
   // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
@@ -142,11 +145,11 @@ export default function Piano() {
         🎹 Playable Piano
       </h1>
 
-      <PianoControls
+      <ControlPanel
         volume={volume}
         setVolume={setVolume}
-        reverbMix={reverbMix}
-        setReverbMix={setReverbMix}
+        effectChain={effectChain}
+        setEffectChain={setEffectChain}
         labelsEnabled={labelsEnabled}
         setLabelsEnabled={setLabelsEnabled}
         solfegeEnabled={solfegeEnabled}
