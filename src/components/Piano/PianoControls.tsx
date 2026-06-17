@@ -50,7 +50,7 @@ export default function PianoControls({
   // Determine slider position based on current octave range
   const sliderValue =
     Object.entries(OCTAVE_MAP).find(
-      ([, range]) => range[0] === startOctave && range[1] === endOctave
+      ([, range]) => range[0] === startOctave && range[1] === endOctave,
     )?.[0] ?? "2"; // default to 2 if no exact match
 
   // Auto-set piano scale when Solfege mode is enabled

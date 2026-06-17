@@ -43,7 +43,7 @@ class NativeReverb {
     this.output = new Tone.Gain();
     
     this.delayNode = context.createDelay(1.0);
-    this.delayNode.delayTime.value = preDelay;
+    this.delayNode.delayTime.setValueAtTime(preDelay, context.currentTime);
     
     this.convolver = context.createConvolver();
     this.convolver.buffer = createImpulseResponse(context, decay, 3.0);
@@ -80,8 +80,8 @@ class NativeReverb {
   }
 
   dispose() {
-    this.input.disconnect();
-    this.output.disconnect();
+    this.input.dispose();
+    this.output.dispose();
     this.delayNode.disconnect();
     this.convolver.disconnect();
     this.wetGain.disconnect();
@@ -397,11 +397,11 @@ export function useNotePlayer(
         e.preventDefault();
         pedalActive.current = false;
 
-        if (samplerRef.current) {
+        if (samplerRef.current && Tone) {
           notes.forEach(n => {
             const toneNote = toToneNote(n.name);
             if (!heldKeys.current.has(n.name)) {
-              samplerRef.current?.triggerRelease(toneNote);
+              samplerRef.current?.triggerRelease(toneNote, Tone.now());
               activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
             }
           });

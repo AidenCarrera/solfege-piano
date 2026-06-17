@@ -33,13 +33,13 @@ export default function Piano() {
 
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [effectChain, setEffectChain] = useState<EffectNode[]>(() => [
-    createEffectNode("Reverb")
+    createEffectNode("Reverb"),
   ]);
   const [labelsEnabled, setLabelsEnabled] = useState(
-    PIANO_CONFIG.DEFAULT_LABELS_ENABLED
+    PIANO_CONFIG.DEFAULT_LABELS_ENABLED,
   );
   const [solfegeEnabled, setSolfegeEnabled] = useState(
-    PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED
+    PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED,
   );
   const [pianoScale, setPianoScale] = usePianoScale();
   const [bgColor, setBgColor] = useBackgroundColor();
@@ -47,10 +47,10 @@ export default function Piano() {
 
   // Octave range (updates note set when changed)
   const [startOctave, setStartOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0] ?? 3
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0] ?? 3,
   );
   const [endOctave, setEndOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1] ?? 4
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1] ?? 4,
   );
 
   // Handle sound type switching (locks Solfege to one octave)
@@ -63,13 +63,13 @@ export default function Piano() {
       }
       setSoundType(newSoundType);
     },
-    [setPianoScale]
+    [setPianoScale],
   );
 
   // Generate piano notes based on the current octave range
   const notes: Note[] = useMemo(
     () => generateNotes(startOctave, endOctave),
-    [startOctave, endOctave]
+    [startOctave, endOctave],
   );
 
   /* ------------------ Audio ------------------ */
@@ -79,7 +79,14 @@ export default function Piano() {
   const [sustainActive, setSustainActive] = useState(false);
 
   const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
-    useNotePlayer(volume, effectChain, soundType, sustainActive, notes, enablePreload);
+    useNotePlayer(
+      volume,
+      effectChain,
+      soundType,
+      sustainActive,
+      notes,
+      enablePreload,
+    );
 
   // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
@@ -91,7 +98,7 @@ export default function Piano() {
     playNote,
     stopNote,
     (note) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),
-    deactivateNote
+    deactivateNote,
   );
 
   // Mouse and touch handlers
@@ -99,7 +106,7 @@ export default function Piano() {
     playNote,
     stopNote,
     flashNote,
-    clearAllNotes
+    clearAllNotes,
   );
 
   const { handleTouchStart, handleTouchMove, handleTouchEnd } =
@@ -114,7 +121,7 @@ export default function Piano() {
     const base = match[1].replace("s", "");
     const octave = match[2];
     const whiteIndex = whiteNotes.findIndex(
-      (n) => n.name === `${base}${octave}`
+      (n) => n.name === `${base}${octave}`,
     );
     if (whiteIndex === -1) return 0;
     return (
@@ -130,7 +137,7 @@ export default function Piano() {
 
   return (
     <main
-      className="flex flex-col items-center justify-center min-h-screen select-none transition-colors duration-500"
+      className="flex flex-col items-center justify-center min-h-screen pb-16 md:pb-36 select-none transition-colors duration-500"
       style={
         {
           color: textColor,
@@ -139,7 +146,7 @@ export default function Piano() {
       }
     >
       <h1
-        className="text-4xl font-bold mb-8 tracking-tight"
+        className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 tracking-tight"
         style={{ textShadow: `0 4px 12px ${shadowColor}` }}
       >
         🎹 Playable Piano

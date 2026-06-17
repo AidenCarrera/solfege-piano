@@ -1,16 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import { Trash2, GripVertical, Plus } from "lucide-react";
-import { EffectNode, EffectType, createEffectNode, EffectParams } from "@/lib/effects";
+import {
+  EffectNode,
+  EffectType,
+  createEffectNode,
+  EffectParams,
+} from "@/lib/effects";
 
 interface EffectsRackProps {
   effectChain: EffectNode[];
   setEffectChain: React.Dispatch<React.SetStateAction<EffectNode[]>>;
 }
 
-export default function EffectsRack({ effectChain, setEffectChain }: EffectsRackProps) {
+export default function EffectsRack({
+  effectChain,
+  setEffectChain,
+}: EffectsRackProps) {
   const [selectedEffect, setSelectedEffect] = useState<EffectType>("AutoWah");
   const [isMounted, setIsMounted] = useState(false);
 
@@ -38,7 +51,11 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
     setEffectChain(effectChain.filter((e) => e.id !== id));
   };
 
-  const updateEffect = (id: string, newParams: Partial<EffectParams>, enabled?: boolean) => {
+  const updateEffect = (
+    id: string,
+    newParams: Partial<EffectParams>,
+    enabled?: boolean,
+  ) => {
     setEffectChain(
       effectChain.map((e) =>
         e.id === id
@@ -47,14 +64,15 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
               enabled: enabled !== undefined ? enabled : e.enabled,
               params: { ...e.params, ...newParams } as EffectParams,
             }
-          : e
-      )
+          : e,
+      ),
     );
   };
 
   const renderEffectParams = (effect: EffectNode) => {
     const { type, params, id } = effect;
-    const update = (newParams: Partial<EffectParams>) => updateEffect(id, newParams);
+    const update = (newParams: Partial<EffectParams>) =>
+      updateEffect(id, newParams);
 
     const renderSlider = (
       label: string,
@@ -63,7 +81,7 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
       max: number,
       step: number,
       val: number,
-      displayMultiplier: number = 1
+      displayMultiplier: number = 1,
     ) => (
       <div className="flex flex-col gap-1 text-xs">
         <label className="flex justify-between">
@@ -85,30 +103,88 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
     return (
       <div className="grid grid-cols-2 gap-3 mt-3">
         {renderSlider("Mix", "mix", 0, 1, 0.01, params.mix, 100)}
-        
+
         {type === "Reverb" && (
           <>
-            {renderSlider("Decay", "decay", 0.5, 10, 0.1, (params as any).decay)}
-            {renderSlider("PreDelay", "preDelay", 0, 0.5, 0.01, (params as any).preDelay)}
+            {renderSlider(
+              "Decay",
+              "decay",
+              0.5,
+              10,
+              0.1,
+              (params as any).decay,
+            )}
+            {renderSlider(
+              "PreDelay",
+              "preDelay",
+              0,
+              0.5,
+              0.01,
+              (params as any).preDelay,
+            )}
           </>
         )}
         {type === "Delay" && (
           <>
-            {renderSlider("Time", "delayTime", 0.01, 1, 0.01, (params as any).delayTime)}
-            {renderSlider("Feedback", "feedback", 0, 0.9, 0.01, (params as any).feedback, 100)}
+            {renderSlider(
+              "Time",
+              "delayTime",
+              0.01,
+              1,
+              0.01,
+              (params as any).delayTime,
+            )}
+            {renderSlider(
+              "Feedback",
+              "feedback",
+              0,
+              0.9,
+              0.01,
+              (params as any).feedback,
+              100,
+            )}
           </>
         )}
         {type === "Chorus" && (
           <>
-            {renderSlider("Rate", "frequency", 0.1, 10, 0.1, (params as any).frequency)}
-            {renderSlider("Depth", "depth", 0, 1, 0.01, (params as any).depth, 100)}
+            {renderSlider(
+              "Rate",
+              "frequency",
+              0.1,
+              10,
+              0.1,
+              (params as any).frequency,
+            )}
+            {renderSlider(
+              "Depth",
+              "depth",
+              0,
+              1,
+              0.01,
+              (params as any).depth,
+              100,
+            )}
           </>
         )}
 
         {type === "AutoWah" && (
           <>
-            {renderSlider("Base Freq", "baseFrequency", 50, 2000, 10, (params as any).baseFrequency)}
-            {renderSlider("Octaves", "octaves", 1, 8, 0.5, (params as any).octaves)}
+            {renderSlider(
+              "Base Freq",
+              "baseFrequency",
+              50,
+              2000,
+              10,
+              (params as any).baseFrequency,
+            )}
+            {renderSlider(
+              "Octaves",
+              "octaves",
+              1,
+              8,
+              0.5,
+              (params as any).octaves,
+            )}
           </>
         )}
       </div>
@@ -148,13 +224,19 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
               className="flex flex-row gap-4 min-h-[150px] overflow-x-auto pb-4 custom-scrollbar"
             >
               {effectChain.map((effect, index) => (
-                <Draggable key={effect.id} draggableId={effect.id} index={index}>
+                <Draggable
+                  key={effect.id}
+                  draggableId={effect.id}
+                  index={index}
+                >
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       className={`min-w-[260px] w-[260px] shrink-0 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-4 rounded-xl shadow-lg border-2 ${
-                        snapshot.isDragging ? "border-indigo-400 scale-105" : "border-transparent"
+                        snapshot.isDragging
+                          ? "border-indigo-400 scale-105"
+                          : "border-transparent"
                       } transition-transform duration-200`}
                     >
                       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
@@ -169,7 +251,9 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
                         </div>
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => updateEffect(effect.id, {}, !effect.enabled)}
+                            onClick={() =>
+                              updateEffect(effect.id, {}, !effect.enabled)
+                            }
                             className={`text-xs px-2 py-1 rounded font-medium ${
                               effect.enabled
                                 ? "bg-green-500/20 text-green-700 dark:text-green-400"
@@ -186,7 +270,7 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
                           </button>
                         </div>
                       </div>
-                      
+
                       {effect.enabled ? (
                         renderEffectParams(effect)
                       ) : (
@@ -199,7 +283,7 @@ export default function EffectsRack({ effectChain, setEffectChain }: EffectsRack
                 </Draggable>
               ))}
               {provided.placeholder}
-              
+
               {effectChain.length === 0 && (
                 <div className="w-full flex items-center justify-center text-sm opacity-50 py-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
                   No effects in chain. Add one from the dropdown above!
