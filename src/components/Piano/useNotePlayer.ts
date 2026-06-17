@@ -1,183 +1,114 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Howl } from "howler";
+import type * as ToneType from "tone";
 import { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "@/lib/config";
 
-type Voice = {
-  noteName: string;
-  howl: Howl;
-  id: number;
-  createdAt: number;
-  released: boolean;
-  killed?: boolean;
-};
-
 /**
- * useNotePlayer Hook
- * 
- * Manages audio playback for piano notes with polyphony, sustain, and deferred preloading.
- * Handles volume, sound type changes, note release/fade, and keyboard sustain.
- *
- * @param volume - Master volume (0-1)
- * @param soundType - Current sound type ("Piano", "Solfege", etc.)
- * @param sustainMode - Whether sustain mode is active
- * @param notes - Array of Note objects to preload (only visible notes)
- * @param enablePreload - Whether to start preloading (deferred to avoid blocking initial render)
- * @param maxVoices - Maximum polyphony limit
+ * Helper to convert our note names (e.g., "Cs4") to standard scientific pitch notation (e.g., "C#4")
  */
+function toToneNote(name: string): string {
+  return name.replace("s", "#");
+}
+
 export function useNotePlayer(
   volume: number,
   soundType: string,
   sustainMode: boolean,
   notes: Note[],
-  enablePreload: boolean = true,
-  maxVoices = PIANO_CONFIG.MAX_POLYPHONY
+  enablePreload: boolean = true
 ) {
-  /** Active voices and mappings */
-  const voices = useRef<Voice[]>([]);
-  const voicesByNote = useRef<Map<string, Voice[]>>(new Map());
-  const heldKeys = useRef<Set<string>>(new Set());
-  const pedalActive = useRef(false);
-
-  /** Fade durations and cleanup timeouts */
-  const FADE_OUT_MS = PIANO_CONFIG.FADE_OUT_MS || 300;
-  const ATTACK_MS = PIANO_CONFIG.ATTACK_MS || 0;
-
-  /** Howl instance cache for efficient playback */
-  const howlCache = useRef<Map<string, Howl>>(new Map());
-  const currentSoundType = useRef<string>(soundType);
-
-  /** Preloading state */
   const [preloadProgress, setPreloadProgress] = useState<number>(0);
   const [isPreloading, setIsPreloading] = useState<boolean>(false);
 
-  // ----- SOUND TYPE CHANGE HANDLING -----
-  useEffect(() => {
-    if (currentSoundType.current !== soundType) {
-      // Unload all Howls from previous soundType
-      howlCache.current.forEach((howl) => {
-        try { howl.unload(); } catch {}
-      });
-      howlCache.current.clear();
-      currentSoundType.current = soundType;
-    }
-  }, [soundType]);
+  // Dynamically load Tone.js on the client
+  const [Tone, setTone] = useState<typeof ToneType | null>(null);
+  
+  // Track preloaded buffers
+  const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(null);
 
-  // ----- DEFERRED SAMPLE PRELOADING -----
+  const samplerRef = useRef<ToneType.Sampler | null>(null);
+  const heldKeys = useRef<Set<string>>(new Set());
+  const activeVoices = useRef<string[]>([]); // Track ringing notes for voice stealing
+  const pedalActive = useRef(false);
+  const contextStarted = useRef(false);
+
+  // 1. Load Tone.js purely on the client side
   useEffect(() => {
-    if (!enablePreload) return;
+    let mounted = true;
+    let localContext: ToneType.Context | null = null;
+    
+    import("tone").then((t) => {
+      if (!mounted) return;
+      
+      // Initialize a fresh Tone Context to ensure it binds correctly to the browser's AudioContext
+      const freshContext = new t.Context({ latencyHint: "interactive", lookAhead: 0.01 });
+      t.setContext(freshContext);
+      localContext = freshContext;
+      
+      setTone(t);
+    });
+    
+    return () => { 
+      mounted = false;
+      // Dispose context on unmount to prevent AudioContext exhaustion during development
+      if (localContext) {
+        localContext.dispose();
+      }
+    };
+  }, []);
+
+  // 2. Preload audio buffers (without instantiating the Sampler instrument yet)
+  useEffect(() => {
+    if (!enablePreload || !Tone) return;
 
     let mounted = true;
     const folder = soundType.toLowerCase();
-    const sampleKeys = notes.map((n) => `${folder}/${n.fileName}`);
-    const total = sampleKeys.length;
-
-    if (total === 0) {
-      setPreloadProgress(1);
-      setIsPreloading(false);
-      return;
-    }
 
     setIsPreloading(true);
     setPreloadProgress(0);
-    let loadedCount = 0;
 
-    const onLoaded = () => {
-      loadedCount += 1;
-      if (!mounted) return;
-      setPreloadProgress(loadedCount / total);
-      if (loadedCount >= total) setIsPreloading(false);
-    };
+    // Dispose old sampler if sound type changes
+    if (samplerRef.current) {
+      samplerRef.current.dispose();
+      samplerRef.current = null;
+    }
 
-    sampleKeys.forEach((key) => {
-      if (howlCache.current.has(key)) {
-        onLoaded();
-        return;
-      }
-
-      const [folderPart, fileName] = key.split("/");
-      const src = `/samples/${folderPart}/${fileName}.mp3`;
-      const h = new Howl({
-        src: [src],
-        preload: true,
-        html5: false,
-        volume: volume,
-        onload: onLoaded,
-        onloaderror: () => onLoaded(),
-      });
-
-      howlCache.current.set(key, h);
+    const urls: Record<string, string> = {};
+    notes.forEach((n) => {
+      urls[toToneNote(n.name)] = `${n.fileName}.mp3`;
     });
 
-    return () => { mounted = false; };
-  }, [soundType, notes, enablePreload, volume]);
+    const newBuffers = new Tone.ToneAudioBuffers({
+      urls,
+      baseUrl: `/samples/${folder}/`,
+      onload: () => {
+        if (!mounted) return;
+        setPreloadProgress(1);
+        setIsPreloading(false);
+        setBuffers(newBuffers);
+      },
+      onerror: () => {
+        if (!mounted) return;
+        setIsPreloading(false);
+      }
+    });
 
-  // ----- INTERNAL HELPERS -----
-
-  /** Adds a new voice to tracking structures and sets cleanup on end */
-  const addVoice = useCallback((noteName: string, howl: Howl, id: number) => {
-    const v: Voice = { noteName, howl, id, createdAt: Date.now(), released: false };
-    voices.current.push(v);
-
-    const arr = voicesByNote.current.get(noteName) ?? [];
-    arr.push(v);
-    voicesByNote.current.set(noteName, arr);
-
-    const onEnd = () => {
-      v.killed = true;
-      voices.current = voices.current.filter((x) => x !== v);
-      const arr2 = (voicesByNote.current.get(noteName) || []).filter((x) => x !== v);
-      if (arr2.length) voicesByNote.current.set(noteName, arr2);
-      else voicesByNote.current.delete(noteName);
-      try { howl.off("end", onEnd, id); } catch {}
+    return () => {
+      mounted = false;
+      // Dispose audio buffers when soundType changes to free memory
+      newBuffers.dispose();
     };
+  }, [soundType, notes, enablePreload, Tone]);
 
-    try { howl.once("end", onEnd, id); } catch { howl.once("end", onEnd); }
-  }, []);
-
-  /** Fade and remove a voice with proper cleanup */
-  const fadeAndRemoveVoice = useCallback((v: Voice) => {
-    if (v.killed) return;
-    v.killed = true;
-
-    try {
-      const currentVol = v.howl.volume(v.id);
-      const vol = typeof currentVol === "number" ? currentVol : volume;
-      
-      // 1. Start the fade
-      v.howl.fade(vol, 0, FADE_OUT_MS, v.id);
-
-      // 2. Use Howler's 'fade' event to clean up after the fade completes
-      v.howl.once('fade', (id) => {
-        // Only run cleanup if the event ID matches our voice ID
-        if (id !== v.id) return;
-
-        // This logic now runs reliably after the fade
-        try { v.howl.stop(id); } catch {}
-        voices.current = voices.current.filter((x) => x !== v);
-        const arr = (voicesByNote.current.get(v.noteName) || []).filter((x) => x !== v);
-        if (arr.length) voicesByNote.current.set(v.noteName, arr);
-        else voicesByNote.current.delete(v.noteName);
-        
-      }, v.id); // Pass v.id to .once() to ensure it's the correct listener
-
-    } catch {}
-    
-    // 3. Remove the entire setTimeout block
-    
-  }, [FADE_OUT_MS, volume]); // KILL_TIMEOUT_MS is no longer needed in dependencies
-
-  /** Ensure polyphony limit is respected */
-  const ensurePolyphonyRoom = useCallback(() => {
-    while (voices.current.length >= maxVoices) {
-      voices.current.sort((a, b) => a.createdAt - b.createdAt);
-      const oldest = voices.current.shift();
-      if (!oldest) break;
-      fadeAndRemoveVoice(oldest);
+  // 3. Update volume dynamically
+  useEffect(() => {
+    if (samplerRef.current && Tone) {
+      // Add -6dB of natural headroom to prevent clipping when many notes sum
+      samplerRef.current.volume.value = Tone.gainToDb(volume * 0.5);
     }
-  }, [maxVoices, fadeAndRemoveVoice]);
+  }, [volume, Tone]);
 
   // ----- KEYBOARD PEDAL HANDLING -----
   useEffect(() => {
@@ -192,8 +123,17 @@ export function useNotePlayer(
       if (e.code === "Space" && !sustainMode) {
         e.preventDefault();
         pedalActive.current = false;
-        voices.current.filter((v) => v.released && !v.killed)
-                      .forEach(fadeAndRemoveVoice);
+
+        if (samplerRef.current) {
+          notes.forEach(n => {
+            const toneNote = toToneNote(n.name);
+            if (!heldKeys.current.has(n.name)) {
+              samplerRef.current?.triggerRelease(toneNote);
+              // Remove from active tracking
+              activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
+            }
+          });
+        }
       }
     };
 
@@ -203,84 +143,96 @@ export function useNotePlayer(
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [sustainMode, fadeAndRemoveVoice]);
+  }, [sustainMode, notes]);
 
   // ----- PUBLIC API FUNCTIONS -----
 
-  /** 
-   * API: Play a note with polyphony handling
-   * @param fileName - File name of the sample
-   * @param noteName - Note identifier
-   * @param isKeyboard - Whether triggered by keyboard
-   */
   const playNote = useCallback(
-    (fileName: string, noteName: string, isKeyboard = false) => {
-      if (!fileName || !noteName) return;
+    async (fileName: string, noteName: string, isKeyboard = false) => {
+      if (!Tone || !buffers || !buffers.loaded) return;
 
-      ensurePolyphonyRoom();
+      // Resume AudioContext on first user interaction
+      if (!contextStarted.current) {
+        if (Tone.getContext().state !== "running") {
+          await Tone.start();
+        }
+        contextStarted.current = true;
+      }
 
-      const folder = soundType.toLowerCase();
-      const key = `${folder}/${fileName}`;
-      let howl = howlCache.current.get(key);
-
-      // Recreate Howl if it doesn't exist or is in a broken/unloaded state
-      if (!howl || howl.state() === "unloaded") {
-        howl = new Howl({
-          src: [`/samples/${folder}/${fileName}.mp3`],
-          volume,
-          preload: true,
-          html5: false,
+      if (!samplerRef.current) {
+        // Convert ToneAudioBuffers into a plain object map for the Sampler
+        const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
+        notes.forEach(n => {
+          const toneNote = toToneNote(n.name);
+          const buf = buffers.get(toneNote);
+          if (buf) bufferMap[toneNote] = buf;
         });
-        howlCache.current.set(key, howl);
+
+        samplerRef.current = new Tone.Sampler({
+          urls: bufferMap as any,
+          release: PIANO_CONFIG.FADE_OUT_MS / 1000,
+          attack: PIANO_CONFIG.ATTACK_MS / 1000,
+        });
+        
+        // Connect directly to the WebAudio destination node
+        samplerRef.current.connect(Tone.getContext().rawContext.destination);
+        
+        // Apply volume with -6dB headroom
+        samplerRef.current.volume.value = Tone.gainToDb(volume * 0.5);
       }
 
-      const existing = voicesByNote.current.get(noteName) ?? [];
-      existing.forEach((v) => { if (!v.killed) fadeAndRemoveVoice(v); });
-
-      const id = howl.play();
-      if (typeof id === "number") {
-        try {
-          howl.volume(0, id);
-          howl.fade(0, volume, ATTACK_MS, id);
-        } catch {}
+      if (isKeyboard || sustainMode) {
+        heldKeys.current.add(noteName);
       }
-      addVoice(noteName, howl, typeof id === "number" ? id : 0);
 
-      if (isKeyboard || sustainMode) heldKeys.current.add(noteName);
+      const toneNote = toToneNote(noteName);
+      
+      // 1. Prevent Phase Stacking: On a real piano, striking a ringing string stops it first.
+      // This prevents 50 identical notes from summing their volume if you mash one key.
+      samplerRef.current.triggerRelease(toneNote, Tone.now());
+      activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
+      
+      // 2. Voice Stealing: limit polyphony to MAX_POLYPHONY to prevent WebAudio clipping
+      activeVoices.current.push(toneNote);
+      if (activeVoices.current.length > PIANO_CONFIG.MAX_POLYPHONY) {
+        const oldestNote = activeVoices.current.shift();
+        if (oldestNote) {
+          samplerRef.current.triggerRelease(oldestNote, Tone.now());
+          // Ensure we don't have duplicates of the oldest note floating around
+          activeVoices.current = activeVoices.current.filter(v => v !== oldestNote);
+        }
+      }
+
+      // Trigger attack immediately
+      samplerRef.current.triggerAttack(toneNote, Tone.now());
     },
-    [addVoice, ensurePolyphonyRoom, fadeAndRemoveVoice, volume, soundType, sustainMode, ATTACK_MS]
+    [sustainMode, Tone, buffers, volume]
   );
 
-  /** 
-   * API: Stop a note
-   * @param noteName - Note identifier
-   * @param isKeyboard - Whether triggered by keyboard
-   */
   const stopNote = useCallback(
     (noteName: string, isKeyboard = false) => {
-      if (!noteName) return;
       if (isKeyboard) heldKeys.current.delete(noteName);
 
-      const arr = voicesByNote.current.get(noteName);
-      if (!arr || arr.length === 0) return;
+      if (pedalActive.current || sustainMode) {
+        return; // Do not release if pedal is down
+      }
 
-      arr.forEach((v) => {
-        if (pedalActive.current || sustainMode) v.released = true;
-        else if (!v.killed) { v.released = true; fadeAndRemoveVoice(v); }
-      });
+      const toneNote = toToneNote(noteName);
+      if (samplerRef.current && Tone) {
+        samplerRef.current.triggerRelease(toneNote, Tone.now());
+        activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
+      }
     },
-    [sustainMode, fadeAndRemoveVoice]
+    [sustainMode, Tone]
   );
 
-  /** 
-   * API: Stop all currently playing notes immediately
-   */
   const stopAllNotes = useCallback(() => {
-    voices.current.slice().forEach((v) => { if (!v.killed) fadeAndRemoveVoice(v); });
-    voicesByNote.current.clear();
+    if (samplerRef.current && Tone) {
+      samplerRef.current.releaseAll(Tone.now());
+    }
     heldKeys.current.clear();
     pedalActive.current = false;
-  }, [fadeAndRemoveVoice]);
+  }, [Tone]);
 
   return { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading };
 }
