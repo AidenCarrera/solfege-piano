@@ -1,26 +1,36 @@
-export type EffectType = "AutoWah" | "Chorus" | "Delay" | "Reverb";
+export type EffectType = "Distortion" | "Filter" | "Modulation" | "Delay" | "Reverb";
 
 export interface BaseEffectParams {
   mix: number;
+  mode: string;
 }
 
 export interface ReverbParams extends BaseEffectParams {
+  mode: "Native" | "Chamber";
   decay: number;
   preDelay: number;
+  roomSize: number;
 }
 
 export interface DelayParams extends BaseEffectParams {
+  mode: "Feedback" | "PingPong";
   delayTime: number;
   feedback: number;
 }
 
-export interface ChorusParams extends BaseEffectParams {
+export interface ModulationParams extends BaseEffectParams {
+  mode: "Chorus" | "Vibrato" | "Phaser";
   frequency: number;
   depth: number;
 }
 
+export interface DistortionParams extends BaseEffectParams {
+  mode: "Distortion" | "BitCrusher" | "Chebyshev";
+  amount: number;
+}
 
-export interface AutoWahParams extends BaseEffectParams {
+export interface FilterParams extends BaseEffectParams {
+  mode: "AutoWah" | "AutoFilter";
   baseFrequency: number;
   octaves: number;
   sensitivity: number;
@@ -29,8 +39,9 @@ export interface AutoWahParams extends BaseEffectParams {
 export type EffectParams =
   | ReverbParams
   | DelayParams
-  | ChorusParams
-  | AutoWahParams;
+  | ModulationParams
+  | DistortionParams
+  | FilterParams;
 
 export interface EffectNode {
   id: string; // Unique ID for drag-and-drop
@@ -40,10 +51,11 @@ export interface EffectNode {
 }
 
 export const EFFECT_PRESETS: Record<EffectType, EffectParams> = {
-  AutoWah: { mix: 1.0, baseFrequency: 150, octaves: 4, sensitivity: -20 } as AutoWahParams,
-  Chorus: { mix: 0.5, frequency: 1.5, depth: 0.7 } as ChorusParams,
-  Delay: { mix: 0.2, delayTime: 0.25, feedback: 0.4 } as DelayParams,
-  Reverb: { mix: 0.15, decay: 2.5, preDelay: 0.01 } as ReverbParams,
+  Distortion: { mix: 0.5, mode: "Distortion", amount: 0.5 } as DistortionParams,
+  Filter: { mix: 1.0, mode: "AutoWah", baseFrequency: 150, octaves: 4, sensitivity: -20 } as FilterParams,
+  Modulation: { mix: 0.5, mode: "Chorus", frequency: 1.5, depth: 0.7 } as ModulationParams,
+  Delay: { mix: 0.2, mode: "Feedback", delayTime: 0.25, feedback: 0.4 } as DelayParams,
+  Reverb: { mix: 0.15, mode: "Native", decay: 2.5, preDelay: 0.01, roomSize: 0.5 } as ReverbParams,
 };
 
 export function createEffectNode(type: EffectType): EffectNode {

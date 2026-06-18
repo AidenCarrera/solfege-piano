@@ -22,7 +22,7 @@ export const PIANO_CONFIG = {
 
   /* Audio Envelope & Fade */
   ATTACK_MS: 10,
-  FADE_OUT_MS: 550,
+  FADE_OUT_MS: 800,
   FADE_OUT_BUFFER_MS: 20,
 
   /* Metadata */

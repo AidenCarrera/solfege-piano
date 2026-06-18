@@ -46,17 +46,23 @@ const EFFECT_META: Record<
   EffectType,
   { icon: React.ReactNode; color: string; glow: string; description: string }
 > = {
-  AutoWah: {
-    icon: <Zap size={14} />,
-    color: "from-pink-500 to-rose-500",
-    glow: "rgba(236,72,153,0.5)",
-    description: "Filter sweep",
+  Distortion: {
+    icon: <Waves size={14} />,
+    color: "from-red-500 to-rose-600",
+    glow: "rgba(239,68,68,0.5)",
+    description: "Drive & crush",
   },
-  Chorus: {
+  Filter: {
+    icon: <Zap size={14} />,
+    color: "from-orange-500 to-amber-500",
+    glow: "rgba(249,115,22,0.5)",
+    description: "Frequency shaping",
+  },
+  Modulation: {
     icon: <Music size={14} />,
     color: "from-emerald-500 to-teal-500",
     glow: "rgba(16,185,129,0.5)",
-    description: "Shimmer & width",
+    description: "Movement & width",
   },
   Delay: {
     icon: <Clock size={14} />,
@@ -323,6 +329,65 @@ function EffectCard({
             className="flex flex-col gap-2 pt-1 border-t"
             style={{ borderColor: "rgba(255,255,255,0.07)" }}
           >
+            {/* Mode Selector */}
+            {effect.type === "Reverb" && (
+              <select 
+                value={p.mode} 
+                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <option value="Native" className="bg-gray-800">Convolver</option>
+                <option value="Chamber" className="bg-gray-800">Chamber</option>
+              </select>
+            )}
+            {effect.type === "Delay" && (
+              <select 
+                value={p.mode} 
+                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <option value="Feedback" className="bg-gray-800">Feedback</option>
+                <option value="PingPong" className="bg-gray-800">Ping-Pong</option>
+              </select>
+            )}
+            {effect.type === "Modulation" && (
+              <select 
+                value={p.mode} 
+                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <option value="Chorus" className="bg-gray-800">Chorus</option>
+                <option value="Vibrato" className="bg-gray-800">Vibrato</option>
+                <option value="Phaser" className="bg-gray-800">Phaser</option>
+              </select>
+            )}
+            {effect.type === "Distortion" && (
+              <select 
+                value={p.mode} 
+                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <option value="Distortion" className="bg-gray-800">Overdrive</option>
+                <option value="BitCrusher" className="bg-gray-800">BitCrusher</option>
+                <option value="Chebyshev" className="bg-gray-800">Wavefolder</option>
+              </select>
+            )}
+            {effect.type === "Filter" && (
+              <select 
+                value={p.mode} 
+                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <option value="AutoWah" className="bg-gray-800">AutoWah</option>
+                <option value="AutoFilter" className="bg-gray-800">AutoFilter</option>
+              </select>
+            )}
+
             {renderSlider(
               "Mix",
               "mix",
@@ -332,94 +397,137 @@ function EffectCard({
               p.mix,
               (v) => `${Math.round(v * 100)}%`,
             )}
-            {effect.type === "Reverb" && (
-              <>
-                {renderSlider(
-                  "Decay",
-                  "decay",
-                  0.5,
-                  10,
-                  0.1,
-                  p.decay,
-                  (v) => `${v.toFixed(1)}s`,
-                )}
-                {renderSlider(
-                  "Pre-Delay",
-                  "preDelay",
-                  0,
-                  0.15,
-                  0.005,
-                  p.preDelay,
-                  (v) => `${Math.round(v * 1000)}ms`,
-                )}
-              </>
-            )}
-            {effect.type === "Delay" && (
-              <>
-                {renderSlider(
-                  "Time",
-                  "delayTime",
-                  0.01,
-                  1,
-                  0.01,
-                  p.delayTime,
-                  (v) => `${Math.round(v * 1000)}ms`,
-                )}
-                {renderSlider(
-                  "Feedback",
-                  "feedback",
-                  0,
-                  0.9,
-                  0.01,
-                  p.feedback,
-                  (v) => `${Math.round(v * 100)}%`,
-                )}
-              </>
-            )}
-            {effect.type === "Chorus" && (
-              <>
-                {renderSlider(
-                  "Rate",
-                  "frequency",
-                  0.1,
-                  10,
-                  0.1,
-                  p.frequency,
-                  (v) => `${v.toFixed(1)}Hz`,
-                )}
-                {renderSlider(
-                  "Depth",
-                  "depth",
-                  0,
-                  1,
-                  0.01,
-                  p.depth,
-                  (v) => `${Math.round(v * 100)}%`,
-                )}
-              </>
-            )}
-            {effect.type === "AutoWah" && (
-              <>
-                {renderSlider(
-                  "Base Freq",
-                  "baseFrequency",
-                  50,
-                  2000,
-                  10,
-                  p.baseFrequency,
-                  (v) => `${v}Hz`,
-                )}
-                {renderSlider(
-                  "Octaves",
-                  "octaves",
-                  1,
-                  8,
-                  0.5,
-                  p.octaves,
-                  (v) => `${v}`,
-                )}
-              </>
-            )}
+
+            {/* Effect-Specific Parameters */}
+            <div className="flex flex-col gap-2 mt-1">
+              {effect.type === "Reverb" && (
+                <>
+                  {p.mode === "Native" && (
+                    <>
+                      {renderSlider(
+                        "Decay",
+                        "decay",
+                        0.5,
+                        10,
+                        0.1,
+                        p.decay ?? 2.5,
+                        (v) => `${v.toFixed(1)}s`,
+                      )}
+                      {renderSlider(
+                        "Pre-Delay",
+                        "preDelay",
+                        0,
+                        0.15,
+                        0.005,
+                        p.preDelay ?? 0.01,
+                        (v) => `${Math.round(v * 1000)}ms`,
+                      )}
+                    </>
+                  )}
+                  {p.mode === "Chamber" && (
+                    <>
+                      {renderSlider(
+                        "Pre-Delay",
+                        "preDelay",
+                        0,
+                        0.15,
+                        0.005,
+                        p.preDelay ?? 0.01,
+                        (v) => `${Math.round(v * 1000)}ms`,
+                      )}
+                      {renderSlider(
+                        "Room Size",
+                        "roomSize",
+                        0,
+                        1,
+                        0.01,
+                        p.roomSize ?? 0.5,
+                        (v) => `${Math.round(v * 100)}%`,
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+              {effect.type === "Delay" && (
+                <>
+                  {renderSlider(
+                    "Time",
+                    "delayTime",
+                    0.01,
+                    1,
+                    0.01,
+                    p.delayTime ?? 0.25,
+                    (v) => `${Math.round(v * 1000)}ms`,
+                  )}
+                  {renderSlider(
+                    "Feedback",
+                    "feedback",
+                    0,
+                    0.9,
+                    0.01,
+                    p.feedback ?? 0.4,
+                    (v) => `${Math.round(v * 100)}%`,
+                  )}
+                </>
+              )}
+              {effect.type === "Modulation" && (
+                <>
+                  {renderSlider(
+                    "Rate",
+                    "frequency",
+                    0.1,
+                    10,
+                    0.1,
+                    p.frequency ?? 1.5,
+                    (v) => `${v.toFixed(1)}Hz`,
+                  )}
+                  {p.mode !== "Phaser" && renderSlider(
+                    "Depth",
+                    "depth",
+                    0,
+                    1,
+                    0.01,
+                    p.depth ?? 0.5,
+                    (v) => `${Math.round(v * 100)}%`,
+                  )}
+                </>
+              )}
+              {effect.type === "Distortion" && (
+                <>
+                  {renderSlider(
+                    "Amount",
+                    "amount",
+                    0,
+                    1,
+                    0.01,
+                    p.amount ?? 0.5,
+                    (v) => `${Math.round(v * 100)}%`,
+                  )}
+                </>
+              )}
+              {effect.type === "Filter" && (
+                <>
+                  {renderSlider(
+                    "Base Freq",
+                    "baseFrequency",
+                    50,
+                    2000,
+                    10,
+                    p.baseFrequency ?? 150,
+                    (v) => `${v}Hz`,
+                  )}
+                  {renderSlider(
+                    "Octaves",
+                    "octaves",
+                    1,
+                    8,
+                    0.5,
+                    p.octaves ?? 4,
+                    (v) => `${v}`,
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
