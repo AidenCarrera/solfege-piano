@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import type * as ToneType from "tone";
 import { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "@/lib/config";
-import { EffectNode, ReverbParams, DelayParams, ModulationParams, DistortionParams, FilterParams } from "@/lib/effects";
+import { EffectNode, ReverbParams, DelayParams, ModulationParams, DistortionParams, FilterParams, CompressorParams } from "@/lib/effects";
 
 function toToneNote(name: string): string {
   return name.replace("s", "#");
@@ -596,6 +596,27 @@ export function useNotePlayer(
             instance = new Tone.AutoFilter({ frequency: 2, baseFrequency: p.baseFrequency ?? 150, octaves: p.octaves ?? 4 }).start();
           }
           if (instance) instance.wet.value = p.mix ?? 1.0;
+        } else if (nodeConfig.type === "Compressor") {
+          const p = nodeConfig.params as CompressorParams;
+          const comp = new Tone.Compressor({
+            threshold: p.threshold ?? -24,
+            ratio: p.ratio ?? 4,
+            attack: 0.003,
+            release: 0.25,
+          });
+          // Wrap compressor with dry/wet mix using native gain nodes
+          const inputGain = new Tone.Gain();
+          const outputGain = new Tone.Gain();
+          const wetGain = nativeContext.createGain();
+          const dryGain = nativeContext.createGain();
+          wetGain.gain.value = p.mix ?? 1.0;
+          dryGain.gain.value = 1 - (p.mix ?? 1.0);
+          Tone.connect(inputGain, comp);
+          Tone.connect(comp, wetGain);
+          Tone.connect(inputGain, dryGain);
+          Tone.connect(wetGain, outputGain);
+          Tone.connect(dryGain, outputGain);
+          instance = { _comp: comp, _inputGain: inputGain, _outputGain: outputGain, _wetGain: wetGain, _dryGain: dryGain, input: inputGain, output: outputGain, dispose: () => { comp.dispose(); inputGain.dispose(); outputGain.dispose(); wetGain.disconnect(); dryGain.disconnect(); } };
         }
         
         effect = {
@@ -681,6 +702,12 @@ export function useNotePlayer(
               instance.sensitivity = p.sensitivity ?? -20;
             }
           }
+        } else if (nodeConfig.type === "Compressor") {
+          const p = nodeConfig.params as CompressorParams;
+          instance._comp.threshold.value = p.threshold ?? -24;
+          instance._comp.ratio.value = p.ratio ?? 4;
+          instance._wetGain.gain.value = p.mix ?? 1.0;
+          instance._dryGain.gain.value = 1 - (p.mix ?? 1.0);
         }
       }
       

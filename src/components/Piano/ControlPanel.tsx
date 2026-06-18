@@ -25,6 +25,7 @@ import {
   Settings2,
   ChevronRight,
   ChevronsUpDown,
+  Gauge,
 } from "lucide-react";
 import {
   EffectNode,
@@ -57,6 +58,12 @@ const EFFECT_META: Record<
     color: "from-orange-500 to-amber-500",
     glow: "rgba(249,115,22,0.5)",
     description: "Frequency shaping",
+  },
+  Compressor: {
+    icon: <Gauge size={14} />,
+    color: "from-yellow-500 to-amber-400",
+    glow: "rgba(234,179,8,0.5)",
+    description: "Dynamic control",
   },
   Modulation: {
     icon: <Music size={14} />,
@@ -505,6 +512,28 @@ function EffectCard({
                   )}
                 </>
               )}
+              {effect.type === "Compressor" && (
+                <>
+                  {renderSlider(
+                    "Threshold",
+                    "threshold",
+                    -60,
+                    0,
+                    1,
+                    p.threshold ?? -24,
+                    (v) => `${v}dB`,
+                  )}
+                  {renderSlider(
+                    "Ratio",
+                    "ratio",
+                    1,
+                    20,
+                    0.5,
+                    p.ratio ?? 4,
+                    (v) => `${v}:1`,
+                  )}
+                </>
+              )}
               {effect.type === "Filter" && (
                 <>
                   {renderSlider(
@@ -786,7 +815,7 @@ export default function ControlPanel({
                     >
                       Add Effect — click or drag into chain
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 items-center">
                       {(Object.keys(EFFECT_META) as EffectType[]).map(
                         (type) => {
                           const meta = EFFECT_META[type];
@@ -861,6 +890,28 @@ export default function ControlPanel({
                           );
                         },
                       )}
+
+                      <AnimatePresence>
+                        {effectChain.length > 0 && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            onClick={() => setEffectChain([])}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-red-400 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 hover:text-red-300 transition-colors shadow-md cursor-pointer ml-auto"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 25,
+                            }}
+                          >
+                            <Trash2 size={12} />
+                            <span>Clear All</span>
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
