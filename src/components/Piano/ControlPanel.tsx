@@ -1017,33 +1017,6 @@ export default function ControlPanel({
                   transition={{ duration: 0.18 }}
                   className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
                 >
-                  {/* Volume */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                      <label
-                        className="text-[11px] font-semibold uppercase tracking-wider"
-                        style={{ color: "rgba(255,255,255,0.45)" }}
-                      >
-                        Volume
-                      </label>
-                      <span
-                        className="text-[11px] font-mono px-1.5 py-px rounded"
-                        style={{ background: "rgba(255,255,255,0.08)" }}
-                      >
-                        {Math.round(volume * 100)}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={volume}
-                      onChange={(e) => setVolume(parseFloat(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-
                   {/* Sound Type */}
                   <div className="flex flex-col gap-2">
                     <label
@@ -1128,6 +1101,33 @@ export default function ControlPanel({
                       onChange={(e) =>
                         setPianoScale(parseFloat(e.target.value))
                       }
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Volume */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <label
+                        className="text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: "rgba(255,255,255,0.45)" }}
+                      >
+                        Volume
+                      </label>
+                      <span
+                        className="text-[11px] font-mono px-1.5 py-px rounded"
+                        style={{ background: "rgba(255,255,255,0.08)" }}
+                      >
+                        {Math.round(volume * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={volume}
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
                       className="w-full"
                     />
                   </div>
