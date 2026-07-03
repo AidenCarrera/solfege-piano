@@ -31,3 +31,10 @@ export const PIANO_CONFIG = {
 
 export const SOUND_OPTIONS = ["Piano", "Solfege"] as const;
 export type SoundType = (typeof SOUND_OPTIONS)[number];
+
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : "https://solfegepiano.vercel.app");
+

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import { SITE_URL } from "@/lib/config";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,7 +16,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://solfegepiano.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Solfege Piano | Interactive Music Learning",
     template: "%s | Solfege Piano",
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     title: "Solfege Piano | Interactive Music Learning",
     description:
       "An interactive browser-based piano that lets you play notes and hear solfege syllables. Perfect for music students and teachers.",
-    url: "https://solfegepiano.vercel.app",
+    url: SITE_URL,
     siteName: "Solfege Piano",
     locale: "en_US",
     type: "website",
@@ -107,7 +108,7 @@ export default function RootLayout({
       "@type": "Person",
       name: "Aiden Carrera",
     },
-    url: "https://solfegepiano.vercel.app",
+    url: SITE_URL,
     offers: {
       "@type": "Offer",
       price: "0",
