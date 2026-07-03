@@ -1,7 +1,7 @@
 # Playable Piano 🎹 – Next.js Side Project
 
-A browser-based piano built with **Next.js**, **React**, and **Howler.js** that helps users learn and practice **solfege** efficiently.
-This project combines interactive web audio, responsive design, and customizable controls to make a playable piano/sampler.
+A browser-based piano built with **Next.js**, **React**, and **Tone.js** that helps users learn and practice **solfege** efficiently.
+This project combines interactive web audio, responsive design, customizable controls, and a dynamic audio effects rack.
 
 ## Purpose
 
@@ -11,17 +11,17 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 
 ## Features
 
-- Play notes using keyboard keys or mouse clicks/drags
-- Solfege mode: plays solfege syllables samples on keys
-- Adjustable volume
-- Toggle note labels on/off
-- Dynamically scale the piano (zoom in/out)
-- Customizable background color via color picker
-- Sustain mode with Spacebar or button toggle
-- Smooth audio playback using Howler.js
-- Preloading of audio samples with progress indicator
-- Dynamic octave ranges with slider control
-- Polyphony support with automatic voice management
+- **Play notes** using keyboard keys, mouse clicks/drags, or touch
+- **Solfege mode**: plays solfege syllables samples on keys
+- **Dynamic Effects Rack**: add, toggle, and drag-to-reorder audio effects (Distortion, Filter, Compressor, Modulation, Delay, Reverb)
+- **Adjustable parameters** for each effect
+- **Toggle note labels** on/off (traditional names or solfege)
+- **Dynamically scale** the piano (zoom in/out)
+- **Customizable background color** via color picker
+- **Sustain mode** with Spacebar or button toggle
+- **Preloading of audio samples** with progress indicator
+- **Dynamic octave ranges** with slider control
+- **Polyphony support** with automatic voice management
 
 ## Tech Stack
 
@@ -29,7 +29,8 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 - **React 19** – UI library for building interactive components
 - **Tailwind CSS v4** – Utility-first CSS framework for responsive design
 - **TypeScript** – Adds static type checking and improved developer experience
-- **Howler.js** – Handles audio playback and polyphony in the browser
+- **Tone.js & Web Audio API** – Handles audio synthesis, sampler playback, and custom effects routing
+- **@hello-pangea/dnd** – Enables drag-and-drop reordering for the effects rack
 
 ## Installation and setup
 
@@ -52,6 +53,23 @@ pnpm dev
 # Open your browser at http://localhost:3000 to view the app
 ```
 
+## Environment Configuration
+
+Copy the template environment file and customize the site's base URL (used for metadata and sitemaps) as needed:
+
+```bash
+cp .env.example .env.local
+```
+
+The config uses the following variable:
+
+```env
+# The public base URL of the site
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+If not provided, the app dynamically falls back to Vercel's preview environment variables in deployment or defaults to `https://solfegepiano.vercel.app`.
+
 ## Playing The Piano
 
 - Mouse / Touch: click, drag, or touch keys to play notes
@@ -62,10 +80,12 @@ pnpm dev
 - Sustain Mode: toggle button with click or Spacebar
 - Background: select color using color picker
 - Octaves: adjust octave range (except when Solfege is active, which locks to one octave)
+- Effects Rack: add effects under the "Effects" tab, tweak sliders, and drag card handles to reorder the signal chain
 
 ## Future Improvements
 
 - Add customizable key mappings
-- Add more instrument sounds (strings, synths, etc.)
-- Add compression, eq, and limiter settings for advanced users
-- Improve mobile responsiveness
+- Add MIDI keyboard support
+- Add recording & looping features
+- Add more instrument soundbanks (strings, synths, etc.)
+- Improve responsiveness
