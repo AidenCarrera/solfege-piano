@@ -18,7 +18,7 @@ const robotoMono = Roboto_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Solfege Piano | Interactive Music Learning",
+    default: "Solfege Piano",
     template: "%s | Solfege Piano",
   },
   description:
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Solfege Piano | Interactive Music Learning",
+    title: "Solfege Piano",
     description:
       "An interactive browser-based piano that lets you play notes and hear solfege syllables. Perfect for music students and teachers.",
     url: SITE_URL,
@@ -84,6 +84,9 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
+  },
+  verification: {
+    google: "ivXP4BMnsO5q10Rcb1-RDmAgpQmwBQR-d4ckfFDQB9c",
   },
 };
 
