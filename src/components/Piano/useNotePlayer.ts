@@ -893,11 +893,11 @@ export function useNotePlayer(
   }, [sustainMode, notes]);
 
   const playNote = useCallback(
-    async (fileName: string, noteName: string, isKeyboard = false) => {
+    (fileName: string, noteName: string, isKeyboard = false) => {
       if (!Tone || !buffers || !buffers.loaded) return;
 
       if (Tone.getContext().state !== "running") {
-        await Tone.start();
+        Tone.start();
       }
 
       if (!samplerRef.current) {
