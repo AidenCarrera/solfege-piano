@@ -31,12 +31,15 @@ export function useActiveNotes() {
    * @param note - Note name to activate
    * @param durationMs - How long to keep the note active (in milliseconds)
    */
-  const flashNote = useCallback((note: string, durationMs: number) => {
-    activateNote(note);
-    setTimeout(() => {
-      deactivateNote(note);
-    }, durationMs);
-  }, [activateNote, deactivateNote]);
+  const flashNote = useCallback(
+    (note: string, durationMs: number) => {
+      activateNote(note);
+      setTimeout(() => {
+        deactivateNote(note);
+      }, durationMs);
+    },
+    [activateNote, deactivateNote],
+  );
 
   /**
    * Clear all active notes

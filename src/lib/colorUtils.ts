@@ -49,14 +49,17 @@ export function getContrastColor(hexColor: string): string {
  * @param opacity - Opacity of the shadow (0-1)
  * @returns RGBA color string
  */
-export function getShadowColor(hexColor: string, opacity: number = 0.5): string {
+export function getShadowColor(
+  hexColor: string,
+  opacity: number = 0.5,
+): string {
   const rgb = hexToRgb(hexColor);
   if (!rgb) return `rgba(0, 0, 0, ${opacity})`;
 
   // If background is very dark, use a lighter shadow (glow) or keep it black?
   // Usually shadows are black. Let's stick to black shadows but maybe adjust opacity.
   // Alternatively, for very dark backgrounds, we might want a colored glow, but standard shadow is safe.
-  
+
   // For now, let's return a standard black shadow with variable opacity
   return `rgba(0, 0, 0, ${opacity})`;
 }
@@ -68,21 +71,24 @@ export function getShadowColor(hexColor: string, opacity: number = 0.5): string 
  * @returns Adjusted hex color string
  */
 export function adjustColor(hex: string, amount: number): string {
-    let color = hex.replace('#', '');
-    if (color.length === 3) {
-        color = color.split('').map(c => c + c).join('');
-    }
+  let color = hex.replace("#", "");
+  if (color.length === 3) {
+    color = color
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
 
-    const num = parseInt(color, 16);
-    let r = (num >> 16) + amount;
-    let g = ((num >> 8) & 0x00FF) + amount;
-    let b = (num & 0x00FF) + amount;
+  const num = parseInt(color, 16);
+  let r = (num >> 16) + amount;
+  let g = ((num >> 8) & 0x00ff) + amount;
+  let b = (num & 0x00ff) + amount;
 
-    r = Math.max(Math.min(255, r), 0);
-    g = Math.max(Math.min(255, g), 0);
-    b = Math.max(Math.min(255, b), 0);
+  r = Math.max(Math.min(255, r), 0);
+  g = Math.max(Math.min(255, g), 0);
+  b = Math.max(Math.min(255, b), 0);
 
-    return '#' + (b | (g << 8) | (r << 16)).toString(16).padStart(6, '0');
+  return "#" + (b | (g << 8) | (r << 16)).toString(16).padStart(6, "0");
 }
 
 /**
@@ -92,9 +98,9 @@ export function adjustColor(hex: string, amount: number): string {
  * @returns RGBA string
  */
 export function hexToRgba(hex: string, alpha: number): string {
-    const rgb = hexToRgb(hex);
-    if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
-    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  const rgb = hexToRgb(hex);
+  if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
 /**
@@ -103,15 +109,15 @@ export function hexToRgba(hex: string, alpha: number): string {
  * @returns RGBA string for the panel background
  */
 export function getGlassPanelColor(bgColor: string): string {
-    const contrast = getContrastColor(bgColor);
-    const isDarkBg = contrast === "#ffffff";
-    
-    // If background is dark, make panel slightly lighter.
-    // If background is light, make panel slightly darker.
-    // But keep it subtle.
-    const adjustment = isDarkBg ? 20 : -20;
-    const adjustedHex = adjustColor(bgColor, adjustment);
-    
-    // Use low opacity for glass effect
-    return hexToRgba(adjustedHex, 0.3); 
+  const contrast = getContrastColor(bgColor);
+  const isDarkBg = contrast === "#ffffff";
+
+  // If background is dark, make panel slightly lighter.
+  // If background is light, make panel slightly darker.
+  // But keep it subtle.
+  const adjustment = isDarkBg ? 20 : -20;
+  const adjustedHex = adjustColor(bgColor, adjustment);
+
+  // Use low opacity for glass effect
+  return hexToRgba(adjustedHex, 0.3);
 }

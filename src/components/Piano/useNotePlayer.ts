@@ -4,13 +4,25 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import type * as ToneType from "tone";
 import { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "@/lib/config";
-import { EffectNode, ReverbParams, DelayParams, ModulationParams, DistortionParams, FilterParams, CompressorParams } from "@/lib/effects";
+import {
+  EffectNode,
+  ReverbParams,
+  DelayParams,
+  ModulationParams,
+  DistortionParams,
+  FilterParams,
+  CompressorParams,
+} from "@/lib/effects";
 
 function toToneNote(name: string): string {
   return name.replace("s", "#");
 }
 
-function createImpulseResponse(context: AudioContext, duration: number, decay: number) {
+function createImpulseResponse(
+  context: AudioContext,
+  duration: number,
+  decay: number,
+) {
   const sampleRate = context.sampleRate;
   const length = Math.max(1, sampleRate * duration);
   const impulse = context.createBuffer(2, length, sampleRate);
@@ -34,30 +46,35 @@ class NativeReverb {
   private context: AudioContext;
   private currentDecay: number;
 
-  constructor(context: AudioContext, decay: number, preDelay: number, Tone: typeof ToneType) {
+  constructor(
+    context: AudioContext,
+    decay: number,
+    preDelay: number,
+    Tone: typeof ToneType,
+  ) {
     this.context = context;
     this.currentDecay = decay;
-    
+
     // Use Tone.Gain for external interoperability
     this.input = new Tone.Gain();
     this.output = new Tone.Gain();
-    
+
     this.delayNode = context.createDelay(1.0);
     this.delayNode.delayTime.setValueAtTime(preDelay, context.currentTime);
-    
+
     this.convolver = context.createConvolver();
     this.convolver.buffer = createImpulseResponse(context, decay, 3.0);
-    
+
     this.wetGain = context.createGain();
     this.dryGain = context.createGain();
-    
+
     // Connect input to delayNode, then delayNode to convolver (wet path)
     Tone.connect(this.input, this.delayNode);
     this.delayNode.connect(this.convolver);
-    
+
     // Connect input to dryGain (dry path)
     Tone.connect(this.input, this.dryGain);
-    
+
     this.convolver.connect(this.wetGain);
     Tone.connect(this.wetGain, this.output);
     Tone.connect(this.dryGain, this.output);
@@ -105,34 +122,34 @@ class NativeBitCrusher {
   private waveShaper: WaveShaperNode;
   private wetGain: GainNode;
   private dryGain: GainNode;
-  
+
   constructor(context: AudioContext, bits: number, Tone: typeof ToneType) {
     this.input = new Tone.Gain();
     this.output = new Tone.Gain();
-    
+
     this.waveShaper = context.createWaveShaper();
     this.waveShaper.curve = createCrusherCurve(bits);
-    
+
     this.wetGain = context.createGain();
     this.dryGain = context.createGain();
-    
+
     Tone.connect(this.input, this.waveShaper);
     this.waveShaper.connect(this.wetGain);
     Tone.connect(this.input, this.dryGain);
-    
+
     Tone.connect(this.wetGain, this.output);
     Tone.connect(this.dryGain, this.output);
   }
-  
+
   set bits(val: number) {
     this.waveShaper.curve = createCrusherCurve(val);
   }
-  
+
   set mix(value: number) {
     this.wetGain.gain.value = value;
     this.dryGain.gain.value = 1 - value;
   }
-  
+
   dispose() {
     this.input.dispose();
     this.output.dispose();
@@ -149,7 +166,12 @@ class NativeLowpassCombFilter {
   private filterNode: BiquadFilterNode;
   private feedbackGain: GainNode;
 
-  constructor(context: AudioContext, delayTime: number, resonance: number, dampening: number) {
+  constructor(
+    context: AudioContext,
+    delayTime: number,
+    resonance: number,
+    dampening: number,
+  ) {
     this.input = context.createGain();
     this.output = context.createGain();
 
@@ -173,11 +195,17 @@ class NativeLowpassCombFilter {
   }
 
   set resonance(val: number) {
-    this.feedbackGain.gain.setValueAtTime(val, this.delayNode.context.currentTime);
+    this.feedbackGain.gain.setValueAtTime(
+      val,
+      this.delayNode.context.currentTime,
+    );
   }
 
   set dampening(val: number) {
-    this.filterNode.frequency.setValueAtTime(val, this.delayNode.context.currentTime);
+    this.filterNode.frequency.setValueAtTime(
+      val,
+      this.delayNode.context.currentTime,
+    );
   }
 
   dispose() {
@@ -238,7 +266,12 @@ class NativeFreeverb {
   private currentRoomSize: number;
   private context: AudioContext;
 
-  constructor(context: AudioContext, roomSize: number, preDelay: number, Tone: typeof ToneType) {
+  constructor(
+    context: AudioContext,
+    roomSize: number,
+    preDelay: number,
+    Tone: typeof ToneType,
+  ) {
     this.context = context;
     this.input = new Tone.Gain();
     this.output = new Tone.Gain();
@@ -255,7 +288,7 @@ class NativeFreeverb {
       1277 / 44100,
       1356 / 44100,
       1188 / 44100,
-      1116 / 44100
+      1116 / 44100,
     ];
 
     const allpassFrequencies = [225, 556, 441, 341];
@@ -266,11 +299,16 @@ class NativeFreeverb {
     const resonance = roomSize * 0.28 + 0.7;
     const dampening = 3000;
 
-    this.combFilters = combTunings.map(delayTime => {
-      return new NativeLowpassCombFilter(context, delayTime, resonance, dampening);
+    this.combFilters = combTunings.map((delayTime) => {
+      return new NativeLowpassCombFilter(
+        context,
+        delayTime,
+        resonance,
+        dampening,
+      );
     });
 
-    this.allpassFilters = allpassFrequencies.map(freq => {
+    this.allpassFilters = allpassFrequencies.map((freq) => {
       return new NativeAllpassFilter(context, 1 / freq, 0.5);
     });
 
@@ -279,11 +317,11 @@ class NativeFreeverb {
     Tone.connect(this.input, this.delayNode);
     this.delayNode.connect(this.wetGain);
 
-    this.combFilters.forEach(cf => {
+    this.combFilters.forEach((cf) => {
       this.wetGain.connect(cf.input);
     });
 
-    this.combFilters.forEach(cf => {
+    this.combFilters.forEach((cf) => {
       cf.output.connect(this.allpassFilters[0]!.input);
     });
 
@@ -297,13 +335,16 @@ class NativeFreeverb {
 
   set mix(value: number) {
     this.wetGain.gain.setValueAtTime(value, this.wetGain.context.currentTime);
-    this.dryGain.gain.setValueAtTime(1 - value, this.dryGain.context.currentTime);
+    this.dryGain.gain.setValueAtTime(
+      1 - value,
+      this.dryGain.context.currentTime,
+    );
   }
 
   set roomSize(value: number) {
     this.currentRoomSize = value;
     const resonance = value * 0.28 + 0.7;
-    this.combFilters.forEach(cf => {
+    this.combFilters.forEach((cf) => {
       cf.resonance = resonance;
     });
   }
@@ -318,12 +359,10 @@ class NativeFreeverb {
     this.delayNode.disconnect();
     this.wetGain.disconnect();
     this.dryGain.disconnect();
-    this.combFilters.forEach(cf => cf.dispose());
-    this.allpassFilters.forEach(ap => ap.dispose());
+    this.combFilters.forEach((cf) => cf.dispose());
+    this.allpassFilters.forEach((ap) => ap.dispose());
   }
 }
-
-
 
 interface ActiveEffect {
   id: string;
@@ -340,34 +379,36 @@ export function useNotePlayer(
   soundType: string,
   sustainMode: boolean,
   notes: Note[],
-  enablePreload: boolean = true
+  enablePreload: boolean = true,
 ) {
   const [preloadProgress, setPreloadProgress] = useState<number>(0);
   const [isPreloading, setIsPreloading] = useState<boolean>(false);
 
   const [Tone, setTone] = useState<typeof ToneType | null>(null);
-  const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(null);
+  const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(
+    null,
+  );
   const [samplerCreated, setSamplerCreated] = useState<boolean>(false);
   const [contextState, setContextState] = useState<string>("suspended");
 
   const samplerRef = useRef<ToneType.Sampler | null>(null);
   const limiterRef = useRef<ToneType.Limiter | null>(null);
   const activeEffectsRef = useRef<Map<string, ActiveEffect>>(new Map());
-  
+
   const heldKeys = useRef<Set<string>>(new Set());
   const activeVoices = useRef<string[]>([]);
   const pedalActive = useRef(false);
 
   useEffect(() => {
     let mounted = true;
-    
+
     import("tone").then((t) => {
       if (!mounted) return;
       // Configure default context for low latency
       t.getContext().lookAhead = 0.01;
       // Force initialization of Tone.Transport to prevent LFO crashes
       t.getTransport();
-      
+
       // Initialize global limiter to prevent clipping
       const limiter = new t.Limiter(-1);
       limiter.connect(t.getContext().rawContext.destination);
@@ -375,10 +416,10 @@ export function useNotePlayer(
 
       setTone(t);
     });
-    
-    return () => { 
+
+    return () => {
       mounted = false;
-      activeEffectsRef.current.forEach(effect => {
+      activeEffectsRef.current.forEach((effect) => {
         if (effect.instance && typeof effect.instance.dispose === "function") {
           effect.instance.dispose();
         }
@@ -407,7 +448,9 @@ export function useNotePlayer(
     window.addEventListener("keydown", resumeContext, { capture: true });
 
     return () => {
-      window.removeEventListener("pointerdown", resumeContext, { capture: true });
+      window.removeEventListener("pointerdown", resumeContext, {
+        capture: true,
+      });
       window.removeEventListener("keydown", resumeContext, { capture: true });
     };
   }, [Tone]);
@@ -444,7 +487,9 @@ export function useNotePlayer(
     }
 
     const urls: Record<string, string> = {};
-    notes.forEach((n) => { urls[toToneNote(n.name)] = `${n.fileName}.mp3`; });
+    notes.forEach((n) => {
+      urls[toToneNote(n.name)] = `${n.fileName}.mp3`;
+    });
 
     const newBuffers = new Tone.ToneAudioBuffers({
       urls,
@@ -455,7 +500,9 @@ export function useNotePlayer(
         setIsPreloading(false);
         setBuffers(newBuffers);
       },
-      onerror: () => { if (mounted) setIsPreloading(false); }
+      onerror: () => {
+        if (mounted) setIsPreloading(false);
+      },
     });
 
     return () => {
@@ -476,7 +523,7 @@ export function useNotePlayer(
     }
 
     const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
-    notes.forEach(n => {
+    notes.forEach((n) => {
       const toneNote = toToneNote(n.name);
       try {
         if (buffers.has && !buffers.has(toneNote)) return;
@@ -492,7 +539,7 @@ export function useNotePlayer(
       release: PIANO_CONFIG.FADE_OUT_MS / 1000,
       attack: PIANO_CONFIG.ATTACK_MS / 1000,
     });
-    
+
     sampler.volume.value = Tone.gainToDb(volume);
     if (limiterRef.current) {
       sampler.connect(limiterRef.current);
@@ -520,8 +567,6 @@ export function useNotePlayer(
     }
   }, [volume, Tone]);
 
-
-
   // Dynamic Audio Routing
   useEffect(() => {
     if (!Tone || !samplerRef.current || !samplerCreated) return;
@@ -529,10 +574,10 @@ export function useNotePlayer(
 
     // 1. Reconcile existing effects
     const newActiveEffects = new Map<string, ActiveEffect>();
-    
+
     effectChain.forEach((nodeConfig) => {
       let effect = activeEffectsRef.current.get(nodeConfig.id);
-      
+
       // Re-instantiate if the mode changed
       if (effect && effect.mode !== nodeConfig.params.mode) {
         if (effect.instance && typeof effect.instance.dispose === "function") {
@@ -540,37 +585,64 @@ export function useNotePlayer(
         }
         effect = undefined;
       }
-      
+
       if (!effect) {
         // Instantiate new effect
         let instance: any;
         if (nodeConfig.type === "Reverb") {
           const p = nodeConfig.params as ReverbParams;
           if (p.mode === "Native") {
-            instance = new NativeReverb(nativeContext, p.decay ?? 2.5, p.preDelay ?? 0.01, Tone);
+            instance = new NativeReverb(
+              nativeContext,
+              p.decay ?? 2.5,
+              p.preDelay ?? 0.01,
+              Tone,
+            );
             instance.mix = p.mix ?? 0.15;
           } else if (p.mode === "Chamber") {
-            instance = new NativeFreeverb(nativeContext, p.roomSize ?? 0.5, p.preDelay ?? 0.01, Tone);
+            instance = new NativeFreeverb(
+              nativeContext,
+              p.roomSize ?? 0.5,
+              p.preDelay ?? 0.01,
+              Tone,
+            );
             instance.mix = p.mix ?? 0.15;
           }
         } else if (nodeConfig.type === "Delay") {
           const p = nodeConfig.params as DelayParams;
           if (p.mode === "Feedback") {
-            instance = new Tone.FeedbackDelay({ delayTime: p.delayTime ?? 0.25, feedback: p.feedback ?? 0.4 });
+            instance = new Tone.FeedbackDelay({
+              delayTime: p.delayTime ?? 0.25,
+              feedback: p.feedback ?? 0.4,
+            });
           } else if (p.mode === "PingPong") {
-            instance = new Tone.PingPongDelay({ delayTime: p.delayTime ?? 0.25, feedback: p.feedback ?? 0.4 });
+            instance = new Tone.PingPongDelay({
+              delayTime: p.delayTime ?? 0.25,
+              feedback: p.feedback ?? 0.4,
+            });
           }
           if (instance) instance.wet.value = p.mix ?? 0.2;
         } else if (nodeConfig.type === "Modulation") {
           const p = nodeConfig.params as ModulationParams;
           if (Tone.getContext().state !== "running") return;
           if (p.mode === "Chorus") {
-            instance = new Tone.Chorus({ frequency: p.frequency ?? 1.5, delayTime: 2.5, depth: p.depth ?? 0.5 }).start();
+            instance = new Tone.Chorus({
+              frequency: p.frequency ?? 1.5,
+              delayTime: 2.5,
+              depth: p.depth ?? 0.5,
+            }).start();
           } else if (p.mode === "Vibrato") {
-            instance = new Tone.Vibrato({ frequency: p.frequency ?? 5.0, depth: p.depth ?? 0.1 });
+            instance = new Tone.Vibrato({
+              frequency: p.frequency ?? 5.0,
+              depth: p.depth ?? 0.1,
+            });
           } else if (p.mode === "Phaser") {
             // Tone.Phaser does not have a start() method on the instance itself
-            instance = new Tone.Phaser({ frequency: p.frequency ?? 1.5, octaves: 3, baseFrequency: 1000 });
+            instance = new Tone.Phaser({
+              frequency: p.frequency ?? 1.5,
+              octaves: 3,
+              baseFrequency: 1000,
+            });
           }
           if (instance) instance.wet.value = p.mix ?? 0.5;
         } else if (nodeConfig.type === "Distortion") {
@@ -590,10 +662,18 @@ export function useNotePlayer(
         } else if (nodeConfig.type === "Filter") {
           const p = nodeConfig.params as FilterParams;
           if (p.mode === "AutoWah") {
-            instance = new Tone.AutoWah({ baseFrequency: p.baseFrequency ?? 150, octaves: p.octaves ?? 4, sensitivity: p.sensitivity ?? -20 });
+            instance = new Tone.AutoWah({
+              baseFrequency: p.baseFrequency ?? 150,
+              octaves: p.octaves ?? 4,
+              sensitivity: p.sensitivity ?? -20,
+            });
           } else if (p.mode === "AutoFilter") {
             if (Tone.getContext().state !== "running") return;
-            instance = new Tone.AutoFilter({ frequency: 2, baseFrequency: p.baseFrequency ?? 150, octaves: p.octaves ?? 4 }).start();
+            instance = new Tone.AutoFilter({
+              frequency: 2,
+              baseFrequency: p.baseFrequency ?? 150,
+              octaves: p.octaves ?? 4,
+            }).start();
           }
           if (instance) instance.wet.value = p.mix ?? 1.0;
         } else if (nodeConfig.type === "Compressor") {
@@ -616,22 +696,37 @@ export function useNotePlayer(
           Tone.connect(inputGain, dryGain);
           Tone.connect(wetGain, outputGain);
           Tone.connect(dryGain, outputGain);
-          instance = { _comp: comp, _inputGain: inputGain, _outputGain: outputGain, _wetGain: wetGain, _dryGain: dryGain, input: inputGain, output: outputGain, dispose: () => { comp.dispose(); inputGain.dispose(); outputGain.dispose(); wetGain.disconnect(); dryGain.disconnect(); } };
+          instance = {
+            _comp: comp,
+            _inputGain: inputGain,
+            _outputGain: outputGain,
+            _wetGain: wetGain,
+            _dryGain: dryGain,
+            input: inputGain,
+            output: outputGain,
+            dispose: () => {
+              comp.dispose();
+              inputGain.dispose();
+              outputGain.dispose();
+              wetGain.disconnect();
+              dryGain.disconnect();
+            },
+          };
         }
-        
+
         effect = {
           id: nodeConfig.id,
           type: nodeConfig.type,
           mode: nodeConfig.params.mode,
           instance,
           input: instance?.input || instance,
-          output: instance?.output || instance
+          output: instance?.output || instance,
         };
       } else {
         // Update parameters
         const { instance } = effect;
         if (!instance) return; // In case of failed instantiation (like LFOs before context running)
-        
+
         if (nodeConfig.type === "Reverb") {
           const p = nodeConfig.params as ReverbParams;
           if (p.mode === "Native") {
@@ -653,13 +748,13 @@ export function useNotePlayer(
         } else if (nodeConfig.type === "Modulation") {
           const p = nodeConfig.params as ModulationParams;
           instance.wet.value = p.mix ?? 0.5;
-          
+
           if (instance.frequency?.value !== undefined) {
             instance.frequency.value = p.frequency ?? 1.5;
           } else {
             instance.frequency = p.frequency ?? 1.5;
           }
-          
+
           if (p.mode !== "Phaser") {
             if (instance.depth?.value !== undefined) {
               instance.depth.value = p.depth ?? 0.5;
@@ -674,7 +769,10 @@ export function useNotePlayer(
             instance.distortion = p.amount ?? 0.5;
           } else if (p.mode === "BitCrusher") {
             instance.mix = p.mix ?? 0.5;
-            instance.bits = Math.max(1, Math.round((1 - (p.amount ?? 0.5)) * 8));
+            instance.bits = Math.max(
+              1,
+              Math.round((1 - (p.amount ?? 0.5)) * 8),
+            );
           } else if (p.mode === "Chebyshev") {
             instance.wet.value = p.mix ?? 0.5;
             instance.order = Math.max(1, Math.round((p.amount ?? 0.5) * 50));
@@ -682,19 +780,19 @@ export function useNotePlayer(
         } else if (nodeConfig.type === "Filter") {
           const p = nodeConfig.params as FilterParams;
           instance.wet.value = p.mix ?? 1.0;
-          
+
           if (instance.baseFrequency?.value !== undefined) {
             instance.baseFrequency.value = p.baseFrequency ?? 150;
           } else {
             instance.baseFrequency = p.baseFrequency ?? 150;
           }
-          
+
           if (instance.octaves?.value !== undefined) {
             instance.octaves.value = p.octaves ?? 4;
           } else {
             instance.octaves = p.octaves ?? 4;
           }
-          
+
           if (p.mode === "AutoWah") {
             if (instance.sensitivity?.value !== undefined) {
               instance.sensitivity.value = p.sensitivity ?? -20;
@@ -710,7 +808,7 @@ export function useNotePlayer(
           instance._dryGain.gain.value = 1 - (p.mix ?? 1.0);
         }
       }
-      
+
       newActiveEffects.set(nodeConfig.id, effect);
     });
 
@@ -729,12 +827,12 @@ export function useNotePlayer(
     // Also disconnect all effect outputs to prevent stale connections
     newActiveEffects.forEach((effect) => {
       if (effect.output && typeof effect.output.disconnect === "function") {
-         effect.output.disconnect();
+        effect.output.disconnect();
       }
     });
 
     let currentOutput: any = samplerRef.current;
-    
+
     effectChain.forEach((nodeConfig) => {
       if (nodeConfig.enabled) {
         const effect = newActiveEffects.get(nodeConfig.id);
@@ -756,7 +854,6 @@ export function useNotePlayer(
         currentOutput.connect(nativeContext.destination);
       }
     }
-
   }, [effectChain, Tone, samplerCreated, contextState]);
 
   // Keyboard Pedal
@@ -774,11 +871,13 @@ export function useNotePlayer(
         pedalActive.current = false;
 
         if (samplerRef.current && Tone) {
-          notes.forEach(n => {
+          notes.forEach((n) => {
             const toneNote = toToneNote(n.name);
             if (!heldKeys.current.has(n.name)) {
               samplerRef.current?.triggerRelease(toneNote, Tone.now());
-              activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
+              activeVoices.current = activeVoices.current.filter(
+                (v) => v !== toneNote,
+              );
             }
           });
         }
@@ -803,7 +902,7 @@ export function useNotePlayer(
 
       if (!samplerRef.current) {
         const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
-        notes.forEach(n => {
+        notes.forEach((n) => {
           const toneNote = toToneNote(n.name);
           try {
             if (buffers.has && !buffers.has(toneNote)) return;
@@ -819,11 +918,11 @@ export function useNotePlayer(
           release: PIANO_CONFIG.FADE_OUT_MS / 1000,
           attack: PIANO_CONFIG.ATTACK_MS / 1000,
         });
-        
+
         samplerRef.current.volume.value = Tone.gainToDb(volume);
-        
+
         // Trigger a fake re-evaluation of effectChain by copying it?
-        // Actually, we can just connect it to the destination directly if there are no effects, 
+        // Actually, we can just connect it to the destination directly if there are no effects,
         // but the routing useEffect will handle it automatically!
         // To be safe and avoid silence before the useEffect runs, we connect to destination initially.
         if (limiterRef.current) {
@@ -839,22 +938,24 @@ export function useNotePlayer(
       }
 
       const toneNote = toToneNote(noteName);
-      
+
       samplerRef.current.triggerRelease(toneNote, Tone.now());
-      activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
-      
+      activeVoices.current = activeVoices.current.filter((v) => v !== toneNote);
+
       activeVoices.current.push(toneNote);
       if (activeVoices.current.length > PIANO_CONFIG.MAX_POLYPHONY) {
         const oldestNote = activeVoices.current.shift();
         if (oldestNote) {
           samplerRef.current.triggerRelease(oldestNote, Tone.now());
-          activeVoices.current = activeVoices.current.filter(v => v !== oldestNote);
+          activeVoices.current = activeVoices.current.filter(
+            (v) => v !== oldestNote,
+          );
         }
       }
 
       samplerRef.current.triggerAttack(toneNote, Tone.now());
     },
-    [sustainMode, Tone, buffers, volume, notes]
+    [sustainMode, Tone, buffers, volume, notes],
   );
 
   const stopNote = useCallback(
@@ -868,10 +969,12 @@ export function useNotePlayer(
       const toneNote = toToneNote(noteName);
       if (samplerRef.current && Tone) {
         samplerRef.current.triggerRelease(toneNote, Tone.now());
-        activeVoices.current = activeVoices.current.filter(v => v !== toneNote);
+        activeVoices.current = activeVoices.current.filter(
+          (v) => v !== toneNote,
+        );
       }
     },
-    [sustainMode, Tone]
+    [sustainMode, Tone],
   );
 
   const stopAllNotes = useCallback(() => {

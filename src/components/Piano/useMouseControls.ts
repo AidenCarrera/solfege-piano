@@ -15,14 +15,14 @@ import { PIANO_CONFIG } from "@/lib/config";
  * @param stopNote - Callback to stop note playback. Receives noteName and isKeyboard flag.
  * @param flashNote - Optional callback to temporarily highlight a note.
  * @param clearAllNotes - Optional callback to clear all visual highlights.
- * 
+ *
  * @returns Object with handlers: handleMouseDown, handleMouseEnter, handleMouseUp
  */
 export function useMouseControls(
   playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
   stopNote: (noteName: string, isKeyboard: boolean) => void,
   flashNote?: (note: string, duration: number) => void,
-  clearAllNotes?: () => void
+  clearAllNotes?: () => void,
 ) {
   /* ----- Track if the mouse is currently pressed ----- */
   const isMouseDown = useRef(false);
@@ -54,7 +54,7 @@ export function useMouseControls(
         flashNote(name, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
       }
     },
-    [playNote, stopNote, flashNote]
+    [playNote, stopNote, flashNote],
   );
 
   /**
@@ -65,7 +65,7 @@ export function useMouseControls(
       isMouseDown.current = true;
       triggerNote(file, name);
     },
-    [triggerNote]
+    [triggerNote],
   );
 
   /**
@@ -76,7 +76,7 @@ export function useMouseControls(
       if (!isMouseDown.current) return;
       triggerNote(file, name);
     },
-    [triggerNote]
+    [triggerNote],
   );
 
   /**

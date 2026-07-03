@@ -3,11 +3,11 @@ import { Note, BASE_NOTES, KEYBOARD_MAP_C4_C5 } from "./note";
 
 /**
  * Generates a list of piano notes for a given octave range
- * 
+ *
  * @param startOctave - Starting octave (inclusive)
  * @param endOctave - Ending octave (inclusive, but only includes C)
  * @returns Array of Note objects with keyboard mappings for C4-C5 range
- * 
+ *
  * @example
  * generateNotes(3, 4) // Returns C3 to C4 with keyboard shortcuts
  * generateNotes(2, 6) // Returns C2 to C6 (full piano range)

@@ -1,7 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { GripVertical, Waves, Trash2, ChevronRight } from "lucide-react";
-import { EffectNode, EffectType, createEffectNode, EffectParams } from "@/lib/effects";
+import {
+  EffectNode,
+  EffectType,
+  createEffectNode,
+  EffectParams,
+} from "@/lib/effects";
 import { EFFECT_META } from "./ControlPanelTypes";
 import { EffectCard } from "./EffectCard";
 
@@ -88,7 +93,9 @@ export function EffectsTab({
   const [isMounted, setIsMounted] = useState(false);
 
   // Drag-from-add-button state
-  const [draggingNewType, setDraggingNewType] = useState<EffectType | null>(null);
+  const [draggingNewType, setDraggingNewType] = useState<EffectType | null>(
+    null,
+  );
   const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 });
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const rackRef = useRef<HTMLDivElement>(null);
@@ -247,10 +254,7 @@ export function EffectsTab({
                         Math.abs(me.clientY - startY) > 6
                       ) {
                         isDraggingNew.current = true;
-                        startAddDrag(
-                          type,
-                          e as unknown as React.PointerEvent,
-                        );
+                        startAddDrag(type, e as unknown as React.PointerEvent);
                         document.removeEventListener("pointermove", onMove);
                         document.removeEventListener("pointerup", onUp);
                       }
@@ -357,7 +361,9 @@ export function EffectsTab({
                             borderColor={borderColor}
                             onToggle={() => toggleEnabled(effect.id)}
                             onRemove={() => removeEffect(effect.id)}
-                            onUpdate={(params) => updateEffect(effect.id, params)}
+                            onUpdate={(params) =>
+                              updateEffect(effect.id, params)
+                            }
                           />
                         </div>
                         {index < effectChain.length - 1 && (

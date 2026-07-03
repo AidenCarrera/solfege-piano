@@ -2,14 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Optimize package imports
-  
+
   experimental: {
-    optimizePackageImports: ['tone'],
+    optimizePackageImports: ["tone"],
   },
-  
+
   // Optimize images
   images: {
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
   },
 };
 

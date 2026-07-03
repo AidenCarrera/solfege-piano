@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
 import "./globals.css";
 
@@ -98,27 +98,26 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Solfege Piano",
-    "description": "An interactive browser-based piano for learning solfege and music theory.",
-    "applicationCategory": "EducationalApplication",
-    "operatingSystem": "Web",
-    "author": {
+    name: "Solfege Piano",
+    description:
+      "An interactive browser-based piano for learning solfege and music theory.",
+    applicationCategory: "EducationalApplication",
+    operatingSystem: "Web",
+    author: {
       "@type": "Person",
-      "name": "Aiden Carrera"
+      name: "Aiden Carrera",
     },
-    "url": "https://solfegepiano.vercel.app",
-    "offers": {
+    url: "https://solfegepiano.vercel.app",
+    offers: {
       "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    }
+      price: "0",
+      priceCurrency: "USD",
+    },
   };
 
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${robotoMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
         <Script
           id="json-ld"
           type="application/ld+json"

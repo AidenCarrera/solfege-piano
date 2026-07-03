@@ -14,18 +14,18 @@ import { PIANO_CONFIG } from "@/lib/config";
  * @param stopNote - Callback to stop note playback
  * @param activateNote - Optional callback to visually activate a note
  * @param deactivateNote - Optional callback to visually deactivate a note
- * 
+ *
  * @returns Object with touch handlers
  */
 export function useTouchControls(
   playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
   stopNote: (noteName: string, isKeyboard: boolean) => void,
   activateNote?: (note: string) => void,
-  deactivateNote?: (note: string) => void
+  deactivateNote?: (note: string) => void,
 ) {
   /* ----- Track which touch ID is playing which note ----- */
   const activeTouches = useRef<Map<number, string>>(new Map());
-  
+
   /* ----- Track auto-deactivation timeouts for visual highlights ----- */
   const activeTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
@@ -38,7 +38,7 @@ export function useTouchControls(
   const triggerNote = useCallback(
     (fileName: string, noteName: string, touchId: number) => {
       const currentNote = activeTouches.current.get(touchId);
-      
+
       // If this touch was playing a different note, stop it
       if (currentNote && currentNote !== noteName) {
         stopNote(currentNote, false);
@@ -63,7 +63,9 @@ export function useTouchControls(
 
       // Auto-remove highlight after duration (if no finger is still on it)
       const timeout = setTimeout(() => {
-        const stillActive = Array.from(activeTouches.current.values()).includes(noteName);
+        const stillActive = Array.from(activeTouches.current.values()).includes(
+          noteName,
+        );
         if (!stillActive && deactivateNote) {
           deactivateNote(noteName);
         }
@@ -72,20 +74,24 @@ export function useTouchControls(
 
       activeTimeouts.current.set(noteName, timeout);
     },
-    [playNote, stopNote, activateNote, deactivateNote]
+    [playNote, stopNote, activateNote, deactivateNote],
   );
 
   /**
    * Handle touch start on a key
    */
   const handleTouchStart = useCallback(
-    (e: React.TouchEvent<HTMLButtonElement>, fileName: string, noteName: string) => {
+    (
+      e: React.TouchEvent<HTMLButtonElement>,
+      fileName: string,
+      noteName: string,
+    ) => {
       e.preventDefault();
-      Array.from(e.changedTouches).forEach(touch => {
+      Array.from(e.changedTouches).forEach((touch) => {
         triggerNote(fileName, noteName, touch.identifier);
       });
     },
-    [triggerNote]
+    [triggerNote],
   );
 
   /**
@@ -95,11 +101,13 @@ export function useTouchControls(
   const handleTouchMove = useCallback(
     (e: React.TouchEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      Array.from(e.touches).forEach(touch => {
+      Array.from(e.touches).forEach((touch) => {
         const element = document.elementFromPoint(touch.clientX, touch.clientY);
         if (!element) return;
 
-        const keyElement = element.closest("[data-note-name]") as HTMLButtonElement;
+        const keyElement = element.closest(
+          "[data-note-name]",
+        ) as HTMLButtonElement;
         if (!keyElement) return;
 
         const newNoteName = keyElement.dataset.noteName;
@@ -118,7 +126,7 @@ export function useTouchControls(
         }
       });
     },
-    [stopNote, deactivateNote, triggerNote]
+    [stopNote, deactivateNote, triggerNote],
   );
 
   /**
@@ -128,7 +136,7 @@ export function useTouchControls(
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      Array.from(e.changedTouches).forEach(touch => {
+      Array.from(e.changedTouches).forEach((touch) => {
         const noteName = activeTouches.current.get(touch.identifier);
         if (noteName) {
           stopNote(noteName, false);
@@ -146,7 +154,7 @@ export function useTouchControls(
         }
       });
     },
-    [stopNote, deactivateNote]
+    [stopNote, deactivateNote],
   );
 
   return {

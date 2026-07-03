@@ -167,60 +167,84 @@ export function EffectCard({
           >
             {/* Mode Selector */}
             {effect.type === "Reverb" && (
-              <select 
-                value={p.mode} 
+              <select
+                value={p.mode}
                 onChange={(e) => onUpdate({ mode: e.target.value as any })}
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="Native" className="bg-gray-800">Convolver</option>
-                <option value="Chamber" className="bg-gray-800">Chamber</option>
+                <option value="Native" className="bg-gray-800">
+                  Convolver
+                </option>
+                <option value="Chamber" className="bg-gray-800">
+                  Chamber
+                </option>
               </select>
             )}
             {effect.type === "Delay" && (
-              <select 
-                value={p.mode} 
+              <select
+                value={p.mode}
                 onChange={(e) => onUpdate({ mode: e.target.value as any })}
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="Feedback" className="bg-gray-800">Feedback</option>
-                <option value="PingPong" className="bg-gray-800">Ping-Pong</option>
+                <option value="Feedback" className="bg-gray-800">
+                  Feedback
+                </option>
+                <option value="PingPong" className="bg-gray-800">
+                  Ping-Pong
+                </option>
               </select>
             )}
             {effect.type === "Modulation" && (
-              <select 
-                value={p.mode} 
+              <select
+                value={p.mode}
                 onChange={(e) => onUpdate({ mode: e.target.value as any })}
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="Chorus" className="bg-gray-800">Chorus</option>
-                <option value="Vibrato" className="bg-gray-800">Vibrato</option>
-                <option value="Phaser" className="bg-gray-800">Phaser</option>
+                <option value="Chorus" className="bg-gray-800">
+                  Chorus
+                </option>
+                <option value="Vibrato" className="bg-gray-800">
+                  Vibrato
+                </option>
+                <option value="Phaser" className="bg-gray-800">
+                  Phaser
+                </option>
               </select>
             )}
             {effect.type === "Distortion" && (
-              <select 
-                value={p.mode} 
+              <select
+                value={p.mode}
                 onChange={(e) => onUpdate({ mode: e.target.value as any })}
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="Distortion" className="bg-gray-800">Overdrive</option>
-                <option value="BitCrusher" className="bg-gray-800">BitCrusher</option>
-                <option value="Chebyshev" className="bg-gray-800">Wavefolder</option>
+                <option value="Distortion" className="bg-gray-800">
+                  Overdrive
+                </option>
+                <option value="BitCrusher" className="bg-gray-800">
+                  BitCrusher
+                </option>
+                <option value="Chebyshev" className="bg-gray-800">
+                  Wavefolder
+                </option>
               </select>
             )}
             {effect.type === "Filter" && (
-              <select 
-                value={p.mode} 
+              <select
+                value={p.mode}
                 onChange={(e) => onUpdate({ mode: e.target.value as any })}
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="AutoWah" className="bg-gray-800">AutoWah</option>
-                <option value="AutoFilter" className="bg-gray-800">AutoFilter</option>
+                <option value="AutoWah" className="bg-gray-800">
+                  AutoWah
+                </option>
+                <option value="AutoFilter" className="bg-gray-800">
+                  AutoFilter
+                </option>
               </select>
             )}
 
@@ -317,15 +341,16 @@ export function EffectCard({
                     p.frequency ?? 1.5,
                     (v) => `${v.toFixed(1)}Hz`,
                   )}
-                  {p.mode !== "Phaser" && renderSlider(
-                    "Depth",
-                    "depth",
-                    0,
-                    1,
-                    0.01,
-                    p.depth ?? 0.5,
-                    (v) => `${Math.round(v * 100)}%`,
-                  )}
+                  {p.mode !== "Phaser" &&
+                    renderSlider(
+                      "Depth",
+                      "depth",
+                      0,
+                      1,
+                      0.01,
+                      p.depth ?? 0.5,
+                      (v) => `${Math.round(v * 100)}%`,
+                    )}
                 </>
               )}
               {effect.type === "Distortion" && (

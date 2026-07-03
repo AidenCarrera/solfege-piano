@@ -34,6 +34,7 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 ## Installation and setup
 
 To clone and run this application, you'll need Git and Node.js installed. Then:
+
 ```
 # Clone this repository
 git clone https://github.com/AidenCarrera/solfege-piano.git

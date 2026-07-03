@@ -8,7 +8,7 @@ import { useCallback, useEffect } from "react";
  */
 export function useSustainToggle(
   stopAllNotes: () => void,
-  setSustainActive: React.Dispatch<React.SetStateAction<boolean>>
+  setSustainActive: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   const toggleSustain = useCallback(() => {
     setSustainActive((prev) => {

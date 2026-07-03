@@ -28,7 +28,9 @@ export default function ControlPanel({
   onOctaveChange,
   textColor,
 }: ControlPanelProps) {
-  const [activeTab, setActiveTab] = useState<"settings" | "effects">("settings");
+  const [activeTab, setActiveTab] = useState<"settings" | "effects">(
+    "settings",
+  );
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {

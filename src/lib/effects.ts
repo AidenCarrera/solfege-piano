@@ -1,4 +1,5 @@
-export type EffectType = "Distortion" | "Filter" | "Compressor" | "Modulation" | "Delay" | "Reverb";
+export type EffectType =
+  "Distortion" | "Filter" | "Compressor" | "Modulation" | "Delay" | "Reverb";
 
 export interface BaseEffectParams {
   mix: number;
@@ -59,11 +60,38 @@ export interface EffectNode {
 
 export const EFFECT_PRESETS: Record<EffectType, EffectParams> = {
   Distortion: { mix: 0.5, mode: "Distortion", amount: 0.5 } as DistortionParams,
-  Filter: { mix: 1.0, mode: "AutoWah", baseFrequency: 150, octaves: 4, sensitivity: -20 } as FilterParams,
-  Compressor: { mix: 1.0, mode: "Compressor", threshold: -24, ratio: 4 } as CompressorParams,
-  Modulation: { mix: 0.5, mode: "Chorus", frequency: 1.5, depth: 0.7 } as ModulationParams,
-  Delay: { mix: 0.2, mode: "Feedback", delayTime: 0.25, feedback: 0.4 } as DelayParams,
-  Reverb: { mix: 0.15, mode: "Native", decay: 2.5, preDelay: 0.01, roomSize: 0.5 } as ReverbParams,
+  Filter: {
+    mix: 1.0,
+    mode: "AutoWah",
+    baseFrequency: 150,
+    octaves: 4,
+    sensitivity: -20,
+  } as FilterParams,
+  Compressor: {
+    mix: 1.0,
+    mode: "Compressor",
+    threshold: -24,
+    ratio: 4,
+  } as CompressorParams,
+  Modulation: {
+    mix: 0.5,
+    mode: "Chorus",
+    frequency: 1.5,
+    depth: 0.7,
+  } as ModulationParams,
+  Delay: {
+    mix: 0.2,
+    mode: "Feedback",
+    delayTime: 0.25,
+    feedback: 0.4,
+  } as DelayParams,
+  Reverb: {
+    mix: 0.15,
+    mode: "Native",
+    decay: 2.5,
+    preDelay: 0.01,
+    roomSize: 0.5,
+  } as ReverbParams,
 };
 
 export function createEffectNode(type: EffectType): EffectNode {

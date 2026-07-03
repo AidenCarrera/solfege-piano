@@ -23,11 +23,11 @@ export function useKeyboardControls(
   playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
   stopNote: (note: string, isKeyboard: boolean) => void,
   activateNote?: (note: string) => void,
-  deactivateNote?: (note: string) => void
+  deactivateNote?: (note: string) => void,
 ) {
   /* ----- Track keys currently pressed to prevent repeated triggers ----- */
   const pressedKeys = useRef<Set<string>>(new Set());
-  
+
   /**
    * Trigger a note if it is not already pressed
    * Plays the note
@@ -44,7 +44,7 @@ export function useKeyboardControls(
         }
       }
     },
-    [playNote, activateNote]
+    [playNote, activateNote],
   );
 
   /**
@@ -63,7 +63,7 @@ export function useKeyboardControls(
         }
       }
     },
-    [stopNote, deactivateNote]
+    [stopNote, deactivateNote],
   );
 
   /* ----- Set up event listeners for keyboard input ----- */

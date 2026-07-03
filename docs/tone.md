@@ -8,7 +8,7 @@ Start a local HTTP server using Python to serve the examples.
 python -m SimpleHTTPServer 8000
 ```
 
---------------------------------
+---
 
 ### Install Dependencies and Build Tone.js
 
@@ -17,13 +17,13 @@ Source: https://github.com/tonejs/tone.js/wiki/Installation
 Commands to install project dependencies and build Tone.js from source. This is part of the quick start guide for running examples.
 
 ```bash
-$ npm install 
+$ npm install
 ...
 $ npm run build
 
 ```
 
---------------------------------
+---
 
 ### Tone.js Bus Setup and Routing Example
 
@@ -45,19 +45,19 @@ const chorus = new Tone.Chorus({
   .toDestination()
   .start();
 const chorusChannel = new Tone.Channel({
-  volume: -60
+  volume: -60,
 }).connect(chorus);
 chorusChannel.receive("chorus");
 
 const cheby = new Tone.Chebyshev(50).toDestination();
 const chebyChannel = new Tone.Channel({
-  volume: -60
+  volume: -60,
 }).connect(cheby);
 chebyChannel.receive("cheby");
 
 const reverb = new Tone.Reverb(3).toDestination();
 const reverbChannel = new Tone.Channel({
-  volume: -60
+  volume: -60,
 }).connect(reverb);
 reverbChannel.receive("reverb");
 
@@ -106,7 +106,7 @@ document
   });
 ```
 
---------------------------------
+---
 
 ### Serve Tone.js Files Locally
 
@@ -119,7 +119,7 @@ $ python -m SimpleHTTPServer 8000
 
 ```
 
---------------------------------
+---
 
 ### Install Dependencies
 
@@ -131,7 +131,7 @@ Run this command to install all necessary project dependencies.
 npm install
 ```
 
---------------------------------
+---
 
 ### Install Tone.js with npm
 
@@ -144,7 +144,7 @@ npm install tone      // Install the latest stable version
 npm install tone@next // Or, alternatively, use the 'next' version
 ```
 
---------------------------------
+---
 
 ### Create and Schedule a Tone.Part
 
@@ -153,14 +153,22 @@ Source: https://github.com/tonejs/tone.js/wiki/Events
 Construct a Tone.Part with an array of time-value pairs to schedule multiple events. This example defines notes and their timings, then starts the part at a specific time.
 
 ```javascript
-var part = new Tone.Part(function(time, pitch){
-	synth.triggerAttackRelease(pitch, "8n", time);
-}, [["0", "C#3"], ["4n", "G3"], [3 * Tone.Time("8n"), "G#3"], ["2n", "C3"]]);
+var part = new Tone.Part(
+  function (time, pitch) {
+    synth.triggerAttackRelease(pitch, "8n", time);
+  },
+  [
+    ["0", "C#3"],
+    ["4n", "G3"],
+    [3 * Tone.Time("8n"), "G#3"],
+    ["2n", "C3"],
+  ],
+);
 
 part.start("4m");
 ```
 
---------------------------------
+---
 
 ### Vanilla JavaScript Tone.js Sampler Example
 
@@ -173,22 +181,21 @@ import { Sampler } from "tone";
 
 const sampler = new Sampler(
   {
-    A1: "A1.mp3"
+    A1: "A1.mp3",
   },
   {
     onload: () => {
       document.querySelector("button").removeAttribute("disabled");
-    }
-  }
+    },
+  },
 ).toDestination();
 
 document.querySelector("button").addEventListener("click", () => {
   sampler.triggerAttack("A2");
 });
-
 ```
 
---------------------------------
+---
 
 ### Microphone Setup and FFT Processing
 
@@ -200,7 +207,7 @@ This snippet demonstrates how to initialize Tone.UserMedia, connect it to a Tone
 const mic = new Tone.UserMedia();
 const micFFT = new Tone.FFT();
 mic.connect(micFFT);
-fft({ tone: micFFT, parent: document.querySelector("#content"), });
+fft({ tone: micFFT, parent: document.querySelector("#content") });
 
 const micButton = document.querySelector("tone-mic-button");
 micButton.supported = Tone.UserMedia.supported;
@@ -208,7 +215,7 @@ micButton.addEventListener("open", () => mic.open());
 micButton.addEventListener("close", () => mic.close());
 ```
 
---------------------------------
+---
 
 ### DAW Player Setup and Transport Synchronization
 
@@ -264,7 +271,7 @@ setInterval(() => {
 }, 16);
 ```
 
---------------------------------
+---
 
 ### Initialize and Start Tone.Oscillator
 
@@ -273,12 +280,10 @@ Source: https://github.com/tonejs/tone.js/wiki/Sources
 Creates a square wave oscillator at 440Hz, connects it to the master output, and starts it immediately. Ensure Tone.js is included and initialized.
 
 ```javascript
-var osc = new Tone.Oscillator(440, "square")
-	.toMaster()
-	.start();
+var osc = new Tone.Oscillator(440, "square").toMaster().start();
 ```
 
---------------------------------
+---
 
 ### Tone.js LFO Effects Setup
 
@@ -301,7 +306,7 @@ Initializes and starts Tone.js LFO effects: AutoPanner, AutoFilter, and Tremolo.
 }).toDestination().start();
 ```
 
---------------------------------
+---
 
 ### Initialize and Connect ReverseDelay
 
@@ -314,7 +319,7 @@ const reverseDelay = new Tone.ReverseDelay().toDestination();
 const synth = new Tone.Synth().connect(reverseDelay);
 ```
 
---------------------------------
+---
 
 ### Start the Arpeggio Pattern
 
@@ -327,7 +332,7 @@ Begin playback of the defined arpeggio pattern from the start of the Transport t
 pattern.start(0);
 ```
 
---------------------------------
+---
 
 ### Phasing Composition Setup
 
@@ -345,7 +350,7 @@ const merge = new Tone.Merge();
 
 // a little reverb
 const reverb = new Tone.Reverb({
-  wet: 0.3
+  wet: 0.3,
 });
 merge.chain(reverb, Tone.Destination);
 
@@ -362,7 +367,7 @@ const synthL = new Tone.Synth({
     release: 1,
   },
   portamento: 0.01,
-  volume: -20
+  volume: -20,
 }).connect(merge, 0, 0);
 
 const synthR = new Tone.Synth({
@@ -377,11 +382,11 @@ const synthR = new Tone.Synth({
     release: 1,
   },
   portamento: 0.01,
-  volume: -20
+  volume: -20,
 }).connect(merge, 0, 1);
 ```
 
---------------------------------
+---
 
 ### Vue Component Tone.js Sampler Example
 
@@ -422,7 +427,7 @@ new Vue({
 
 ```
 
---------------------------------
+---
 
 ### Start a Tone.Loop at Transport Time 0
 
@@ -434,7 +439,7 @@ Starts a previously defined Tone.Loop from the beginning of the Transport timeli
 loop.start(0);
 ```
 
---------------------------------
+---
 
 ### Start Audio After User Interaction
 
@@ -445,12 +450,12 @@ Initiate audio playback after a user interaction, such as a click, by calling To
 ```javascript
 //attach a click listener to a play button
 document.querySelector("button")?.addEventListener("click", async () => {
-	await Tone.start();
-	console.log("audio is ready");
+  await Tone.start();
+  console.log("audio is ready");
 });
 ```
 
---------------------------------
+---
 
 ### Create a Tone.Sequence with Evenly-Spaced Events
 
@@ -463,7 +468,7 @@ Instantiate a Tone.Sequence with a callback, an array of values, and a subdivisi
 var seq = new Tone.Sequence(callback, ["C3", "Eb3", "F4", "Bb4"], "8n");
 ```
 
---------------------------------
+---
 
 ### Initialize and Control Tone.js Oscillator
 
@@ -472,8 +477,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/oscillator.html
 Demonstrates initializing a square wave oscillator, setting its frequency and volume, and connecting it to the destination. Includes UI event listeners to start and stop the oscillator.
 
 ```javascript
-const osc = new Tone.Oscillator({ type: "square", frequency: 440, volume: -16, }).toDestination();
-ui({ tone: osc, parent: document.querySelector("#content"), }); // bind the interface
+const osc = new Tone.Oscillator({
+  type: "square",
+  frequency: 440,
+  volume: -16,
+}).toDestination();
+ui({ tone: osc, parent: document.querySelector("#content") }); // bind the interface
 document
   .querySelector("tone-momentary-button")
   .addEventListener("down", () => osc.start());
@@ -482,7 +491,7 @@ document
   .addEventListener("up", () => osc.stop());
 ```
 
---------------------------------
+---
 
 ### Playing Audio Samples with Tone.Player
 
@@ -492,14 +501,14 @@ Load and play back an audio file using Tone.Player. Use Tone.loaded() to ensure 
 
 ```javascript
 const player = new Tone.Player(
-	"https://tonejs.github.io/audio/berklee/gong_1.mp3"
+  "https://tonejs.github.io/audio/berklee/gong_1.mp3",
 ).toDestination();
 Tone.loaded().then(() => {
-	player.start();
+  player.start();
 });
 ```
 
---------------------------------
+---
 
 ### Ramp Oscillator Frequency
 
@@ -517,7 +526,7 @@ osc.frequency.rampTo("C2", 2);
 osc.start().stop("+3");
 ```
 
---------------------------------
+---
 
 ### Start Oscillator and Trigger Envelope Attack
 
@@ -530,7 +539,7 @@ osc.start();
 env.triggerAttack();
 ```
 
---------------------------------
+---
 
 ### Tone.js Audio Control Interface Setup
 
@@ -540,52 +549,67 @@ Initializes a 'drawer' interface to control various Tone.js audio components. Fo
 
 ```javascript
 const controls = drawer({
-    parent: document.body,
-    open: false,
+  parent: document.body,
+  open: false,
 });
 
-controls.folder({
-    name: "Hihat"
-}).add({
+controls
+  .folder({
+    name: "Hihat",
+  })
+  .add({
     tone: lowPass,
-}).add({
+  })
+  .add({
     name: "Open Hihat",
     tone: openHiHat,
-}).add({
+  })
+  .add({
     name: "Closed Hihat",
-    tone: closedHiHat
-});
+    tone: closedHiHat,
+  });
 
-controls.folder({
-    name: "Bass"
-}).add({
+controls
+  .folder({
+    name: "Bass",
+  })
+  .add({
     tone: bassFilter,
-}).add({
+  })
+  .add({
     tone: bass,
-}).add({
-    tone: bassEnvelope
-});
+  })
+  .add({
+    tone: bassEnvelope,
+  });
 
-controls.folder({
-    name: "Bleep"
-}).add({
+controls
+  .folder({
+    name: "Bleep",
+  })
+  .add({
     tone: bleep,
-}).add({
+  })
+  .add({
     tone: bleepEnvelope,
-});
+  });
 
-controls.folder({
-    name: "Kick"
-}).add({
+controls
+  .folder({
+    name: "Kick",
+  })
+  .add({
     tone: kick,
-}).add({
+  })
+  .add({
     tone: kickEnvelope,
-}).add({
+  })
+  .add({
     tone: kickSnapEnv,
-});
+  });
 ```
 
---------------------------------
+---
 
 ### Trigger Note Attack Immediately
 
@@ -598,7 +622,7 @@ Use triggerAttack to start a note. If no time is specified, it triggers immediat
 synth.triggerAttack("C4");
 ```
 
---------------------------------
+---
 
 ### React Class Component Tone.js Sampler Example
 
@@ -623,8 +647,8 @@ export default class App extends React.Component {
       {
         onload: () => {
           this.setState({ isLoaded: true });
-        }
-      }
+        },
+      },
     ).toDestination();
   }
 
@@ -645,10 +669,9 @@ export default class App extends React.Component {
 }
 
 ReactDOM.render(<App />, document.getElementById("app"));
-
 ```
 
---------------------------------
+---
 
 ### Initialize and Control Tone.js Player
 
@@ -676,7 +699,7 @@ document
   .addEventListener("stop", () => player.stop());
 ```
 
---------------------------------
+---
 
 ### Trigger Note Attack and Release with Duration
 
@@ -688,7 +711,7 @@ A convenience method to trigger both the attack and release of a note with a spe
 synth.triggerAttackRelease("C4", 0.25, time);
 ```
 
---------------------------------
+---
 
 ### Navigate to Tone.js Directory
 
@@ -701,7 +724,7 @@ $ cd Tone.js-dev
 
 ```
 
---------------------------------
+---
 
 ### Play a Note with Tone.js Synth
 
@@ -719,7 +742,7 @@ function playNote() {
 }
 ```
 
---------------------------------
+---
 
 ### Trigger Attack and Release Separately
 
@@ -736,7 +759,7 @@ synth.triggerAttack("C4", now);
 synth.triggerRelease(now + 1);
 ```
 
---------------------------------
+---
 
 ### Schedule a Repeating Event
 
@@ -746,12 +769,16 @@ Schedules a callback to repeat at a specified interval, starting from a given ti
 
 ```javascript
 //play a note every eighth note starting from the first measure
-Tone.Transport.scheduleRepeat(function(time){
-	note.triggerAttack(time);
-}, "8n", "1m");
+Tone.Transport.scheduleRepeat(
+  function (time) {
+    note.triggerAttack(time);
+  },
+  "8n",
+  "1m",
+);
 ```
 
---------------------------------
+---
 
 ### Create a Tone.Pattern with Arpeggiator Logic
 
@@ -765,7 +792,7 @@ var arp = new Tone.Pattern(callback, ["C3", "E3", "G3"], "upDown");
 //callback order: "C3", "E3", "G3", "E3", ...repeat
 ```
 
---------------------------------
+---
 
 ### Initialize and Control Tone.Noise
 
@@ -797,7 +824,7 @@ document
   .addEventListener("up", () => noise.stop());
 ```
 
---------------------------------
+---
 
 ### Tone.js Transport Playback Control and Position Display
 
@@ -806,29 +833,35 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/quantization.html
 Initializes a PolySynth, starts the Transport on 'start' event, stops it on 'stop' event, and continuously updates the displayed Transport position (bar, beat, sixteenth).
 
 ```javascript
-const polySynth = new Tone.PolySynth(Tone.Synth).toDestination(); function loop() {
+const polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+function loop() {
   requestAnimationFrame(loop);
   // @ts-ignore
   const [bar, beat, sixteenth] = Tone.Transport.position.split(":");
-  document.querySelector("#progress").textContent = ` bar: ${bar}, beat: ${beat}, sixteenth: ${sixteenth} `;
+  document.querySelector("#progress").textContent =
+    ` bar: ${bar}, beat: ${beat}, sixteenth: ${sixteenth} `;
 }
 loop();
 // bind the interface
-document.querySelector("tone-play-toggle").addEventListener("start", e => {
+document.querySelector("tone-play-toggle").addEventListener("start", (e) => {
   Tone.Transport.start();
   // enable all of the buttons if it's playing
   // @ts-ignore
-  Array.from(document.querySelectorAll("tone-button")).forEach(el => el.disabled = false);
+  Array.from(document.querySelectorAll("tone-button")).forEach(
+    (el) => (el.disabled = false),
+  );
 });
 document.querySelector("tone-play-toggle").addEventListener("stop", () => {
   Tone.Transport.stop();
   // disable all of the buttons if it's not playing
   // @ts-ignore
-  Array.from(document.querySelectorAll("tone-button")).forEach(el => el.disabled = true);
+  Array.from(document.querySelectorAll("tone-button")).forEach(
+    (el) => (el.disabled = true),
+  );
 });
 ```
 
---------------------------------
+---
 
 ### Trigger Attack and Release Together
 
@@ -841,7 +874,7 @@ Use triggerAttackRelease to schedule both the start and end of a note.
 synth.triggerAttackRelease("C4", 1);
 ```
 
---------------------------------
+---
 
 ### Start the Tone.js Transport
 
@@ -853,7 +886,7 @@ Initiate the Tone.js Transport clock to begin scheduling and playing musical eve
 Tone.Transport.start();
 ```
 
---------------------------------
+---
 
 ### Set Oscillator Frequency and Timing
 
@@ -866,7 +899,7 @@ osc.frequency.value = "C4";
 osc.start().stop("+8n");
 ```
 
---------------------------------
+---
 
 ### Set Tone.Event Probability
 
@@ -879,7 +912,7 @@ Adjust the probability of a Tone.Event firing each time it is scheduled. This ex
 note.probability = 0.5;
 ```
 
---------------------------------
+---
 
 ### Correct Audio Event Scheduling
 
@@ -893,7 +926,7 @@ Transport.schedule((time) => {
 }, 0);
 ```
 
---------------------------------
+---
 
 ### Tone.Transport.scheduleRepeat
 
@@ -901,7 +934,7 @@ Source: https://github.com/tonejs/tone.js/wiki/Transport
 
 Schedules a callback to be invoked repeatedly at a given interval, starting from a specified time and for an optional duration.
 
-```APIDOC
+````APIDOC
 ## Tone.Transport.scheduleRepeat(callback, interval, startTime, duration)
 
 ### Description
@@ -920,12 +953,15 @@ Schedules an event to be invoked at the given interval, starting at `startTime` 
 Tone.Transport.scheduleRepeat(function(time){
 	note.triggerAttack(time);
 }, "8n", "1m");
-```
+````
 
 ### Response
+
 #### Success Response (200)
+
 - **eventID** (number) - The unique ID of the scheduled event, which can be used to clear it.
-```
+
+````
 
 --------------------------------
 
@@ -938,9 +974,9 @@ Schedule the start of a note at a specific time using the 'time' argument.
 ```javascript
 //trigger the start of a note at `time`
 synth.triggerAttack("C4", time);
-```
+````
 
---------------------------------
+---
 
 ### Quantize Note Attack to Half Note
 
@@ -949,12 +985,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/quantization.html
 Triggers a 'G3' note with an '8n' duration, quantized to the '@2n' subdivision. Requires the Transport to be started.
 
 ```javascript
-document.querySelector("#at2n").addEventListener("click", e => {
+document.querySelector("#at2n").addEventListener("click", (e) => {
   polySynth.triggerAttackRelease("G3", "8n", "@2n");
 });
 ```
 
---------------------------------
+---
 
 ### Create and Schedule a Looping Tone.Event
 
@@ -963,14 +999,14 @@ Source: https://github.com/tonejs/tone.js/wiki/Events
 This snippet demonstrates how to create a Tone.Event that triggers a synth note, sets it to loop, and schedules its start and stop times on the Transport.
 
 ```javascript
-var note = new Tone.Event(function(time, pitch){
-	synth.triggerAttackRelease(pitch, "16n", time);
+var note = new Tone.Event(function (time, pitch) {
+  synth.triggerAttackRelease(pitch, "16n", time);
 }, "C2");
 
 //set the note to loop every half measure
 note.set({
-	"loop" : true,
-	"loopEnd" : "2n"
+  loop: true,
+  loopEnd: "2n",
 });
 
 //start the note at the beginning of the Transport timeline
@@ -980,7 +1016,7 @@ note.start(0);
 note.stop("4m");
 ```
 
---------------------------------
+---
 
 ### Create and Configure an Arpeggio Pattern
 
@@ -989,12 +1025,15 @@ Source: https://github.com/tonejs/tone.js/wiki/Arpeggiator
 Define a repeating musical pattern using Tone.Pattern. This example arpeggiates over a C pentatonic scale. The pattern iterates upwards by default.
 
 ```javascript
-var pattern = new Tone.Pattern(function(time, note){
-	synth.triggerAttackRelease(note, 0.25);
-}, ["C4", "D4", "E4", "G4", "A4"]);
+var pattern = new Tone.Pattern(
+  function (time, note) {
+    synth.triggerAttackRelease(note, 0.25);
+  },
+  ["C4", "D4", "E4", "G4", "A4"],
+);
 ```
 
---------------------------------
+---
 
 ### Quantize Note Attack to Measure
 
@@ -1003,12 +1042,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/quantization.html
 Triggers a 'C2' note with an '8n' duration, quantized to the '@1m' subdivision. Requires the Transport to be started.
 
 ```javascript
-document.querySelector("#at1m").addEventListener("click", e => {
+document.querySelector("#at1m").addEventListener("click", (e) => {
   polySynth.triggerAttackRelease("C2", "8n", "@1m");
 });
 ```
 
---------------------------------
+---
 
 ### Quantize Note Attack to Quarter Note
 
@@ -1017,12 +1056,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/quantization.html
 Triggers an 'E4' note with an '8n' duration, quantized to the '@4n' subdivision. Requires the Transport to be started.
 
 ```javascript
-document.querySelector("#at4n").addEventListener("click", e => {
+document.querySelector("#at4n").addEventListener("click", (e) => {
   polySynth.triggerAttackRelease("E4", "8n", "@4n");
 });
 ```
 
---------------------------------
+---
 
 ### Tone.Transport.timeSignature
 
@@ -1040,7 +1079,7 @@ The transport is capable of any time signature, but the value will be reduced to
 - **timeSignature** (number | Array<number>) - The time signature.
 ```
 
---------------------------------
+---
 
 ### Change Tone.Pattern Type
 
@@ -1053,7 +1092,7 @@ arp.pattern = "downUp";
 //callback order: "G3", "E3", "C3", "E3", ...repeat
 ```
 
---------------------------------
+---
 
 ### Signal Chaining and Control
 
@@ -1104,30 +1143,23 @@ const detuneScale = new Tone.Scale(14, 4);
 frequency.chain(detuneScale, detuneLFO.frequency);
 
 // start the oscillators with the play button
-document
-  .querySelector("tone-play-toggle")
-  .addEventListener("start", () => {
-    rightOsc.start();
-    leftOsc.start();
-  });
+document.querySelector("tone-play-toggle").addEventListener("start", () => {
+  rightOsc.start();
+  leftOsc.start();
+});
 
-document
-  .querySelector("tone-play-toggle")
-  .addEventListener("stop", () => {
-    rightOsc.stop();
-    leftOsc.stop();
-  });
+document.querySelector("tone-play-toggle").addEventListener("stop", () => {
+  rightOsc.stop();
+  leftOsc.stop();
+});
 
 // ramp the frequency with the slider
-document
-  .querySelector("tone-slider")
-  .addEventListener("input", (e) => {
-    frequency.rampTo(parseFloat(e.target.value), 0.1);
-  });
-
+document.querySelector("tone-slider").addEventListener("input", (e) => {
+  frequency.rampTo(parseFloat(e.target.value), 0.1);
+});
 ```
 
---------------------------------
+---
 
 ### Initialize Audio Playback
 
@@ -1144,7 +1176,7 @@ document
   .addEventListener("stop", () => Tone.Transport.stop());
 ```
 
---------------------------------
+---
 
 ### Tone.js Ping Pong Delay Setup
 
@@ -1156,11 +1188,11 @@ Initializes a Ping Pong Delay effect with specified delay time, feedback, and we
 const feedbackDelay = new Tone.PingPongDelay({
   delayTime: "8n",
   feedback: 0.6,
-  wet: 0.5
+  wet: 0.5,
 }).toDestination();
 ```
 
---------------------------------
+---
 
 ### Skip Test Example in Javascript
 
@@ -1171,10 +1203,10 @@ When a test cannot pass due to API changes during the TypeScript conversion, mar
 ```javascript
 it.skip("does not work yet", () => {
   // can't get this test to work
-})
+});
 ```
 
---------------------------------
+---
 
 ### Quantize Note Attack to Eighth Note
 
@@ -1183,12 +1215,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/quantization.html
 Triggers a 'B4' note with an '8n' duration, quantized to the '@8n' subdivision. Requires the Transport to be started.
 
 ```javascript
-document.querySelector("#at8n").addEventListener("click", e => {
+document.querySelector("#at8n").addEventListener("click", (e) => {
   polySynth.triggerAttackRelease("B4", "8n", "@8n");
 });
 ```
 
---------------------------------
+---
 
 ### Tone.js Transport Control and Setup
 
@@ -1203,11 +1235,15 @@ Tone.Transport.loopEnd = "1:0";
 Tone.Transport.loop = true;
 
 // bind the interface
-document.querySelector("tone-play-toggle").addEventListener("start", e => Tone.Transport.start());
-document.querySelector("tone-play-toggle").addEventListener("stop", e => Tone.Transport.stop());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("start", (e) => Tone.Transport.start());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("stop", (e) => Tone.Transport.stop());
 ```
 
---------------------------------
+---
 
 ### Initialize Tone.Sampler with Audio Samples
 
@@ -1254,7 +1290,7 @@ const sampler = new Tone.Sampler({
 }).toDestination();
 ```
 
---------------------------------
+---
 
 ### React Hooks Tone.js Sampler Example
 
@@ -1278,8 +1314,8 @@ export const App = () => {
       {
         onload: () => {
           setLoaded(true);
-        }
-      }
+        },
+      },
     ).toDestination();
   }, []);
 
@@ -1295,10 +1331,9 @@ export const App = () => {
 };
 
 ReactDOM.render(<App />, document.getElementById("app"));
-
 ```
 
---------------------------------
+---
 
 ### Schedule Sine Wave with AudioContext Time
 
@@ -1314,7 +1349,7 @@ sine.start(0);
 sine.stop(2);
 ```
 
---------------------------------
+---
 
 ### Schedule Multiple Transport Events
 
@@ -1323,15 +1358,14 @@ Source: https://github.com/tonejs/tone.js/wiki/TransportTime
 Schedules a Tone.Loop and a Tone.Event, then manipulates the Tone.Transport by starting, stopping, and restarting it at specific AudioContext times. This demonstrates synchronized scheduling of various events.
 
 ```javascript
-function loopCallback(time){
-	console.log("loop");
+function loopCallback(time) {
+  console.log("loop");
 }
 var loop = new Tone.Loop(loopCallback, 2);
 loop.start(0).stop(5);
 
-
-function eventCallback(time){
-	console.log("event");
+function eventCallback(time) {
+  console.log("event");
 }
 var event = new Tone.Event(eventCallback).start(3);
 
@@ -1342,7 +1376,7 @@ Tone.Transport.stop(6);
 Tone.Transport.start(8);
 ```
 
---------------------------------
+---
 
 ### Initialize Tone.Player with Default Callback
 
@@ -1354,7 +1388,7 @@ Creates a player for an audio file. The audio file will be loaded and ready to p
 var player = new Tone.Player("./sound.mp3").toDestination();
 ```
 
---------------------------------
+---
 
 ### Control Audio Playback with UI Events
 
@@ -1371,7 +1405,7 @@ document
   .addEventListener("stop", () => player.stop());
 ```
 
---------------------------------
+---
 
 ### Connecting UI Playback Controls
 
@@ -1380,13 +1414,17 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/animationSync.html
 Add event listeners to UI elements to control Tone.Transport start and stop actions. This allows user interaction to manage the playback of scheduled audio events.
 
 ```javascript
-drawer().add({ tone: synth, title: "Piano", });
+drawer().add({ tone: synth, title: "Piano" });
 // connect the UI with the components
-document.querySelector("tone-play-toggle").addEventListener("start", () => Tone.Transport.start());
-document.querySelector("tone-play-toggle").addEventListener("stop", () => Tone.Transport.stop());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("start", () => Tone.Transport.start());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("stop", () => Tone.Transport.stop());
 ```
 
---------------------------------
+---
 
 ### Control Tone.Transport with Play Toggle
 
@@ -1395,11 +1433,15 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/spatialPanner.html
 Adds event listeners to a custom 'tone-play-toggle' element to start and stop the Tone.Transport. Ensure this element is present in your HTML.
 
 ```javascript
-document.querySelector("tone-play-toggle").addEventListener("start", () => Tone.Transport.start());
-document.querySelector("tone-play-toggle").addEventListener("stop", () => Tone.Transport.stop());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("start", () => Tone.Transport.start());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("stop", () => Tone.Transport.stop());
 ```
 
---------------------------------
+---
 
 ### Webpack Configuration for Tone.js
 
@@ -1420,7 +1462,7 @@ module.exports = {
 
 ```
 
---------------------------------
+---
 
 ### Initializing and Controlling Player
 
@@ -1459,7 +1501,7 @@ document
   .addEventListener("stop", () => player.stop());
 ```
 
---------------------------------
+---
 
 ### Tone.Oscillator
 
@@ -1467,7 +1509,7 @@ Source: https://github.com/tonejs/tone.js/wiki/Sources
 
 A wrapper around the native OscillatorNode that simplifies starting and stopping and includes additional parameters such as phase rotation. It supports various wave types, including modified partials.
 
-```APIDOC
+````APIDOC
 ## Tone.Oscillator
 
 ### Description
@@ -1479,10 +1521,11 @@ A wrapper around the native OscillatorNode which simplifies starting and stoppin
 var osc = new Tone.Oscillator(440, "square")
 	.toMaster()
 	.start();
-```
+````
 
 Tone.Oscillator also includes modifiers on the default oscillator types. Set the type to `"square4"` to hear the first 4 partials of the square wave, or `"triangle9"` for the first 9 partials of the triangle wave.
-```
+
+````
 
 --------------------------------
 
@@ -1501,9 +1544,9 @@ const toneMeter = new Tone.Meter({
   channelCount: 2,
 });
 player.connect(toneMeter);
-```
+````
 
---------------------------------
+---
 
 ### Set BPM and Connect UI Controls
 
@@ -1534,7 +1577,7 @@ document
   .addEventListener("stop", () => Tone.Transport.stop());
 ```
 
---------------------------------
+---
 
 ### Initialize and Configure PolySynth
 
@@ -1543,10 +1586,12 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/polySynth.html
 Instantiates a PolySynth with a Tone.Synth and custom oscillator partials, then routes it to the destination. This is useful for creating complex polyphonic sounds.
 
 ```javascript
-const synth = new Tone.PolySynth(Tone.Synth, { oscillator: { partials: [0, 2, 3, 4], }, }).toDestination();
+const synth = new Tone.PolySynth(Tone.Synth, {
+  oscillator: { partials: [0, 2, 3, 4] },
+}).toDestination();
 ```
 
---------------------------------
+---
 
 ### Tone.Part
 
@@ -1554,7 +1599,7 @@ Source: https://github.com/tonejs/tone.js/wiki/Events
 
 Tone.Part aggregates multiple Tone.Events, allowing them to be controlled as a single unit. It supports starting, stopping, and looping, and provides methods to access and modify event values at specific times.
 
-```APIDOC
+````APIDOC
 ## Tone.Part
 
 ### Description
@@ -1586,8 +1631,9 @@ part.at("4n"); //returns "G3"
 
 //change the first note to a G#
 part.at("0", "G#2");
-```
-```
+````
+
+````
 
 --------------------------------
 
@@ -1614,9 +1660,9 @@ document
 document
   .querySelector("tone-play-toggle")
   .addEventListener("stop", () => player.stop());
-```
+````
 
---------------------------------
+---
 
 ### Initialize Tone.Player with Load Callback
 
@@ -1625,12 +1671,12 @@ Source: https://github.com/tonejs/tone.js/wiki/Sources
 Creates a player for an audio file and provides a callback function that executes once the audio file is loaded. This is useful for tracking individual buffer loading.
 
 ```javascript
-var player = new Tone.Player("./sound.mp3", function(){
-	//the player is now ready
+var player = new Tone.Player("./sound.mp3", function () {
+  //the player is now ready
 }).toDestination();
 ```
 
---------------------------------
+---
 
 ### Control GrainPlayer Playback with UI Events
 
@@ -1639,14 +1685,18 @@ Source: https://github.com/tonejs/tone.js/blob/dev/examples/grainPlayer.html
 Attach event listeners to a custom UI element ('tone-play-toggle') to control the start and stop actions of the Tone.GrainPlayer instance. Ensure the UI element is correctly selected and the player instance is accessible.
 
 ```javascript
-document.querySelector("tone-play-toggle").addEventListener("start", () => player.start());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("start", () => player.start());
 ```
 
 ```javascript
-document.querySelector("tone-play-toggle").addEventListener("stop", () => player.stop());
+document
+  .querySelector("tone-play-toggle")
+  .addEventListener("stop", () => player.stop());
 ```
 
---------------------------------
+---
 
 ### Scheduling Looped Events with Tone.Transport
 
@@ -1659,11 +1709,11 @@ const synthA = new Tone.FMSynth().toDestination();
 const synthB = new Tone.AMSynth().toDestination();
 //play a note every quarter-note
 const loopA = new Tone.Loop((time) => {
-	synthA.triggerAttackRelease("C2", "8n", time);
+  synthA.triggerAttackRelease("C2", "8n", time);
 }, "4n").start(0);
 //play another note every off quarter-note, by starting it "8n"
 const loopB = new Tone.Loop((time) => {
-	synthB.triggerAttackRelease("C4", "8n", time);
+  synthB.triggerAttackRelease("C4", "8n", time);
 }, "4n").start("8n");
 // all loops start when the Transport is started
 Tone.getTransport().start();
@@ -1671,7 +1721,7 @@ Tone.getTransport().start();
 Tone.getTransport().bpm.rampTo(800, 10);
 ```
 
---------------------------------
+---
 
 ### Tone.Event
 
@@ -1679,7 +1729,7 @@ Source: https://github.com/tonejs/tone.js/wiki/Events
 
 Tone.Event is the base class for musical events, allowing callbacks with associated values. It supports setting loop properties, start and stop times, probability, humanization, and playback rate.
 
-```APIDOC
+````APIDOC
 ## Tone.Event
 
 ### Description
@@ -1737,5 +1787,8 @@ note.humanize = "32n";
 
 //loop the event twice as fast.
 note.playbackRate = 2;
+````
+
 ```
+
 ```
