@@ -45,6 +45,7 @@ class NativeReverb {
   private dryGain: GainNode;
   private context: AudioContext;
   private currentDecay: number;
+  private impulseTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     context: AudioContext,
@@ -86,7 +87,15 @@ class NativeReverb {
   set decay(value: number) {
     if (this.currentDecay !== value) {
       this.currentDecay = value;
-      this.convolver.buffer = createImpulseResponse(this.context, value, 3.0);
+      if (this.impulseTimer) clearTimeout(this.impulseTimer);
+      this.impulseTimer = setTimeout(() => {
+        this.convolver.buffer = createImpulseResponse(
+          this.context,
+          this.currentDecay,
+          3.0,
+        );
+        this.impulseTimer = null;
+      }, 120);
     }
   }
 
@@ -95,6 +104,7 @@ class NativeReverb {
   }
 
   dispose() {
+    if (this.impulseTimer) clearTimeout(this.impulseTimer);
     this.input.dispose();
     this.output.dispose();
     this.delayNode.disconnect();
@@ -426,6 +436,9 @@ export function useNotePlayer(
 ) {
   const [preloadProgress, setPreloadProgress] = useState<number>(0);
   const [isPreloading, setIsPreloading] = useState<boolean>(false);
+  const [preloadError, setPreloadError] = useState<string | null>(null);
+  const [preloadAttempt, setPreloadAttempt] = useState(0);
+  const [engineAttempt, setEngineAttempt] = useState(0);
 
   const [Tone, setTone] = useState<typeof ToneType | null>(null);
   const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(
@@ -443,20 +456,34 @@ export function useNotePlayer(
   const pedalActive = useRef(false);
 
   useEffect(() => {
+    if (!enablePreload) return;
     let mounted = true;
 
-    import("tone").then((t) => {
+    queueMicrotask(() => {
       if (!mounted) return;
-      // Reduce latency and initialize Transport before creating LFO effects.
-      t.getContext().lookAhead = 0.01;
-      t.getTransport();
-
-      const limiter = new t.Limiter(-1);
-      limiter.connect(t.getContext().rawContext.destination);
-      limiterRef.current = limiter;
-
-      setTone(t);
+      setIsPreloading(true);
+      setPreloadProgress(0);
+      setPreloadError(null);
     });
+
+    import("tone")
+      .then((t) => {
+        if (!mounted) return;
+        // Reduce latency and initialize Transport before creating LFO effects.
+        t.getContext().lookAhead = 0.01;
+        t.getTransport();
+
+        const limiter = new t.Limiter(-1);
+        limiter.connect(t.getContext().rawContext.destination);
+        limiterRef.current = limiter;
+
+        setTone(t);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setIsPreloading(false);
+        setPreloadError("The audio engine could not be loaded.");
+      });
 
     return () => {
       mounted = false;
@@ -472,7 +499,7 @@ export function useNotePlayer(
         limiterRef.current = null;
       }
     };
-  }, []);
+  }, [enablePreload, engineAttempt]);
 
   // Browsers require AudioContext startup within a user gesture.
   useEffect(() => {
@@ -519,6 +546,7 @@ export function useNotePlayer(
       if (!mounted) return;
       setIsPreloading(true);
       setPreloadProgress(0);
+      setPreloadError(null);
       setBuffers(null);
     });
 
@@ -539,10 +567,13 @@ export function useNotePlayer(
         if (!mounted) return;
         setPreloadProgress(1);
         setIsPreloading(false);
+        setPreloadError(null);
         setBuffers(newBuffers);
       },
       onerror: () => {
-        if (mounted) setIsPreloading(false);
+        if (!mounted) return;
+        setIsPreloading(false);
+        setPreloadError("The audio samples could not be loaded.");
       },
     });
 
@@ -550,7 +581,13 @@ export function useNotePlayer(
       mounted = false;
       newBuffers.dispose();
     };
-  }, [soundType, notes, enablePreload, Tone]);
+  }, [soundType, notes, enablePreload, Tone, preloadAttempt]);
+
+  const retryPreload = useCallback(() => {
+    setPreloadError(null);
+    if (Tone) setPreloadAttempt((attempt) => attempt + 1);
+    else setEngineAttempt((attempt) => attempt + 1);
+  }, [Tone]);
 
   // Create the sampler as soon as buffers load so routing is ready before input.
   useEffect(() => {
@@ -1025,8 +1062,17 @@ export function useNotePlayer(
       samplerRef.current.releaseAll(Tone.now());
     }
     heldKeys.current.clear();
+    activeVoices.current = [];
     pedalActive.current = false;
   }, [Tone]);
 
-  return { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading };
+  return {
+    playNote,
+    stopNote,
+    stopAllNotes,
+    preloadProgress,
+    isPreloading,
+    preloadError,
+    retryPreload,
+  };
 }

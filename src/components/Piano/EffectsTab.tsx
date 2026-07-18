@@ -94,6 +94,7 @@ export function EffectsTab({
   );
   const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 });
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dropIndexRef = useRef<number | null>(null);
   const rackRef = useRef<HTMLDivElement>(null);
   const isDraggingNew = useRef(false);
 
@@ -157,47 +158,55 @@ export function EffectsTab({
           e.clientX <= rackRect.right &&
           e.clientY >= rackRect.top - 30 &&
           e.clientY <= rackRect.bottom + 30;
-        setDropIndex(inRack ? computeDropIndex(e.clientX) : null);
+        const nextDropIndex = inRack ? computeDropIndex(e.clientX) : null;
+        dropIndexRef.current = nextDropIndex;
+        setDropIndex(nextDropIndex);
       }
     };
 
     const onUp = () => {
-      if (draggingNewType) {
-        const idx = dropIndex ?? effectChain.length;
+      const index = dropIndexRef.current;
+      if (draggingNewType && index !== null) {
         const node = createEffectNode(draggingNewType);
         setEffectChain((prev) => {
           const next = [...prev];
-          next.splice(idx, 0, node);
+          next.splice(index, 0, node);
           return next;
         });
       }
+      finishDrag();
+    };
+
+    const finishDrag = () => {
       setDraggingNewType(null);
       setDropIndex(null);
+      dropIndexRef.current = null;
       isDraggingNew.current = false;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
 
+    const onCancel = () => finishDrag();
+
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
     document.body.style.cursor = "grabbing";
     document.body.style.userSelect = "none";
     return () => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
     };
-  }, [
-    draggingNewType,
-    dropIndex,
-    effectChain.length,
-    computeDropIndex,
-    setEffectChain,
-  ]);
+  }, [draggingNewType, computeDropIndex, setEffectChain]);
 
   const startAddDrag = (type: EffectType, e: React.PointerEvent) => {
     // Ignore secondary-button gestures.
     if (e.button !== 0) return;
     e.preventDefault();
+    dropIndexRef.current = null;
     setDraggingNewType(type);
     setGhostPos({ x: e.clientX, y: e.clientY });
   };
@@ -249,14 +258,17 @@ export function EffectsTab({
                         startAddDrag(type, e as unknown as React.PointerEvent);
                         document.removeEventListener("pointermove", onMove);
                         document.removeEventListener("pointerup", onUp);
+                        document.removeEventListener("pointercancel", onUp);
                       }
                     };
                     const onUp = () => {
                       document.removeEventListener("pointermove", onMove);
                       document.removeEventListener("pointerup", onUp);
+                      document.removeEventListener("pointercancel", onUp);
                     };
                     document.addEventListener("pointermove", onMove);
                     document.addEventListener("pointerup", onUp);
+                    document.addEventListener("pointercancel", onUp);
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab active:cursor-grabbing shadow-md select-none`}
                   whileHover={{

@@ -53,16 +53,25 @@ export function useMouseControls(
 
   // Release notes even when the pointer leaves the key before mouseup.
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
+    const releaseMouse = () => {
       if (currentNote.current) stopNote(currentNote.current, false);
       currentNote.current = null;
       isMouseDown.current = false;
 
       if (clearAllNotes) clearAllNotes();
     };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") releaseMouse();
+    };
 
-    window.addEventListener("mouseup", handleGlobalMouseUp);
-    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+    window.addEventListener("mouseup", releaseMouse);
+    window.addEventListener("blur", releaseMouse);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("mouseup", releaseMouse);
+      window.removeEventListener("blur", releaseMouse);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [stopNote, clearAllNotes]);
 
   return { handleMouseDown, handleMouseEnter, handleMouseUp };

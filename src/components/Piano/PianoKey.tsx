@@ -11,6 +11,7 @@ type PianoKeyProps = {
   onTouchStart?: (e: React.TouchEvent<HTMLButtonElement>) => void;
   onTouchMove?: (e: React.TouchEvent<HTMLButtonElement>) => void;
   onTouchEnd?: (e: React.TouchEvent<HTMLButtonElement>) => void;
+  onTouchCancel?: (e: React.TouchEvent<HTMLButtonElement>) => void;
   getSharpKeyPosition: (note: Note) => number;
   showLabel?: boolean;
   showSolfege?: boolean;
@@ -25,6 +26,7 @@ function PianoKey({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
+  onTouchCancel,
   getSharpKeyPosition,
   showLabel = true,
   showSolfege = true,
@@ -73,6 +75,7 @@ function PianoKey({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
       className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
       style={{
         ...position,

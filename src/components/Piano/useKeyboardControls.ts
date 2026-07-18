@@ -74,12 +74,25 @@ export function useKeyboardControls(
       stopNoteIfPressed(noteObj);
     };
 
+    const releasePressedKeys = () => {
+      notes.forEach(stopNoteIfPressed);
+      pressedKeys.current.clear();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") releasePressedKeys();
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", releasePressedKeys);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", releasePressedKeys);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      releasePressedKeys();
     };
   }, [triggerNote, stopNoteIfPressed, notes]);
 }

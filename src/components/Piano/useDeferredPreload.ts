@@ -17,14 +17,12 @@ export function useDeferredPreload(preloadFn: () => void, delay = 500) {
     };
 
     const removeListeners = () => {
-      window.removeEventListener("click", triggerPreload);
+      window.removeEventListener("pointerdown", triggerPreload);
       window.removeEventListener("keydown", triggerPreload);
-      window.removeEventListener("touchstart", triggerPreload);
     };
 
-    window.addEventListener("click", triggerPreload);
+    window.addEventListener("pointerdown", triggerPreload, { passive: true });
     window.addEventListener("keydown", triggerPreload);
-    window.addEventListener("touchstart", triggerPreload);
 
     const timeout = window.setTimeout(triggerPreload, delay);
 

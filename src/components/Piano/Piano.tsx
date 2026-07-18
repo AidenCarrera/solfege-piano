@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 import { Note } from "@/lib/note";
 import { generateNotes } from "@/lib/noteGenerator";
@@ -14,6 +14,7 @@ import { useTouchControls } from "./useTouchControls";
 import { useBackgroundColor } from "./useBackgroundColor";
 import { useSustainToggle } from "./useSustainToggle";
 import { useActiveNotes } from "./useActiveNotes";
+import { useDeferredPreload } from "./useDeferredPreload";
 import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
 
 import PianoKey from "./PianoKey";
@@ -68,20 +69,28 @@ export default function Piano() {
     [startOctave, endOctave],
   );
 
-  // Audio samples are preloaded to keep first-note latency predictable.
-  const enablePreload = true;
+  const [enablePreload, setEnablePreload] = useState(false);
+  const beginPreload = useCallback(() => setEnablePreload(true), []);
+  useDeferredPreload(beginPreload, 1500);
 
   const [sustainActive, setSustainActive] = useState(false);
 
-  const { playNote, stopNote, stopAllNotes, preloadProgress, isPreloading } =
-    useNotePlayer(
-      volume,
-      effectChain,
-      soundType,
-      sustainActive,
-      notes,
-      enablePreload,
-    );
+  const {
+    playNote,
+    stopNote,
+    stopAllNotes,
+    preloadProgress,
+    isPreloading,
+    preloadError,
+    retryPreload,
+  } = useNotePlayer(
+    volume,
+    effectChain,
+    soundType,
+    sustainActive,
+    notes,
+    enablePreload,
+  );
 
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
@@ -100,8 +109,29 @@ export default function Piano() {
     clearAllNotes,
   );
 
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } =
-    useTouchControls(playNote, stopNote, activateNote, deactivateNote);
+  const {
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
+  } = useTouchControls(playNote, stopNote, activateNote, deactivateNote);
+
+  useEffect(() => {
+    const releaseNotes = () => {
+      stopAllNotes();
+      clearAllNotes();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") releaseNotes();
+    };
+
+    window.addEventListener("blur", releaseNotes);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("blur", releaseNotes);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [stopAllNotes, clearAllNotes]);
 
   // Sharp keys are positioned against their preceding white key.
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
@@ -175,6 +205,8 @@ export default function Piano() {
         <PreloadProgress
           progress={preloadProgress}
           isPreloading={isPreloading}
+          error={preloadError}
+          onRetry={retryPreload}
         />
 
         <div
@@ -197,6 +229,7 @@ export default function Piano() {
               }
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchCancel}
               getSharpKeyPosition={getSharpKeyPosition}
               showLabel={labelsEnabled}
               showSolfege={solfegeEnabled}
