@@ -21,7 +21,7 @@ type Props = {
   textColor: string;
 };
 
-// Maps slider positions to octave ranges
+/** Maps the discrete range control to supported sample spans. */
 const OCTAVE_MAP: Record<number, [number, number]> = {
   1: [3, 4],
   2: [3, 5],
@@ -47,27 +47,24 @@ export default function PianoControls({
   onOctaveChange,
   textColor,
 }: Props) {
-  // Determine slider position based on current octave range
   const sliderValue =
     Object.entries(OCTAVE_MAP).find(
       ([, range]) => range[0] === startOctave && range[1] === endOctave,
-    )?.[0] ?? "2"; // default to 2 if no exact match
+    )?.[0] ?? "2";
 
-  // Auto-set piano scale when Solfege mode is enabled
   useEffect(() => {
     if (soundType === "Solfege") {
       setPianoScale(1.5);
     }
   }, [soundType, setPianoScale]);
 
-  // Handle octave range slider changes
   const handleSliderChange = (val: number) => {
     const range = OCTAVE_MAP[val];
     if (!range) return;
     const [start, end] = range;
     onOctaveChange(start, end);
 
-    // Calculate number of octaves and map to piano scale
+    // Wider ranges need a smaller scale to remain visible.
     const numOctaves = end - start + 1;
     let newScale = 1;
 
@@ -104,7 +101,6 @@ export default function PianoControls({
           textColor === "#ffffff" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
       }}
     >
-      {/* ----- Volume Control ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
           Volume: {volume.toFixed(2)}
@@ -120,7 +116,6 @@ export default function PianoControls({
         />
       </div>
 
-      {/* ----- Label Toggles (Keyboard / Solfege) ----- */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
           <input
@@ -141,7 +136,6 @@ export default function PianoControls({
         </label>
       </div>
 
-      {/* ----- Piano Scale (Zoom) ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
           Piano Scale: {pianoScale.toFixed(2)}
@@ -157,7 +151,6 @@ export default function PianoControls({
         />
       </div>
 
-      {/* ----- Background Color Picker ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">Background:</label>
         <input
@@ -168,7 +161,6 @@ export default function PianoControls({
         />
       </div>
 
-      {/* ----- Sound Type Selector ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">Sound Type:</label>
         <select
@@ -182,7 +174,6 @@ export default function PianoControls({
         </select>
       </div>
 
-      {/* ----- Octave Range Slider ----- */}
       <div className="flex flex-col items-start">
         <label className="text-sm font-medium mb-1">
           Octave Range: C{startOctave} - C{endOctave}
@@ -195,7 +186,7 @@ export default function PianoControls({
           value={parseInt(sliderValue)}
           onChange={(e) => handleSliderChange(parseInt(e.target.value))}
           className="w-40"
-          disabled={soundType === "Solfege"} // Disable slider for Solfege mode
+          disabled={soundType === "Solfege"}
         />
         {soundType === "Solfege" && (
           <span className="text-xs opacity-70 mt-1">

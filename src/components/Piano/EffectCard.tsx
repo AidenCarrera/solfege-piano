@@ -91,16 +91,14 @@ export function EffectCard({
           transition: { duration: 0.15 },
         }}
       >
-        {/* Gradient top bar — also a drag handle */}
         <div
           className={`h-1 w-full bg-linear-to-r ${meta.color} ${!effect.enabled ? "opacity-30" : ""}`}
         />
 
-        {/* Header — entire area is draggable */}
         <div
           className="flex items-center gap-2 px-3 pt-2.5 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
           onPointerDown={(e) => {
-            // Don't start drag from buttons
+            // Preserve button interactions inside the drag handle.
             if ((e.target as HTMLElement).closest("button")) return;
             dragControls.start(e);
           }}
@@ -153,7 +151,6 @@ export function EffectCard({
           </motion.button>
         </div>
 
-        {/* Params — greyed out when bypassed, but always visible */}
         <div
           className="px-3 pb-3 flex flex-col gap-2 flex-1 transition-opacity duration-200"
           style={{
@@ -165,7 +162,6 @@ export function EffectCard({
             className="flex flex-col gap-2 pt-1 border-t"
             style={{ borderColor: "rgba(255,255,255,0.07)" }}
           >
-            {/* Mode Selector */}
             {effect.type === "Reverb" && (
               <select
                 value={p.mode}
@@ -288,7 +284,6 @@ export function EffectCard({
               (v) => `${Math.round(v * 100)}%`,
             )}
 
-            {/* Effect-Specific Parameters */}
             <div className="flex flex-col gap-2 mt-1">
               {effect.type === "Reverb" && (
                 <>

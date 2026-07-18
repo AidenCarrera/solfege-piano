@@ -61,7 +61,6 @@ export function SettingsTab({
       transition={{ duration: 0.18 }}
       className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
     >
-      {/* Sound Type */}
       <div className="flex flex-col gap-2">
         <label
           className="text-[11px] font-semibold uppercase tracking-wider"
@@ -80,7 +79,6 @@ export function SettingsTab({
         </select>
       </div>
 
-      {/* Octave Range */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
@@ -116,7 +114,6 @@ export function SettingsTab({
         )}
       </div>
 
-      {/* Zoom */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
@@ -143,7 +140,6 @@ export function SettingsTab({
         />
       </div>
 
-      {/* Volume */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
@@ -170,7 +166,6 @@ export function SettingsTab({
         />
       </div>
 
-      {/* Background */}
       <div className="flex flex-col gap-2">
         <label
           className="text-[11px] font-semibold uppercase tracking-wider"
@@ -194,7 +189,6 @@ export function SettingsTab({
         </div>
       </div>
 
-      {/* Labels */}
       <div className="flex flex-col gap-3">
         <label
           className="text-[11px] font-semibold uppercase tracking-wider"

@@ -70,7 +70,7 @@ export type EffectParamsUpdate = Partial<{
 }>;
 
 export interface EffectNode {
-  id: string; // Unique ID for drag-and-drop
+  id: string;
   type: EffectType;
   enabled: boolean;
   params: EffectParams;

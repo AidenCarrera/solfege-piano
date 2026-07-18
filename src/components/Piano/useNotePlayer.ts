@@ -55,7 +55,7 @@ class NativeReverb {
     this.context = context;
     this.currentDecay = decay;
 
-    // Use Tone.Gain for external interoperability
+    // Tone.Gain bridges Tone.js and native Web Audio graph boundaries.
     this.input = new Tone.Gain();
     this.output = new Tone.Gain();
 
@@ -68,11 +68,9 @@ class NativeReverb {
     this.wetGain = context.createGain();
     this.dryGain = context.createGain();
 
-    // Connect input to delayNode, then delayNode to convolver (wet path)
     Tone.connect(this.input, this.delayNode);
     this.delayNode.connect(this.convolver);
 
-    // Connect input to dryGain (dry path)
     Tone.connect(this.input, this.dryGain);
 
     this.convolver.connect(this.wetGain);
@@ -449,12 +447,10 @@ export function useNotePlayer(
 
     import("tone").then((t) => {
       if (!mounted) return;
-      // Configure default context for low latency
+      // Reduce latency and initialize Transport before creating LFO effects.
       t.getContext().lookAhead = 0.01;
-      // Force initialization of Tone.Transport to prevent LFO crashes
       t.getTransport();
 
-      // Initialize global limiter to prevent clipping
       const limiter = new t.Limiter(-1);
       limiter.connect(t.getContext().rawContext.destination);
       limiterRef.current = limiter;
@@ -478,8 +474,7 @@ export function useNotePlayer(
     };
   }, []);
 
-  // Warm up and start the AudioContext on any user interaction with the page (e.g. click, touch, key press)
-  // This runs synchronously inside user events, avoiding browser-enforced AudioContext suspension/blockage.
+  // Browsers require AudioContext startup within a user gesture.
   useEffect(() => {
     if (!Tone) return;
 
@@ -500,7 +495,7 @@ export function useNotePlayer(
     };
   }, [Tone]);
 
-  // Sync AudioContext state to react state so that effects routing updates automatically when context starts
+  // Reconcile LFO-backed effects after a suspended context starts.
   useEffect(() => {
     if (!Tone) return;
     const rawCtx = Tone.getContext().rawContext;
@@ -557,7 +552,7 @@ export function useNotePlayer(
     };
   }, [soundType, notes, enablePreload, Tone]);
 
-  // Eagerly instantiate Sampler once buffers are loaded so that the routing effects are connected immediately
+  // Create the sampler as soon as buffers load so routing is ready before input.
   useEffect(() => {
     if (!Tone || !buffers) {
       if (samplerRef.current) {
@@ -575,7 +570,7 @@ export function useNotePlayer(
         const buf = buffers.get(toneNote);
         if (buf) bufferMap[toneNote] = buf;
       } catch {
-        // Ignore missing buffer during transient state
+        // Buffers can disappear briefly while the sound bank changes.
       }
     });
 
@@ -603,25 +598,23 @@ export function useNotePlayer(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buffers, Tone, notes]);
 
-  // Volume
   useEffect(() => {
     if (samplerRef.current && Tone) {
       samplerRef.current.volume.value = Tone.gainToDb(volume) - 3;
     }
   }, [volume, Tone]);
 
-  // Dynamic Audio Routing
   useEffect(() => {
     if (!Tone || !samplerRef.current || !buffers) return;
     const nativeContext = Tone.getContext().rawContext as AudioContext;
 
-    // 1. Reconcile existing effects
+    // Reuse effect instances when possible to preserve their audio state.
     const newActiveEffects = new Map<string, ActiveEffect>();
 
     effectChain.forEach((nodeConfig) => {
       let effect = activeEffectsRef.current.get(nodeConfig.id);
 
-      // Re-instantiate if the mode changed
+      // Different modes use different node types and cannot update in place.
       if (effect && effect.mode !== nodeConfig.params.mode) {
         if (effect.instance && typeof effect.instance.dispose === "function") {
           effect.instance.dispose();
@@ -630,7 +623,6 @@ export function useNotePlayer(
       }
 
       if (!effect) {
-        // Instantiate new effect
         let instance: EffectInstance | undefined;
         if (nodeConfig.type === "Reverb") {
           const p = nodeConfig.params as ReverbParams;
@@ -692,7 +684,7 @@ export function useNotePlayer(
               }),
             );
           } else if (p.mode === "Phaser") {
-            // Tone.Phaser does not have a start() method on the instance itself
+            // Phaser starts internally, unlike the other LFO-backed effects.
             instance = asEffectInstance(
               new Tone.Phaser({
                 frequency: p.frequency ?? 1.5,
@@ -749,7 +741,7 @@ export function useNotePlayer(
             attack: 0.003,
             release: 0.25,
           });
-          // Wrap compressor with dry/wet mix using native gain nodes
+          // Compressor has no wet control, so provide a parallel dry path.
           const inputGain = new Tone.Gain();
           const outputGain = new Tone.Gain();
           const wetGain = nativeContext.createGain();
@@ -791,9 +783,8 @@ export function useNotePlayer(
             instance.output ?? (instance as unknown as ToneType.OutputNode),
         };
       } else {
-        // Update parameters
         const { instance } = effect;
-        if (!instance) return; // In case of failed instantiation (like LFOs before context running)
+        if (!instance) return;
 
         if (nodeConfig.type === "Reverb") {
           const p = nodeConfig.params as ReverbParams;
@@ -874,7 +865,7 @@ export function useNotePlayer(
       newActiveEffects.set(nodeConfig.id, effect);
     });
 
-    // Destroy removed effects
+    // Dispose removed nodes before rebuilding graph connections.
     activeEffectsRef.current.forEach((effect, id) => {
       if (!newActiveEffects.has(id)) {
         if (effect.instance && typeof effect.instance.dispose === "function") {
@@ -884,9 +875,8 @@ export function useNotePlayer(
     });
     activeEffectsRef.current = newActiveEffects;
 
-    // 2. Re-wire the chain
     samplerRef.current.disconnect();
-    // Also disconnect all effect outputs to prevent stale connections
+    // Clear stale outgoing edges before reconnecting the ordered chain.
     newActiveEffects.forEach((effect) => {
       if (effect.output && typeof effect.output.disconnect === "function") {
         effect.output.disconnect();
@@ -899,21 +889,19 @@ export function useNotePlayer(
       if (nodeConfig.enabled) {
         const effect = newActiveEffects.get(nodeConfig.id);
         if (effect) {
-          // Native AudioNodes vs ToneAudioNodes connection semantics
+          // Tone.connect normalizes native and Tone.js node semantics.
           Tone.connect(currentOutput, effect.input);
           currentOutput = effect.output;
         }
       }
     });
 
-    // Final connection to destination (via limiter if available)
     Tone.connect(
       currentOutput,
       limiterRef.current ?? nativeContext.destination,
     );
   }, [effectChain, Tone, buffers, contextState]);
 
-  // Keyboard Pedal
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat && !sustainMode) {
@@ -966,7 +954,7 @@ export function useNotePlayer(
             const buf = buffers.get(toneNote);
             if (buf) bufferMap[toneNote] = buf;
           } catch {
-            // Ignore missing buffer during transient state
+            // Buffers can disappear briefly while the sound bank changes.
           }
         });
 
@@ -978,10 +966,7 @@ export function useNotePlayer(
 
         samplerRef.current.volume.value = Tone.gainToDb(volume);
 
-        // Trigger a fake re-evaluation of effectChain by copying it?
-        // Actually, we can just connect it to the destination directly if there are no effects,
-        // but the routing useEffect will handle it automatically!
-        // To be safe and avoid silence before the useEffect runs, we connect to destination initially.
+        // Provide audio immediately while the routing effect reconciles the chain.
         if (limiterRef.current) {
           samplerRef.current.connect(limiterRef.current);
         } else {

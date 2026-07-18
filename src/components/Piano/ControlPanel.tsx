@@ -46,7 +46,6 @@ export default function ControlPanel({
       className="glass-panel rounded-2xl mb-4 w-full max-w-4xl overflow-hidden"
       style={{ backgroundColor: panelBg, borderColor, color: textColor }}
     >
-      {/* Tab Bar */}
       <div
         className="flex border-b relative items-center"
         style={{ borderColor }}

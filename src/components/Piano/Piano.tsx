@@ -22,7 +22,6 @@ import PreloadProgress from "./PreloadProgress";
 import { EffectNode, createEffectNode } from "@/lib/effects";
 
 export default function Piano() {
-  /* ------------------ State ------------------ */
   const {
     activeNotes,
     activateNote,
@@ -45,7 +44,6 @@ export default function Piano() {
   const [bgColor, setBgColor] = useBackgroundColor();
   const [soundType, setSoundType] = useState<SoundType>("Piano");
 
-  // Octave range (updates note set when changed)
   const [startOctave, setStartOctave] = useState(
     PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0] ?? 3,
   );
@@ -53,27 +51,24 @@ export default function Piano() {
     PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1] ?? 4,
   );
 
-  // Handle sound type switching (locks Solfege to one octave)
   const handleSoundTypeChange = useCallback(
     (newSoundType: SoundType) => {
       if (newSoundType === "Solfege") {
         setStartOctave(3);
         setEndOctave(4);
-        setPianoScale(1.5); // lock scale to 1.5 in Solfege mode
+        setPianoScale(1.5);
       }
       setSoundType(newSoundType);
     },
     [setPianoScale],
   );
 
-  // Generate piano notes based on the current octave range
   const notes: Note[] = useMemo(
     () => generateNotes(startOctave, endOctave),
     [startOctave, endOctave],
   );
 
-  /* ------------------ Audio ------------------ */
-  // Immediate preloading to prevent latency in production
+  // Audio samples are preloaded to keep first-note latency predictable.
   const enablePreload = true;
 
   const [sustainActive, setSustainActive] = useState(false);
@@ -88,11 +83,8 @@ export default function Piano() {
       enablePreload,
     );
 
-  // Connect sustain mode to note playback
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
-  /* ------------------ Input Handlers ------------------ */
-  // Keyboard controls
   useKeyboardControls(
     notes,
     playNote,
@@ -101,7 +93,6 @@ export default function Piano() {
     deactivateNote,
   );
 
-  // Mouse and touch handlers
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
     playNote,
     stopNote,
@@ -112,8 +103,7 @@ export default function Piano() {
   const { handleTouchStart, handleTouchMove, handleTouchEnd } =
     useTouchControls(playNote, stopNote, activateNote, deactivateNote);
 
-  /* ------------------ Layout ------------------ */
-  // Compute layout position for sharp keys
+  // Sharp keys are positioned against their preceding white key.
   const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
   const getSharpKeyPosition = (note: Note) => {
     const match = note.name.match(/^([A-G]s?)(\d+)$/);
@@ -130,8 +120,6 @@ export default function Piano() {
     );
   };
 
-  /* ------------------ Render ------------------ */
-  // Calculate adaptive colors
   const textColor = useMemo(() => getContrastColor(bgColor), [bgColor]);
   const shadowColor = useMemo(() => getShadowColor(bgColor), [bgColor]);
 

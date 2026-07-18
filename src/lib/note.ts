@@ -1,21 +1,12 @@
-// lib/note.ts
-/**
- * Consolidated note definitions and types
- */
-
-/* ----- TYPE DEFINITIONS ----- */
 export type Note = {
-  name: string; // e.g., "C4"
-  isSharp: boolean; // true if sharp
-  fileName: string; // e.g., "Cs4" (for audio file)
-  key: string; // keyboard mapping, e.g., "a"
-  solfege: string; // e.g., "Do"
+  name: string;
+  isSharp: boolean;
+  fileName: string;
+  key: string;
+  solfege: string;
 };
 
-/* ----- BASE NOTE DEFINITIONS ----- */
-/**
- * The 12 chromatic notes in an octave with their properties
- */
+/** Chromatic note metadata; `s` encodes sharps in sample filenames. */
 export const BASE_NOTES = [
   { base: "C", isSharp: false, solfege: "Do" },
   { base: "Cs", isSharp: true, solfege: "Di" },
@@ -31,11 +22,7 @@ export const BASE_NOTES = [
   { base: "B", isSharp: false, solfege: "Ti" },
 ] as const;
 
-/* ----- KEYBOARD MAPPING ----- */
-/**
- * Maps computer keyboard keys to piano notes for C4-C5 range
- * Order matches BASE_NOTES chromatic sequence
- */
+/** Keyboard shortcuts in chromatic order from C4 through C5. */
 export const KEYBOARD_MAP_C4_C5 = [
   "a",
   "w",

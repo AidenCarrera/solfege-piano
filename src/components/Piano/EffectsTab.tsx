@@ -17,7 +17,6 @@ export interface EffectsTabProps {
   borderColor: string;
 }
 
-// Ghost card shown while dragging from add buttons
 function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   const meta = EFFECT_META[type];
   return (
@@ -70,7 +69,6 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   );
 }
 
-// Drop position indicator shown between cards
 function DropIndicator() {
   return (
     <motion.div
@@ -91,7 +89,6 @@ export function EffectsTab({
   setEffectChain,
   borderColor,
 }: EffectsTabProps) {
-  // Drag-from-add-button state
   const [draggingNewType, setDraggingNewType] = useState<EffectType | null>(
     null,
   );
@@ -129,7 +126,7 @@ export function EffectsTab({
     [setEffectChain],
   );
 
-  // Compute which slot the ghost should drop into based on cursor X over the rack
+  // Insert before the first card whose midpoint is right of the pointer.
   const computeDropIndex = useCallback(
     (clientX: number): number => {
       if (!rackRef.current) return effectChain.length;
@@ -147,7 +144,7 @@ export function EffectsTab({
     [effectChain.length],
   );
 
-  // Global pointer handlers during a "drag from add" gesture
+  // Global listeners keep the drag active after the pointer leaves its source.
   useEffect(() => {
     if (!draggingNewType) return;
 
@@ -198,7 +195,7 @@ export function EffectsTab({
   ]);
 
   const startAddDrag = (type: EffectType, e: React.PointerEvent) => {
-    // Only trigger on primary button drag (not clicks)
+    // Ignore secondary-button gestures.
     if (e.button !== 0) return;
     e.preventDefault();
     setDraggingNewType(type);
@@ -215,7 +212,6 @@ export function EffectsTab({
         transition={{ duration: 0.18 }}
         className="p-5"
       >
-        {/* Add Effect pills — draggable into chain */}
         <div className="mb-4">
           <p
             className="text-[11px] font-semibold uppercase tracking-widest mb-3"
@@ -230,7 +226,7 @@ export function EffectsTab({
                 <motion.button
                   key={type}
                   onClick={() => {
-                    // Only add on click if it wasn't a drag gesture
+                    // A completed drag must not also add an effect on click.
                     if (!isDraggingNew.current) {
                       setEffectChain((prev) => [
                         ...prev,
@@ -240,7 +236,7 @@ export function EffectsTab({
                   }}
                   onPointerDown={(e) => {
                     isDraggingNew.current = false;
-                    // Delay to disambiguate click vs drag
+                    // Wait for movement before treating the gesture as a drag.
                     const startX = e.clientX;
                     const startY = e.clientY;
                     const onMove = (me: PointerEvent) => {
@@ -303,7 +299,6 @@ export function EffectsTab({
           </div>
         </div>
 
-        {/* Chain */}
         <AnimatePresence mode="wait">
           {effectChain.length === 0 && !draggingNewType ? (
             <motion.div
@@ -323,7 +318,6 @@ export function EffectsTab({
               className="flex items-start overflow-x-auto pb-3 min-h-[80px]"
               style={{
                 scrollbarWidth: "thin",
-                // Highlight drop zone when dragging new effect
                 outline: draggingNewType
                   ? "2px dashed rgba(99,102,241,0.5)"
                   : "none",
@@ -343,7 +337,6 @@ export function EffectsTab({
                 <AnimatePresence initial={false}>
                   {effectChain.map((effect, index) => (
                     <React.Fragment key={effect.id}>
-                      {/* Drop indicator before this card */}
                       <AnimatePresence>
                         {dropIndex === index && (
                           <DropIndicator key="drop-before" />
@@ -374,7 +367,6 @@ export function EffectsTab({
                       )}
                     </React.Fragment>
                   ))}
-                  {/* Drop indicator at end */}
                   <AnimatePresence>
                     {dropIndex === effectChain.length && (
                       <DropIndicator key="drop-end" />
@@ -387,7 +379,6 @@ export function EffectsTab({
         </AnimatePresence>
       </motion.div>
 
-      {/* Ghost card — follows cursor during drag-from-add */}
       <AnimatePresence>
         {draggingNewType && (
           <GhostCard type={draggingNewType} x={ghostPos.x} y={ghostPos.y} />

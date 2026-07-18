@@ -1,11 +1,5 @@
 import { useCallback, useEffect } from "react";
 
-/**
- * Hook to manage sustain pedal toggle behavior and spacebar listener
- * @param stopAllNotes - Callback to stop all playing notes when sustain is released
- * @param setSustainActive - State setter for sustain active state
- * @returns Object with toggleSustain function
- */
 export function useSustainToggle(
   stopAllNotes: () => void,
   setSustainActive: React.Dispatch<React.SetStateAction<boolean>>,
@@ -13,7 +7,7 @@ export function useSustainToggle(
   const toggleSustain = useCallback(() => {
     setSustainActive((prev) => {
       const newState = !prev;
-      // When sustain is turned off, stop all notes
+      // Release voices that were retained by sustain.
       if (!newState) {
         stopAllNotes();
       }
@@ -21,7 +15,6 @@ export function useSustainToggle(
     });
   }, [stopAllNotes, setSustainActive]);
 
-  // Listen for spacebar to toggle sustain
   useEffect(() => {
     const handleSpace = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
