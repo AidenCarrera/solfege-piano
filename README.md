@@ -30,7 +30,7 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 - **Tailwind CSS v4** – Utility-first CSS framework for responsive design
 - **TypeScript** – Adds static type checking and improved developer experience
 - **Tone.js & Web Audio API** – Handles audio synthesis, sampler playback, and custom effects routing
-- **@hello-pangea/dnd** – Enables drag-and-drop reordering for the effects rack
+- **Framer Motion** – Powers interface animation and effects-rack reordering
 
 ## Installation and setup
 

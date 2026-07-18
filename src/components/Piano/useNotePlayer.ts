@@ -364,13 +364,58 @@ class NativeFreeverb {
   }
 }
 
+interface NumericValue {
+  value: unknown;
+}
+
+interface EffectInstance {
+  input?: ToneType.InputNode;
+  output?: ToneType.OutputNode;
+  dispose: () => unknown;
+  wet?: NumericValue;
+  mix?: number;
+  decay?: number;
+  preDelay?: number;
+  roomSize?: number;
+  delayTime?: NumericValue | number;
+  feedback?: NumericValue;
+  frequency?: NumericValue | number;
+  depth?: NumericValue | number;
+  distortion?: number;
+  bits?: number;
+  order?: number;
+  baseFrequency?: NumericValue | number;
+  octaves?: NumericValue | number;
+  sensitivity?: NumericValue | number;
+  _comp?: ToneType.Compressor;
+  _inputGain?: ToneType.Gain;
+  _outputGain?: ToneType.Gain;
+  _wetGain?: GainNode;
+  _dryGain?: GainNode;
+}
+
+function asEffectInstance(value: unknown): EffectInstance {
+  return value as EffectInstance;
+}
+
+function setNumericValue(
+  target: NumericValue | number | undefined,
+  value: number,
+): boolean {
+  if (typeof target === "object" && target !== null) {
+    target.value = value;
+    return true;
+  }
+  return false;
+}
+
 interface ActiveEffect {
   id: string;
   type: string;
   mode: string;
-  input: any;
-  output: any;
-  instance: any;
+  input: ToneType.InputNode;
+  output: ToneType.OutputNode;
+  instance: EffectInstance;
 }
 
 export function useNotePlayer(
@@ -388,8 +433,8 @@ export function useNotePlayer(
   const [buffers, setBuffers] = useState<ToneType.ToneAudioBuffers | null>(
     null,
   );
-  const [samplerCreated, setSamplerCreated] = useState<boolean>(false);
-  const [contextState, setContextState] = useState<string>("suspended");
+  const [contextState, setContextState] =
+    useState<AudioContextState>("suspended");
 
   const samplerRef = useRef<ToneType.Sampler | null>(null);
   const limiterRef = useRef<ToneType.Limiter | null>(null);
@@ -460,7 +505,6 @@ export function useNotePlayer(
     if (!Tone) return;
     const rawCtx = Tone.getContext().rawContext;
     if (rawCtx) {
-      setContextState(rawCtx.state);
       const handleStateChange = () => {
         setContextState(rawCtx.state);
       };
@@ -476,14 +520,16 @@ export function useNotePlayer(
     let mounted = true;
     const folder = soundType.toLowerCase();
 
-    setIsPreloading(true);
-    setPreloadProgress(0);
-    setBuffers(null);
+    queueMicrotask(() => {
+      if (!mounted) return;
+      setIsPreloading(true);
+      setPreloadProgress(0);
+      setBuffers(null);
+    });
 
     if (samplerRef.current) {
       samplerRef.current.dispose();
       samplerRef.current = null;
-      setSamplerCreated(false);
     }
 
     const urls: Record<string, string> = {};
@@ -517,7 +563,6 @@ export function useNotePlayer(
       if (samplerRef.current) {
         samplerRef.current.dispose();
         samplerRef.current = null;
-        setSamplerCreated(false);
       }
       return;
     }
@@ -529,13 +574,13 @@ export function useNotePlayer(
         if (buffers.has && !buffers.has(toneNote)) return;
         const buf = buffers.get(toneNote);
         if (buf) bufferMap[toneNote] = buf;
-      } catch (e) {
+      } catch {
         // Ignore missing buffer during transient state
       }
     });
 
     const sampler = new Tone.Sampler({
-      urls: bufferMap as any,
+      urls: bufferMap,
       release: PIANO_CONFIG.FADE_OUT_MS / 1000,
       attack: PIANO_CONFIG.ATTACK_MS / 1000,
     });
@@ -548,13 +593,11 @@ export function useNotePlayer(
     }
 
     samplerRef.current = sampler;
-    setSamplerCreated(true);
 
     return () => {
       if (samplerRef.current) {
         samplerRef.current.dispose();
         samplerRef.current = null;
-        setSamplerCreated(false);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -569,7 +612,7 @@ export function useNotePlayer(
 
   // Dynamic Audio Routing
   useEffect(() => {
-    if (!Tone || !samplerRef.current || !samplerCreated) return;
+    if (!Tone || !samplerRef.current || !buffers) return;
     const nativeContext = Tone.getContext().rawContext as AudioContext;
 
     // 1. Reconcile existing effects
@@ -588,94 +631,116 @@ export function useNotePlayer(
 
       if (!effect) {
         // Instantiate new effect
-        let instance: any;
+        let instance: EffectInstance | undefined;
         if (nodeConfig.type === "Reverb") {
           const p = nodeConfig.params as ReverbParams;
           if (p.mode === "Native") {
-            instance = new NativeReverb(
-              nativeContext,
-              p.decay ?? 2.5,
-              p.preDelay ?? 0.01,
-              Tone,
+            instance = asEffectInstance(
+              new NativeReverb(
+                nativeContext,
+                p.decay ?? 2.5,
+                p.preDelay ?? 0.01,
+                Tone,
+              ),
             );
             instance.mix = p.mix ?? 0.15;
           } else if (p.mode === "Chamber") {
-            instance = new NativeFreeverb(
-              nativeContext,
-              p.roomSize ?? 0.5,
-              p.preDelay ?? 0.01,
-              Tone,
+            instance = asEffectInstance(
+              new NativeFreeverb(
+                nativeContext,
+                p.roomSize ?? 0.5,
+                p.preDelay ?? 0.01,
+                Tone,
+              ),
             );
             instance.mix = p.mix ?? 0.15;
           }
         } else if (nodeConfig.type === "Delay") {
           const p = nodeConfig.params as DelayParams;
           if (p.mode === "Feedback") {
-            instance = new Tone.FeedbackDelay({
-              delayTime: p.delayTime ?? 0.25,
-              feedback: p.feedback ?? 0.4,
-            });
+            instance = asEffectInstance(
+              new Tone.FeedbackDelay({
+                delayTime: p.delayTime ?? 0.25,
+                feedback: p.feedback ?? 0.4,
+              }),
+            );
           } else if (p.mode === "PingPong") {
-            instance = new Tone.PingPongDelay({
-              delayTime: p.delayTime ?? 0.25,
-              feedback: p.feedback ?? 0.4,
-            });
+            instance = asEffectInstance(
+              new Tone.PingPongDelay({
+                delayTime: p.delayTime ?? 0.25,
+                feedback: p.feedback ?? 0.4,
+              }),
+            );
           }
-          if (instance) instance.wet.value = p.mix ?? 0.2;
+          if (instance) setNumericValue(instance.wet, p.mix ?? 0.2);
         } else if (nodeConfig.type === "Modulation") {
           const p = nodeConfig.params as ModulationParams;
           if (Tone.getContext().state !== "running") return;
           if (p.mode === "Chorus") {
-            instance = new Tone.Chorus({
-              frequency: p.frequency ?? 1.5,
-              delayTime: 2.5,
-              depth: p.depth ?? 0.5,
-            }).start();
+            instance = asEffectInstance(
+              new Tone.Chorus({
+                frequency: p.frequency ?? 1.5,
+                delayTime: 2.5,
+                depth: p.depth ?? 0.5,
+              }).start(),
+            );
           } else if (p.mode === "Vibrato") {
-            instance = new Tone.Vibrato({
-              frequency: p.frequency ?? 5.0,
-              depth: p.depth ?? 0.1,
-            });
+            instance = asEffectInstance(
+              new Tone.Vibrato({
+                frequency: p.frequency ?? 5.0,
+                depth: p.depth ?? 0.1,
+              }),
+            );
           } else if (p.mode === "Phaser") {
             // Tone.Phaser does not have a start() method on the instance itself
-            instance = new Tone.Phaser({
-              frequency: p.frequency ?? 1.5,
-              octaves: 3,
-              baseFrequency: 1000,
-            });
+            instance = asEffectInstance(
+              new Tone.Phaser({
+                frequency: p.frequency ?? 1.5,
+                octaves: 3,
+                baseFrequency: 1000,
+              }),
+            );
           }
-          if (instance) instance.wet.value = p.mix ?? 0.5;
+          if (instance) setNumericValue(instance.wet, p.mix ?? 0.5);
         } else if (nodeConfig.type === "Distortion") {
           const p = nodeConfig.params as DistortionParams;
           if (p.mode === "Distortion") {
-            instance = new Tone.Distortion({ distortion: p.amount ?? 0.5 });
-            instance.wet.value = p.mix ?? 0.5;
+            instance = asEffectInstance(
+              new Tone.Distortion({ distortion: p.amount ?? 0.5 }),
+            );
+            setNumericValue(instance.wet, p.mix ?? 0.5);
           } else if (p.mode === "BitCrusher") {
             const bits = Math.max(1, Math.round((1 - (p.amount ?? 0.5)) * 8));
-            instance = new NativeBitCrusher(nativeContext, bits, Tone);
+            instance = asEffectInstance(
+              new NativeBitCrusher(nativeContext, bits, Tone),
+            );
             instance.mix = p.mix ?? 0.5;
           } else if (p.mode === "Chebyshev") {
             const order = Math.max(1, Math.round((p.amount ?? 0.5) * 50));
-            instance = new Tone.Chebyshev({ order });
-            instance.wet.value = p.mix ?? 0.5;
+            instance = asEffectInstance(new Tone.Chebyshev({ order }));
+            setNumericValue(instance.wet, p.mix ?? 0.5);
           }
         } else if (nodeConfig.type === "Filter") {
           const p = nodeConfig.params as FilterParams;
           if (p.mode === "AutoWah") {
-            instance = new Tone.AutoWah({
-              baseFrequency: p.baseFrequency ?? 150,
-              octaves: p.octaves ?? 4,
-              sensitivity: p.sensitivity ?? -20,
-            });
+            instance = asEffectInstance(
+              new Tone.AutoWah({
+                baseFrequency: p.baseFrequency ?? 150,
+                octaves: p.octaves ?? 4,
+                sensitivity: p.sensitivity ?? -20,
+              }),
+            );
           } else if (p.mode === "AutoFilter") {
             if (Tone.getContext().state !== "running") return;
-            instance = new Tone.AutoFilter({
-              frequency: 2,
-              baseFrequency: p.baseFrequency ?? 150,
-              octaves: p.octaves ?? 4,
-            }).start();
+            instance = asEffectInstance(
+              new Tone.AutoFilter({
+                frequency: 2,
+                baseFrequency: p.baseFrequency ?? 150,
+                octaves: p.octaves ?? 4,
+              }).start(),
+            );
           }
-          if (instance) instance.wet.value = p.mix ?? 1.0;
+          if (instance) setNumericValue(instance.wet, p.mix ?? 1.0);
         } else if (nodeConfig.type === "Compressor") {
           const p = nodeConfig.params as CompressorParams;
           const comp = new Tone.Compressor({
@@ -714,13 +779,16 @@ export function useNotePlayer(
           };
         }
 
+        if (!instance) return;
+
         effect = {
           id: nodeConfig.id,
           type: nodeConfig.type,
           mode: nodeConfig.params.mode,
           instance,
-          input: instance?.input || instance,
-          output: instance?.output || instance,
+          input: instance.input ?? (instance as unknown as ToneType.InputNode),
+          output:
+            instance.output ?? (instance as unknown as ToneType.OutputNode),
         };
       } else {
         // Update parameters
@@ -738,34 +806,30 @@ export function useNotePlayer(
             instance.roomSize = p.roomSize ?? 0.5;
             instance.preDelay = p.preDelay ?? 0.01;
           } else {
-            instance.wet.value = p.mix ?? 0.15;
+            setNumericValue(instance.wet, p.mix ?? 0.15);
           }
         } else if (nodeConfig.type === "Delay") {
           const p = nodeConfig.params as DelayParams;
-          instance.wet.value = p.mix ?? 0.2;
-          instance.delayTime.value = p.delayTime ?? 0.25;
-          instance.feedback.value = p.feedback ?? 0.4;
+          setNumericValue(instance.wet, p.mix ?? 0.2);
+          setNumericValue(instance.delayTime, p.delayTime ?? 0.25);
+          setNumericValue(instance.feedback, p.feedback ?? 0.4);
         } else if (nodeConfig.type === "Modulation") {
           const p = nodeConfig.params as ModulationParams;
-          instance.wet.value = p.mix ?? 0.5;
+          setNumericValue(instance.wet, p.mix ?? 0.5);
 
-          if (instance.frequency?.value !== undefined) {
-            instance.frequency.value = p.frequency ?? 1.5;
-          } else {
+          if (!setNumericValue(instance.frequency, p.frequency ?? 1.5)) {
             instance.frequency = p.frequency ?? 1.5;
           }
 
           if (p.mode !== "Phaser") {
-            if (instance.depth?.value !== undefined) {
-              instance.depth.value = p.depth ?? 0.5;
-            } else {
+            if (!setNumericValue(instance.depth, p.depth ?? 0.5)) {
               instance.depth = p.depth ?? 0.5;
             }
           }
         } else if (nodeConfig.type === "Distortion") {
           const p = nodeConfig.params as DistortionParams;
           if (p.mode === "Distortion") {
-            instance.wet.value = p.mix ?? 0.5;
+            setNumericValue(instance.wet, p.mix ?? 0.5);
             instance.distortion = p.amount ?? 0.5;
           } else if (p.mode === "BitCrusher") {
             instance.mix = p.mix ?? 0.5;
@@ -774,38 +838,36 @@ export function useNotePlayer(
               Math.round((1 - (p.amount ?? 0.5)) * 8),
             );
           } else if (p.mode === "Chebyshev") {
-            instance.wet.value = p.mix ?? 0.5;
+            setNumericValue(instance.wet, p.mix ?? 0.5);
             instance.order = Math.max(1, Math.round((p.amount ?? 0.5) * 50));
           }
         } else if (nodeConfig.type === "Filter") {
           const p = nodeConfig.params as FilterParams;
-          instance.wet.value = p.mix ?? 1.0;
+          setNumericValue(instance.wet, p.mix ?? 1.0);
 
-          if (instance.baseFrequency?.value !== undefined) {
-            instance.baseFrequency.value = p.baseFrequency ?? 150;
-          } else {
+          if (
+            !setNumericValue(instance.baseFrequency, p.baseFrequency ?? 150)
+          ) {
             instance.baseFrequency = p.baseFrequency ?? 150;
           }
 
-          if (instance.octaves?.value !== undefined) {
-            instance.octaves.value = p.octaves ?? 4;
-          } else {
+          if (!setNumericValue(instance.octaves, p.octaves ?? 4)) {
             instance.octaves = p.octaves ?? 4;
           }
 
           if (p.mode === "AutoWah") {
-            if (instance.sensitivity?.value !== undefined) {
-              instance.sensitivity.value = p.sensitivity ?? -20;
-            } else {
+            if (!setNumericValue(instance.sensitivity, p.sensitivity ?? -20)) {
               instance.sensitivity = p.sensitivity ?? -20;
             }
           }
         } else if (nodeConfig.type === "Compressor") {
           const p = nodeConfig.params as CompressorParams;
-          instance._comp.threshold.value = p.threshold ?? -24;
-          instance._comp.ratio.value = p.ratio ?? 4;
-          instance._wetGain.gain.value = p.mix ?? 1.0;
-          instance._dryGain.gain.value = 1 - (p.mix ?? 1.0);
+          if (instance._comp && instance._wetGain && instance._dryGain) {
+            instance._comp.threshold.value = p.threshold ?? -24;
+            instance._comp.ratio.value = p.ratio ?? 4;
+            instance._wetGain.gain.value = p.mix ?? 1.0;
+            instance._dryGain.gain.value = 1 - (p.mix ?? 1.0);
+          }
         }
       }
 
@@ -831,30 +893,25 @@ export function useNotePlayer(
       }
     });
 
-    let currentOutput: any = samplerRef.current;
+    let currentOutput: ToneType.OutputNode = samplerRef.current;
 
     effectChain.forEach((nodeConfig) => {
       if (nodeConfig.enabled) {
         const effect = newActiveEffects.get(nodeConfig.id);
         if (effect) {
           // Native AudioNodes vs ToneAudioNodes connection semantics
-          if (currentOutput.connect) {
-            currentOutput.connect(effect.input);
-          }
+          Tone.connect(currentOutput, effect.input);
           currentOutput = effect.output;
         }
       }
     });
 
     // Final connection to destination (via limiter if available)
-    if (currentOutput.connect) {
-      if (limiterRef.current) {
-        currentOutput.connect(limiterRef.current);
-      } else {
-        currentOutput.connect(nativeContext.destination);
-      }
-    }
-  }, [effectChain, Tone, samplerCreated, contextState]);
+    Tone.connect(
+      currentOutput,
+      limiterRef.current ?? nativeContext.destination,
+    );
+  }, [effectChain, Tone, buffers, contextState]);
 
   // Keyboard Pedal
   useEffect(() => {
@@ -890,7 +947,7 @@ export function useNotePlayer(
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [sustainMode, notes]);
+  }, [sustainMode, notes, Tone]);
 
   const playNote = useCallback(
     (fileName: string, noteName: string, isKeyboard = false) => {
@@ -908,13 +965,13 @@ export function useNotePlayer(
             if (buffers.has && !buffers.has(toneNote)) return;
             const buf = buffers.get(toneNote);
             if (buf) bufferMap[toneNote] = buf;
-          } catch (e) {
+          } catch {
             // Ignore missing buffer during transient state
           }
         });
 
         samplerRef.current = new Tone.Sampler({
-          urls: bufferMap as any,
+          urls: bufferMap,
           release: PIANO_CONFIG.FADE_OUT_MS / 1000,
           attack: PIANO_CONFIG.ATTACK_MS / 1000,
         });
@@ -930,7 +987,6 @@ export function useNotePlayer(
         } else {
           samplerRef.current.connect(Tone.getContext().rawContext.destination);
         }
-        setSamplerCreated(true);
       }
 
       if (isKeyboard || sustainMode) {

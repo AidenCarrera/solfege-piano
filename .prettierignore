@@ -1,0 +1,5 @@
+.next/
+node_modules/
+docs/tone.md
+pnpm-lock.yaml
+public/

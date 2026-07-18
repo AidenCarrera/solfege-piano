@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import { GripVertical, Power, Trash2 } from "lucide-react";
-import { EffectNode, EffectParams } from "@/lib/effects";
+import { EffectNode, EffectParamsUpdate } from "@/lib/effects";
 import { EFFECT_META } from "./ControlPanelTypes";
 
 export function EffectCard({
@@ -15,11 +15,11 @@ export function EffectCard({
   borderColor: string;
   onToggle: () => void;
   onRemove: () => void;
-  onUpdate: (params: Partial<EffectParams>) => void;
+  onUpdate: (params: EffectParamsUpdate) => void;
 }) {
   const dragControls = useDragControls();
   const meta = EFFECT_META[effect.type];
-  const p = effect.params as any;
+  const p = effect.params as typeof effect.params & EffectParamsUpdate;
 
   const renderSlider = (
     label: string,
@@ -169,7 +169,13 @@ export function EffectCard({
             {effect.type === "Reverb" && (
               <select
                 value={p.mode}
-                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                onChange={(e) =>
+                  onUpdate({
+                    mode: e.target.value as NonNullable<
+                      EffectParamsUpdate["mode"]
+                    >,
+                  })
+                }
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
@@ -184,7 +190,13 @@ export function EffectCard({
             {effect.type === "Delay" && (
               <select
                 value={p.mode}
-                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                onChange={(e) =>
+                  onUpdate({
+                    mode: e.target.value as NonNullable<
+                      EffectParamsUpdate["mode"]
+                    >,
+                  })
+                }
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
@@ -199,7 +211,13 @@ export function EffectCard({
             {effect.type === "Modulation" && (
               <select
                 value={p.mode}
-                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                onChange={(e) =>
+                  onUpdate({
+                    mode: e.target.value as NonNullable<
+                      EffectParamsUpdate["mode"]
+                    >,
+                  })
+                }
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
@@ -217,7 +235,13 @@ export function EffectCard({
             {effect.type === "Distortion" && (
               <select
                 value={p.mode}
-                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                onChange={(e) =>
+                  onUpdate({
+                    mode: e.target.value as NonNullable<
+                      EffectParamsUpdate["mode"]
+                    >,
+                  })
+                }
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
@@ -235,7 +259,13 @@ export function EffectCard({
             {effect.type === "Filter" && (
               <select
                 value={p.mode}
-                onChange={(e) => onUpdate({ mode: e.target.value as any })}
+                onChange={(e) =>
+                  onUpdate({
+                    mode: e.target.value as NonNullable<
+                      EffectParamsUpdate["mode"]
+                    >,
+                  })
+                }
                 className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >

@@ -6,6 +6,7 @@ import {
   EffectType,
   createEffectNode,
   EffectParams,
+  EffectParamsUpdate,
 } from "@/lib/effects";
 import { EFFECT_META } from "./ControlPanelTypes";
 import { EffectCard } from "./EffectCard";
@@ -90,8 +91,6 @@ export function EffectsTab({
   setEffectChain,
   borderColor,
 }: EffectsTabProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
   // Drag-from-add-button state
   const [draggingNewType, setDraggingNewType] = useState<EffectType | null>(
     null,
@@ -100,10 +99,6 @@ export function EffectsTab({
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const rackRef = useRef<HTMLDivElement>(null);
   const isDraggingNew = useRef(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const removeEffect = useCallback(
     (id: string) => {
@@ -122,7 +117,7 @@ export function EffectsTab({
   );
 
   const updateEffect = useCallback(
-    (id: string, params: Partial<EffectParams>) => {
+    (id: string, params: EffectParamsUpdate) => {
       setEffectChain((prev) =>
         prev.map((e) =>
           e.id === id
@@ -169,7 +164,7 @@ export function EffectsTab({
       }
     };
 
-    const onUp = (e: PointerEvent) => {
+    const onUp = () => {
       if (draggingNewType) {
         const idx = dropIndex ?? effectChain.length;
         const node = createEffectNode(draggingNewType);
@@ -323,75 +318,71 @@ export function EffectsTab({
               <p className="text-sm">Drag effects here or click to add.</p>
             </motion.div>
           ) : (
-            isMounted && (
-              <div
-                ref={rackRef}
-                className="flex items-start overflow-x-auto pb-3 min-h-[80px]"
-                style={{
-                  scrollbarWidth: "thin",
-                  // Highlight drop zone when dragging new effect
-                  outline: draggingNewType
-                    ? "2px dashed rgba(99,102,241,0.5)"
-                    : "none",
-                  outlineOffset: "4px",
-                  borderRadius: "12px",
-                  transition: "outline 0.15s ease",
-                }}
+            <div
+              ref={rackRef}
+              className="flex items-start overflow-x-auto pb-3 min-h-[80px]"
+              style={{
+                scrollbarWidth: "thin",
+                // Highlight drop zone when dragging new effect
+                outline: draggingNewType
+                  ? "2px dashed rgba(99,102,241,0.5)"
+                  : "none",
+                outlineOffset: "4px",
+                borderRadius: "12px",
+                transition: "outline 0.15s ease",
+              }}
+            >
+              <Reorder.Group
+                axis="x"
+                values={effectChain}
+                onReorder={setEffectChain}
+                as="div"
+                className="flex items-start gap-0"
+                style={{ listStyle: "none", padding: 0, margin: 0 }}
               >
-                <Reorder.Group
-                  axis="x"
-                  values={effectChain}
-                  onReorder={setEffectChain}
-                  as="div"
-                  className="flex items-start gap-0"
-                  style={{ listStyle: "none", padding: 0, margin: 0 }}
-                >
-                  <AnimatePresence initial={false}>
-                    {effectChain.map((effect, index) => (
-                      <React.Fragment key={effect.id}>
-                        {/* Drop indicator before this card */}
-                        <AnimatePresence>
-                          {dropIndex === index && (
-                            <DropIndicator key="drop-before" />
-                          )}
-                        </AnimatePresence>
-                        <div data-effect-card="true">
-                          <EffectCard
-                            effect={effect}
-                            borderColor={borderColor}
-                            onToggle={() => toggleEnabled(effect.id)}
-                            onRemove={() => removeEffect(effect.id)}
-                            onUpdate={(params) =>
-                              updateEffect(effect.id, params)
-                            }
-                          />
-                        </div>
-                        {index < effectChain.length - 1 && (
-                          <motion.div
-                            className="flex items-center self-stretch shrink-0 px-1"
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.5 }}
-                            transition={{ delay: 0.1 }}
-                          >
-                            <ChevronRight
-                              size={16}
-                              style={{ color: "rgba(255,255,255,0.2)" }}
-                            />
-                          </motion.div>
+                <AnimatePresence initial={false}>
+                  {effectChain.map((effect, index) => (
+                    <React.Fragment key={effect.id}>
+                      {/* Drop indicator before this card */}
+                      <AnimatePresence>
+                        {dropIndex === index && (
+                          <DropIndicator key="drop-before" />
                         )}
-                      </React.Fragment>
-                    ))}
-                    {/* Drop indicator at end */}
-                    <AnimatePresence>
-                      {dropIndex === effectChain.length && (
-                        <DropIndicator key="drop-end" />
+                      </AnimatePresence>
+                      <div data-effect-card="true">
+                        <EffectCard
+                          effect={effect}
+                          borderColor={borderColor}
+                          onToggle={() => toggleEnabled(effect.id)}
+                          onRemove={() => removeEffect(effect.id)}
+                          onUpdate={(params) => updateEffect(effect.id, params)}
+                        />
+                      </div>
+                      {index < effectChain.length - 1 && (
+                        <motion.div
+                          className="flex items-center self-stretch shrink-0 px-1"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.5 }}
+                          transition={{ delay: 0.1 }}
+                        >
+                          <ChevronRight
+                            size={16}
+                            style={{ color: "rgba(255,255,255,0.2)" }}
+                          />
+                        </motion.div>
                       )}
-                    </AnimatePresence>
+                    </React.Fragment>
+                  ))}
+                  {/* Drop indicator at end */}
+                  <AnimatePresence>
+                    {dropIndex === effectChain.length && (
+                      <DropIndicator key="drop-end" />
+                    )}
                   </AnimatePresence>
-                </Reorder.Group>
-              </div>
-            )
+                </AnimatePresence>
+              </Reorder.Group>
+            </div>
           )}
         </AnimatePresence>
       </motion.div>

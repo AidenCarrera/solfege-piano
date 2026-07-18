@@ -51,6 +51,24 @@ export type EffectParams =
   | FilterParams
   | CompressorParams;
 
+export type EffectParamsUpdate = Partial<{
+  mix: number;
+  mode: EffectParams["mode"];
+  decay: number;
+  preDelay: number;
+  roomSize: number;
+  delayTime: number;
+  feedback: number;
+  frequency: number;
+  depth: number;
+  amount: number;
+  baseFrequency: number;
+  octaves: number;
+  sensitivity: number;
+  threshold: number;
+  ratio: number;
+}>;
+
 export interface EffectNode {
   id: string; // Unique ID for drag-and-drop
   type: EffectType;

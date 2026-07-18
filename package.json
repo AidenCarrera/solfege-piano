@@ -2,37 +2,33 @@
   "name": "solfege-piano",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.13.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@hello-pangea/dnd": "^18.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "framer-motion": "^12.42.2",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tone": "^15.1.22"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^16.2.10",
-    "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^25.9.4",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.6.0",
+    "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.7.0",
-    "jiti": "^2.7.0",
-    "prettier": "^3.9.4",
-    "tailwindcss": "^4.3.2",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1"
+    "prettier": "^3.9.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
   }
 }
