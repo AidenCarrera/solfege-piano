@@ -40,11 +40,28 @@ export default function ControlPanel({
   const panelBg = useMemo(() => getGlassPanelColor(bgColor), [bgColor]);
   const borderColor =
     textColor === "#ffffff" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
+  const usesLightText = textColor === "#ffffff";
+  const panelTheme = {
+    "--panel-fg": textColor,
+    "--panel-muted": textColor,
+    "--panel-subtle": textColor,
+    "--panel-surface": usesLightText
+      ? "rgba(255,255,255,0.08)"
+      : "rgba(0,0,0,0.08)",
+    "--panel-surface-hover": usesLightText
+      ? "rgba(255,255,255,0.14)"
+      : "rgba(0,0,0,0.14)",
+  } as React.CSSProperties;
 
   return (
     <div
       className="glass-panel rounded-2xl mb-4 w-full max-w-4xl overflow-hidden"
-      style={{ backgroundColor: panelBg, borderColor, color: textColor }}
+      style={{
+        backgroundColor: panelBg,
+        borderColor,
+        color: textColor,
+        ...panelTheme,
+      }}
     >
       <div
         className="flex border-b relative items-center"
@@ -60,9 +77,7 @@ export default function ControlPanel({
             className="relative flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors duration-150 cursor-pointer"
             style={{
               color:
-                activeTab === tab
-                  ? "rgb(129,140,248)"
-                  : "rgba(255,255,255,0.45)",
+                activeTab === tab ? "rgb(129,140,248)" : "var(--panel-muted)",
             }}
           >
             {tab === "effects" ? <Waves size={14} /> : <Settings2 size={14} />}
@@ -81,17 +96,21 @@ export default function ControlPanel({
           onClick={() => setIsCollapsed((c) => !c)}
           className="ml-auto mr-3 p-1.5 rounded-lg cursor-pointer"
           style={{
-            color: "rgba(255,255,255,0.4)",
-            background: "rgba(255,255,255,0.05)",
+            color: "var(--panel-muted)",
+            background: "var(--panel-surface)",
           }}
           whileHover={{
-            color: "rgba(255,255,255,0.9)",
-            background: "rgba(255,255,255,0.1)",
+            color: "var(--panel-fg)",
+            background: "var(--panel-surface-hover)",
           }}
           whileTap={{ scale: 0.9 }}
           animate={{ rotate: isCollapsed ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
           title={isCollapsed ? "Expand panel" : "Collapse panel"}
+          aria-label={
+            isCollapsed ? "Expand control panel" : "Collapse control panel"
+          }
+          aria-expanded={!isCollapsed}
         >
           <ChevronsUpDown size={15} />
         </motion.button>

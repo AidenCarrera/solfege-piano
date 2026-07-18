@@ -215,7 +215,7 @@ export function EffectsTab({
         <div className="mb-4">
           <p
             className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "var(--panel-muted)" }}
           >
             Add Effect — click or drag into chain
           </p>
@@ -225,6 +225,7 @@ export function EffectsTab({
               return (
                 <motion.button
                   key={type}
+                  type="button"
                   onClick={() => {
                     // A completed drag must not also add an effect on click.
                     if (!isDraggingNew.current) {
@@ -278,6 +279,7 @@ export function EffectsTab({
             <AnimatePresence>
               {effectChain.length > 0 && (
                 <motion.button
+                  type="button"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
@@ -307,7 +309,7 @@ export function EffectsTab({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-10 gap-3 rounded-xl border-2 border-dashed"
-              style={{ borderColor, color: "rgba(255,255,255,0.25)" }}
+              style={{ borderColor, color: "var(--panel-muted)" }}
             >
               <Waves size={26} />
               <p className="text-sm">Drag effects here or click to add.</p>
@@ -315,6 +317,8 @@ export function EffectsTab({
           ) : (
             <div
               ref={rackRef}
+              role="region"
+              aria-label="Active effects chain"
               className="flex items-start overflow-x-auto pb-3 min-h-[80px]"
               style={{
                 scrollbarWidth: "thin",
@@ -361,7 +365,7 @@ export function EffectsTab({
                         >
                           <ChevronRight
                             size={16}
-                            style={{ color: "rgba(255,255,255,0.2)" }}
+                            style={{ color: "var(--panel-subtle)" }}
                           />
                         </motion.div>
                       )}

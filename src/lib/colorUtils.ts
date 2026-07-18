@@ -19,13 +19,16 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     : null;
 }
 
-/** Selects black or white text using the WCAG luminance threshold. */
+/** Selects whichever of black or white has the stronger WCAG contrast ratio. */
 export function getContrastColor(hexColor: string): string {
   const rgb = hexToRgb(hexColor);
   if (!rgb) return "#ffffff";
 
   const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
-  return luminance > 0.5 ? "#000000" : "#ffffff";
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  const blackContrast = (luminance + 0.05) / 0.05;
+
+  return blackContrast >= whiteContrast ? "#000000" : "#ffffff";
 }
 
 export function getShadowColor(

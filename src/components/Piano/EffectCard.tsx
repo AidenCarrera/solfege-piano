@@ -29,37 +29,45 @@ export function EffectCard({
     step: number,
     val: number,
     format?: (v: number) => string,
-  ) => (
-    <div key={field} className="flex flex-col gap-1">
-      <div className="flex justify-between items-center">
-        <span
-          className="text-[11px] font-medium"
-          style={{ color: "rgba(255,255,255,0.55)" }}
-        >
-          {label}
-        </span>
-        <span
-          className="text-[11px] font-mono px-1.5 py-px rounded"
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.85)",
-          }}
-        >
-          {format ? format(val) : val.toFixed(2)}
-        </span>
+  ) => {
+    const inputId = `${effect.id}-${field}`;
+    const displayValue = format ? format(val) : val.toFixed(2);
+
+    return (
+      <div key={field} className="flex flex-col gap-1">
+        <div className="flex justify-between items-center">
+          <label
+            htmlFor={inputId}
+            className="text-[11px] font-medium"
+            style={{ color: "var(--panel-muted)" }}
+          >
+            {label}
+          </label>
+          <span
+            className="text-[11px] font-mono px-1.5 py-px rounded"
+            style={{
+              background: "var(--panel-surface)",
+              color: "var(--panel-fg)",
+            }}
+          >
+            {displayValue}
+          </span>
+        </div>
+        <input
+          id={inputId}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={val}
+          onChange={(e) => onUpdate({ [field]: parseFloat(e.target.value) })}
+          className="w-full"
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-valuetext={displayValue}
+        />
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={val}
-        onChange={(e) => onUpdate({ [field]: parseFloat(e.target.value) })}
-        className="w-full"
-        onPointerDown={(e) => e.stopPropagation()}
-      />
-    </div>
-  );
+    );
+  };
 
   return (
     <Reorder.Item
@@ -82,12 +90,12 @@ export function EffectCard({
       <motion.div
         className="rounded-xl overflow-hidden flex flex-col h-full"
         style={{
-          background: "rgba(255,255,255,0.04)",
+          background: "var(--panel-surface)",
           border: `1px solid ${borderColor}`,
         }}
         whileHover={{
-          background: "rgba(255,255,255,0.07)",
-          borderColor: "rgba(255,255,255,0.15)",
+          background: "var(--panel-surface-hover)",
+          borderColor,
           transition: { duration: 0.15 },
         }}
       >
@@ -105,7 +113,7 @@ export function EffectCard({
         >
           <GripVertical
             size={14}
-            style={{ color: "rgba(255,255,255,0.25)", flexShrink: 0 }}
+            style={{ color: "var(--panel-subtle)", flexShrink: 0 }}
           />
 
           <div
@@ -115,29 +123,31 @@ export function EffectCard({
           </div>
           <span
             className="font-semibold text-[13px] flex-1 truncate"
-            style={{ color: "rgba(255,255,255,0.9)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             {effect.type}
           </span>
 
           <motion.button
+            type="button"
             onClick={onToggle}
             className="p-1 rounded-md shrink-0 cursor-pointer"
             style={{
               background: effect.enabled
                 ? "rgba(74,222,128,0.12)"
-                : "rgba(255,255,255,0.05)",
-              color: effect.enabled
-                ? "rgb(74,222,128)"
-                : "rgba(255,255,255,0.3)",
+                : "var(--panel-surface)",
+              color: effect.enabled ? "rgb(74,222,128)" : "var(--panel-muted)",
             }}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
             title={effect.enabled ? "Bypass" : "Enable"}
+            aria-label={`${effect.enabled ? "Bypass" : "Enable"} ${effect.type}`}
+            aria-pressed={effect.enabled}
           >
             <Power size={12} />
           </motion.button>
           <motion.button
+            type="button"
             onClick={onRemove}
             className="p-1 rounded-md shrink-0 cursor-pointer"
             style={{
@@ -146,6 +156,7 @@ export function EffectCard({
             }}
             whileHover={{ scale: 1.15, background: "rgba(248,113,113,0.22)" }}
             whileTap={{ scale: 0.85 }}
+            aria-label={`Remove ${effect.type}`}
           >
             <Trash2 size={12} />
           </motion.button>
@@ -160,10 +171,11 @@ export function EffectCard({
         >
           <div
             className="flex flex-col gap-2 pt-1 border-t"
-            style={{ borderColor: "rgba(255,255,255,0.07)" }}
+            style={{ borderColor }}
           >
             {effect.type === "Reverb" && (
               <select
+                aria-label="Reverb mode"
                 value={p.mode}
                 onChange={(e) =>
                   onUpdate({
@@ -172,7 +184,7 @@ export function EffectCard({
                     >,
                   })
                 }
-                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <option value="Native" className="bg-gray-800">
@@ -185,6 +197,7 @@ export function EffectCard({
             )}
             {effect.type === "Delay" && (
               <select
+                aria-label="Delay mode"
                 value={p.mode}
                 onChange={(e) =>
                   onUpdate({
@@ -193,7 +206,7 @@ export function EffectCard({
                     >,
                   })
                 }
-                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <option value="Feedback" className="bg-gray-800">
@@ -206,6 +219,7 @@ export function EffectCard({
             )}
             {effect.type === "Modulation" && (
               <select
+                aria-label="Modulation mode"
                 value={p.mode}
                 onChange={(e) =>
                   onUpdate({
@@ -214,7 +228,7 @@ export function EffectCard({
                     >,
                   })
                 }
-                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <option value="Chorus" className="bg-gray-800">
@@ -230,6 +244,7 @@ export function EffectCard({
             )}
             {effect.type === "Distortion" && (
               <select
+                aria-label="Distortion mode"
                 value={p.mode}
                 onChange={(e) =>
                   onUpdate({
@@ -238,7 +253,7 @@ export function EffectCard({
                     >,
                   })
                 }
-                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <option value="Distortion" className="bg-gray-800">
@@ -254,6 +269,7 @@ export function EffectCard({
             )}
             {effect.type === "Filter" && (
               <select
+                aria-label="Filter mode"
                 value={p.mode}
                 onChange={(e) =>
                   onUpdate({
@@ -262,7 +278,7 @@ export function EffectCard({
                     >,
                   })
                 }
-                className="w-full bg-white/10 border border-white/10 text-white text-xs rounded px-2 py-1 outline-none mt-1 hover:bg-white/20 transition-colors mb-2"
+                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <option value="AutoWah" className="bg-gray-800">

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { Note } from "@/lib/note";
+import { isInteractiveKeyboardTarget } from "@/lib/keyboard";
 
 export function useKeyboardControls(
   notes: Note[],
@@ -43,7 +44,14 @@ export function useKeyboardControls(
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Space is reserved for sustain; modified shortcuts belong to the browser.
-      if (e.code === "Space" || e.metaKey || e.altKey || e.ctrlKey) return;
+      if (
+        e.code === "Space" ||
+        e.metaKey ||
+        e.altKey ||
+        e.ctrlKey ||
+        isInteractiveKeyboardTarget(e.target)
+      )
+        return;
 
       const key = e.key.toLowerCase();
       const noteObj = notes.find((n) => n.key === key);

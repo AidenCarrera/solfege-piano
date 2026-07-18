@@ -63,12 +63,14 @@ export function SettingsTab({
     >
       <div className="flex flex-col gap-2">
         <label
+          htmlFor="sound-type"
           className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "rgba(255,255,255,0.45)" }}
+          style={{ color: "var(--panel-muted)" }}
         >
           Sound Type
         </label>
         <select
+          id="sound-type"
           value={soundType}
           onChange={(e) => setSoundType(e.target.value as SoundType)}
           className="text-sm"
@@ -82,19 +84,21 @@ export function SettingsTab({
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
+            htmlFor="octave-range"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            style={{ color: "var(--panel-muted)" }}
           >
             Octave Range
           </label>
           <span
             className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "rgba(255,255,255,0.08)" }}
+            style={{ background: "var(--panel-surface)" }}
           >
             C{startOctave}–C{endOctave}
           </span>
         </div>
         <input
+          id="octave-range"
           type="range"
           min={1}
           max={4}
@@ -103,11 +107,16 @@ export function SettingsTab({
           onChange={(e) => handleOctaveSlider(parseInt(e.target.value))}
           className="w-full"
           disabled={soundType === "Solfege"}
+          aria-valuetext={`C${startOctave} to C${endOctave}`}
+          aria-describedby={
+            soundType === "Solfege" ? "octave-range-help" : undefined
+          }
         />
         {soundType === "Solfege" && (
           <span
+            id="octave-range-help"
             className="text-[10px]"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "var(--panel-subtle)" }}
           >
             Locked to 1 octave in Solfege mode
           </span>
@@ -117,19 +126,21 @@ export function SettingsTab({
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
+            htmlFor="piano-zoom"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            style={{ color: "var(--panel-muted)" }}
           >
             Zoom
           </label>
           <span
             className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "rgba(255,255,255,0.08)" }}
+            style={{ background: "var(--panel-surface)" }}
           >
             {pianoScale.toFixed(2)}×
           </span>
         </div>
         <input
+          id="piano-zoom"
           type="range"
           min={0.5}
           max={2}
@@ -137,25 +148,28 @@ export function SettingsTab({
           value={pianoScale}
           onChange={(e) => setPianoScale(parseFloat(e.target.value))}
           className="w-full"
+          aria-valuetext={`${pianoScale.toFixed(2)} times`}
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <label
+            htmlFor="piano-volume"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            style={{ color: "var(--panel-muted)" }}
           >
             Volume
           </label>
           <span
             className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "rgba(255,255,255,0.08)" }}
+            style={{ background: "var(--panel-surface)" }}
           >
             {Math.round(volume * 100)}%
           </span>
         </div>
         <input
+          id="piano-volume"
           type="range"
           min={0}
           max={1}
@@ -163,18 +177,21 @@ export function SettingsTab({
           value={volume}
           onChange={(e) => setVolume(parseFloat(e.target.value))}
           className="w-full"
+          aria-valuetext={`${Math.round(volume * 100)} percent`}
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <label
+          htmlFor="background-color"
           className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "rgba(255,255,255,0.45)" }}
+          style={{ color: "var(--panel-muted)" }}
         >
           Background
         </label>
         <div className="flex items-center gap-3">
           <input
+            id="background-color"
             type="color"
             value={bgColor}
             onChange={(e) => setBgColor(e.target.value)}
@@ -182,25 +199,28 @@ export function SettingsTab({
           />
           <span
             className="text-[11px] font-mono"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            style={{ color: "var(--panel-muted)" }}
           >
             {bgColor}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <label
+      <fieldset className="flex flex-col gap-3">
+        <legend
           className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "rgba(255,255,255,0.45)" }}
+          style={{ color: "var(--panel-muted)" }}
         >
           Labels
-        </label>
+        </legend>
         <label className="flex items-center gap-2.5 text-sm cursor-pointer">
           <input
             type="checkbox"
             checked={labelsEnabled}
             onChange={(e) => setLabelsEnabled(e.target.checked)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setLabelsEnabled(!labelsEnabled);
+            }}
           />
           Keyboard
         </label>
@@ -209,10 +229,13 @@ export function SettingsTab({
             type="checkbox"
             checked={solfegeEnabled}
             onChange={(e) => setSolfegeEnabled(e.target.checked)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setSolfegeEnabled(!solfegeEnabled);
+            }}
           />
           Solfege
         </label>
-      </div>
+      </fieldset>
     </motion.div>
   );
 }

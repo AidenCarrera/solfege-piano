@@ -684,12 +684,14 @@ export function useNotePlayer(
               }),
             );
           } else if (p.mode === "Phaser") {
-            // Phaser starts internally, unlike the other LFO-backed effects.
             instance = asEffectInstance(
               new Tone.Phaser({
                 frequency: p.frequency ?? 1.5,
-                octaves: 3,
-                baseFrequency: 1000,
+                octaves: 2,
+                baseFrequency: 350,
+                stages: 6,
+                Q: 2,
+                wet: p.mix ?? 0.5,
               }),
             );
           }
@@ -911,7 +913,7 @@ export function useNotePlayer(
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !sustainMode) {
+      if (e.code === "Space" && !sustainMode && pedalActive.current) {
         e.preventDefault();
         pedalActive.current = false;
 

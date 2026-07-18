@@ -57,6 +57,19 @@ function PianoKey({
       }}
       onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
       onMouseUp={() => onMouseUp(note.name)}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
+          e.preventDefault();
+          onMouseDown(note.fileName, note.name);
+        }
+      }}
+      onKeyUp={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onMouseUp(note.name);
+        }
+      }}
+      onBlur={() => onMouseUp(note.name)}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -73,6 +86,8 @@ function PianoKey({
       data-note-name={note.name}
       data-file-name={note.fileName}
       tabIndex={-1}
+      aria-label={`${note.name.replace("s", " sharp ")} piano key${note.key ? `, shortcut ${note.key.toUpperCase()}` : ""}`}
+      aria-pressed={isActive}
     >
       {showSolfege && (
         <span
