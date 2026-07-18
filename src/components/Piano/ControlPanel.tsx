@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings2, Waves, ChevronsUpDown } from "lucide-react";
 import { getGlassPanelColor } from "@/lib/colorUtils";
@@ -32,10 +32,6 @@ export default function ControlPanel({
     "settings",
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  useEffect(() => {
-    if (soundType === "Solfege") setPianoScale(1.5);
-  }, [soundType, setPianoScale]);
 
   const panelBg = useMemo(() => getGlassPanelColor(bgColor), [bgColor]);
   const borderColor =

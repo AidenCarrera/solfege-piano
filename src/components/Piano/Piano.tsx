@@ -167,7 +167,7 @@ export default function Piano() {
         className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 tracking-tight"
         style={{ textShadow: `0 4px 12px ${shadowColor}` }}
       >
-        🎹 Playable Piano
+        🎹 Solfege Piano
       </h1>
 
       <ControlPanel

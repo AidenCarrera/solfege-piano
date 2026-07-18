@@ -35,10 +35,9 @@ export function getShadowColor(
   hexColor: string,
   opacity: number = 0.5,
 ): string {
-  const rgb = hexToRgb(hexColor);
-  if (!rgb) return `rgba(0, 0, 0, ${opacity})`;
-
-  return `rgba(0, 0, 0, ${opacity})`;
+  return getContrastColor(hexColor) === "#ffffff"
+    ? `rgba(0, 0, 0, ${opacity})`
+    : `rgba(255, 255, 255, ${opacity})`;
 }
 
 /** Adjusts each RGB channel by a signed amount. */

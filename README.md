@@ -1,4 +1,4 @@
-# Playable Piano 🎹 – Next.js Side Project
+# Solfege Piano 🎹 – Next.js Side Project
 
 A browser-based piano built with **Next.js**, **React**, and **Tone.js** that helps users learn and practice **solfege** efficiently.
 This project combines interactive web audio, responsive design, customizable controls, and a dynamic audio effects rack.
@@ -51,6 +51,15 @@ pnpm install
 pnpm dev
 
 # Open your browser at http://localhost:3000 to view the app
+```
+
+Before submitting a change, run the automated checks:
+
+```bash
+pnpm test
+pnpm lint
+pnpm format:check
+pnpm build
 ```
 
 ## Environment Configuration

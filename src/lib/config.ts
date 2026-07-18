@@ -6,22 +6,12 @@ export const PIANO_CONFIG = {
   DEFAULT_SOLFEGE_ENABLED: false,
   DEFAULT_BG_COLOR: "#0f172a",
 
-  SAMPLE_RANGES: {
-    Piano: { minOctave: 2, maxOctave: 6 },
-    Solfege: { minOctave: 3, maxOctave: 4 },
-  } as const,
-
   DEFAULT_VOLUME: 0.75,
-  DEFAULT_REVERB_MIX: 0.15,
-  NOTE_RETRIGGER_COOLDOWN_MS: 50,
   KEY_HIGHLIGHT_DURATION_MS: 250,
   MAX_POLYPHONY: 128,
 
   ATTACK_MS: 10,
   FADE_OUT_MS: 800,
-  FADE_OUT_BUFFER_MS: 20,
-
-  APP_TITLE: "Playable Piano",
 };
 
 export const SOUND_OPTIONS = ["Piano", "Solfege"] as const;

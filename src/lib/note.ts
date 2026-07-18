@@ -22,8 +22,8 @@ export const BASE_NOTES = [
   { base: "B", isSharp: false, solfege: "Ti" },
 ] as const;
 
-/** Keyboard shortcuts in chromatic order from C4 through C5. */
-export const KEYBOARD_MAP_C4_C5 = [
+/** Keyboard shortcuts in chromatic order from C3 through C4. */
+export const KEYBOARD_MAP_C3_C4 = [
   "a",
   "w",
   "s",

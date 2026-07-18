@@ -1,8 +1,8 @@
-import { Note, BASE_NOTES, KEYBOARD_MAP_C4_C5 } from "./note";
+import { Note, BASE_NOTES, KEYBOARD_MAP_C3_C4 } from "./note";
 
 /**
  * Generates complete octaves followed by the ending octave's C boundary.
- * Computer-key mappings are limited to the playable C4-C5 range.
+ * Computer-key mappings are limited to the primary C3-C4 range.
  */
 export function generateNotes(startOctave: number, endOctave: number): Note[] {
   const notes: Note[] = [];
@@ -14,9 +14,9 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
 
       let key = "";
       if (octave === 3) {
-        key = KEYBOARD_MAP_C4_C5[i] ?? "";
+        key = KEYBOARD_MAP_C3_C4[i] ?? "";
       } else if (octave === 4 && n.base === "C") {
-        key = KEYBOARD_MAP_C4_C5[KEYBOARD_MAP_C4_C5.length - 1] ?? "";
+        key = KEYBOARD_MAP_C3_C4[KEYBOARD_MAP_C3_C4.length - 1] ?? "";
       }
 
       notes.push({
