@@ -74,10 +74,12 @@ The config uses the following variable:
 
 ```env
 # The public base URL of the site
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+SITE_URL=http://localhost:3000
 ```
 
-If not provided, the app dynamically falls back to Vercel's preview environment variables in deployment or defaults to `https://solfegepiano.vercel.app`.
+If not provided, the app uses Vercel's stable production-domain variable so preview deployments keep the production canonical URL. It otherwise defaults to `https://solfegepiano.vercel.app`.
+
+Note that Vercel's variable always resolves to the project's `.vercel.app` domain. If you attach a custom domain, set `SITE_URL` to it explicitly — otherwise the canonical URL, sitemap, and robots entries keep pointing at the `.vercel.app` address.
 
 ## Playing The Piano
 

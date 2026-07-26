@@ -1,6 +1,6 @@
 export const PIANO_CONFIG = {
   WHITE_KEY_WIDTH_REM: 4,
-  DEFAULT_PIANO_SCALE: 1.5,
+  DEFAULT_PIANO_SCALE: 1.65,
   DEFAULT_OCTAVE_RANGE: [3, 4],
   DEFAULT_LABELS_ENABLED: true,
   DEFAULT_SOLFEGE_ENABLED: false,
@@ -16,9 +16,3 @@ export const PIANO_CONFIG = {
 
 export const SOUND_OPTIONS = ["Piano", "Solfege"] as const;
 export type SoundType = (typeof SOUND_OPTIONS)[number];
-
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : "https://solfegepiano.vercel.app");

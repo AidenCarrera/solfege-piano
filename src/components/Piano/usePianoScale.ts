@@ -12,9 +12,9 @@ export function usePianoScale() {
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 640) setPianoScale(1.0);
-      else if (width < 768) setPianoScale(1.25);
-      else if (width < 1024) setPianoScale(1.4);
+      if (width < 640) setPianoScale(1.15);
+      else if (width < 768) setPianoScale(1.35);
+      else if (width < 1024) setPianoScale(1.55);
       else setPianoScale(PIANO_CONFIG.DEFAULT_PIANO_SCALE);
     };
 

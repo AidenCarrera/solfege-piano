@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { Note } from "@/lib/note";
-import { isInteractiveKeyboardTarget } from "@/lib/keyboard";
+import { isTextEntryTarget } from "@/lib/keyboard";
 
 export function useKeyboardControls(
   notes: Note[],
@@ -13,33 +13,48 @@ export function useKeyboardControls(
 ) {
   const pressedKeys = useRef<Set<string>>(new Set());
 
-  const triggerNote = useCallback(
-    (noteObj: Note) => {
-      if (!pressedKeys.current.has(noteObj.key)) {
-        pressedKeys.current.add(noteObj.key);
-        playNote(noteObj.fileName, noteObj.name, true);
+  // Piano rebuilds these on nearly every render: activateNote is an inline
+  // arrow and playNote changes with volume. Reading them through a ref keeps
+  // the listener effect mounted for the component's lifetime. When it re-ran
+  // per render instead, its cleanup released the note that had just been
+  // pressed, cutting each keystroke off within a few milliseconds.
+  const latest = useRef({
+    notes,
+    playNote,
+    stopNote,
+    activateNote,
+    deactivateNote,
+  });
+  useEffect(() => {
+    latest.current = {
+      notes,
+      playNote,
+      stopNote,
+      activateNote,
+      deactivateNote,
+    };
+  });
 
-        if (activateNote) {
-          activateNote(noteObj.name);
-        }
-      }
-    },
-    [playNote, activateNote],
-  );
+  const triggerNote = useCallback((noteObj: Note) => {
+    if (pressedKeys.current.has(noteObj.key)) return;
 
-  const stopNoteIfPressed = useCallback(
-    (noteObj: Note) => {
-      if (pressedKeys.current.has(noteObj.key)) {
-        pressedKeys.current.delete(noteObj.key);
-        stopNote(noteObj.name, true);
+    pressedKeys.current.add(noteObj.key);
+    latest.current.playNote(noteObj.fileName, noteObj.name, true);
+    latest.current.activateNote?.(noteObj.name);
+  }, []);
 
-        if (deactivateNote) {
-          deactivateNote(noteObj.name);
-        }
-      }
-    },
-    [stopNote, deactivateNote],
-  );
+  const stopNoteIfPressed = useCallback((noteObj: Note) => {
+    if (!pressedKeys.current.has(noteObj.key)) return;
+
+    pressedKeys.current.delete(noteObj.key);
+    latest.current.stopNote(noteObj.name, true);
+    latest.current.deactivateNote?.(noteObj.name);
+  }, []);
+
+  const releasePressedKeys = useCallback(() => {
+    latest.current.notes.forEach(stopNoteIfPressed);
+    pressedKeys.current.clear();
+  }, [stopNoteIfPressed]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,12 +64,12 @@ export function useKeyboardControls(
         e.metaKey ||
         e.altKey ||
         e.ctrlKey ||
-        isInteractiveKeyboardTarget(e.target)
+        isTextEntryTarget(e.target)
       )
         return;
 
       const key = e.key.toLowerCase();
-      const noteObj = notes.find((n) => n.key === key);
+      const noteObj = latest.current.notes.find((n) => n.key === key);
       if (!noteObj) return;
 
       e.preventDefault();
@@ -68,16 +83,12 @@ export function useKeyboardControls(
       if (e.code === "Space") return;
 
       const key = e.key.toLowerCase();
-      const noteObj = notes.find((n) => n.key === key);
+      const noteObj = latest.current.notes.find((n) => n.key === key);
       if (!noteObj) return;
 
       stopNoteIfPressed(noteObj);
     };
 
-    const releasePressedKeys = () => {
-      notes.forEach(stopNoteIfPressed);
-      pressedKeys.current.clear();
-    };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") releasePressedKeys();
     };
@@ -94,5 +105,16 @@ export function useKeyboardControls(
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       releasePressedKeys();
     };
-  }, [triggerNote, stopNoteIfPressed, notes]);
+  }, [triggerNote, stopNoteIfPressed, releasePressedKeys]);
+
+  // The shortcut map moves with the octave range, so release whatever is still
+  // held against the outgoing note set before it is swapped out.
+  useEffect(() => {
+    const boundNotes = notes;
+    const heldKeys = pressedKeys.current;
+    return () => {
+      boundNotes.forEach(stopNoteIfPressed);
+      heldKeys.clear();
+    };
+  }, [notes, stopNoteIfPressed]);
 }

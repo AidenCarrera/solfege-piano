@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title" width="512" height="512"><metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:creator>RealFaviconGenerator</dc:creator><dc:source>https://realfavicongenerator.net</dc:source></rdf:Description></rdf:RDF></metadata><title id="title">Solfege Piano</title><rect width="512" height="512" rx="256" fill="#0f172a"></rect><g transform="translate(38.4, 38.4) scale(0.85)">
+    <!-- White keys -->
+    <g fill="#f1f5f9">
+      <path d="M57 88H124V295H152V409A15 15 0 0 1 137 424H72A15 15 0 0 1 57 409Z"></path>
+      <path d="M186 88H225V295H253V409A15 15 0 0 1 238 424H173A15 15 0 0 1 158 409V295H186Z"></path>
+      <path d="M287 88H326V295H354V409A15 15 0 0 1 339 424H274A15 15 0 0 1 259 409V295H287Z"></path>
+      <path d="M388 88H455V409A15 15 0 0 1 440 424H375A15 15 0 0 1 360 409V295H388Z"></path>
+    </g>
+
+    <!-- Dark black keys -->
+    <g fill="#090d16">
+      <path d="M124 88H186V295A11 11 0 0 1 175 306H135A11 11 0 0 1 124 295Z"></path>
+      <path d="M225 88H287V295A11 11 0 0 1 276 306H236A11 11 0 0 1 225 295Z"></path>
+      <path d="M326 88H388V295A11 11 0 0 1 377 306H337A11 11 0 0 1 326 295Z"></path>
+    </g>
+  </g></svg>

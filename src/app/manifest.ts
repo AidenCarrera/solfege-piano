@@ -1,20 +1,32 @@
 import { MetadataRoute } from "next";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Solfege Piano",
-    short_name: "Solfege Piano",
-    description:
-      "An interactive browser-based piano for learning solfege and music theory.",
+    id: "/",
+    name: SITE_NAME,
+    short_name: SITE_NAME,
+    description: SITE_DESCRIPTION,
     start_url: "/",
+    scope: "/",
     display: "standalone",
+    orientation: "any",
+    lang: "en-US",
+    categories: ["education", "music"],
     background_color: "#0f172a",
     theme_color: "#0f172a",
     icons: [
       {
-        src: "/favicon.ico",
+        src: "/favicon.svg",
         sizes: "any",
-        type: "image/x-icon",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
+      {
+        src: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

@@ -62,27 +62,33 @@ export function SettingsTab({
       className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
     >
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor="sound-type"
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "var(--panel-muted)" }}
-        >
-          Sound Type
-        </label>
-        <select
-          id="sound-type"
-          value={soundType}
-          onChange={(e) => setSoundType(e.target.value as SoundType)}
-          className="text-sm"
-        >
-          {SOUND_OPTIONS.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
+        <div className="flex justify-between items-center h-5">
+          <label
+            htmlFor="sound-type"
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--panel-muted)" }}
+          >
+            Sound Type
+          </label>
+        </div>
+        <div className="h-8 flex items-center">
+          <select
+            id="sound-type"
+            value={soundType}
+            onChange={(e) => setSoundType(e.target.value as SoundType)}
+            className="text-sm font-medium text-left pl-2.5 pr-6 rounded-md w-full h-8"
+          >
+            {SOUND_OPTIONS.map((s) => (
+              <option key={s} className="text-left">
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center h-5">
           <label
             htmlFor="octave-range"
             className="text-[11px] font-semibold uppercase tracking-wider"
@@ -97,21 +103,23 @@ export function SettingsTab({
             C{startOctave}–C{endOctave}
           </span>
         </div>
-        <input
-          id="octave-range"
-          type="range"
-          min={1}
-          max={4}
-          step={1}
-          value={parseInt(sliderValue)}
-          onChange={(e) => handleOctaveSlider(parseInt(e.target.value))}
-          className="w-full"
-          disabled={soundType === "Solfege"}
-          aria-valuetext={`C${startOctave} to C${endOctave}`}
-          aria-describedby={
-            soundType === "Solfege" ? "octave-range-help" : undefined
-          }
-        />
+        <div className="h-8 flex items-center">
+          <input
+            id="octave-range"
+            type="range"
+            min={1}
+            max={4}
+            step={1}
+            value={parseInt(sliderValue)}
+            onChange={(e) => handleOctaveSlider(parseInt(e.target.value))}
+            className="w-full"
+            disabled={soundType === "Solfege"}
+            aria-valuetext={`C${startOctave} to C${endOctave}`}
+            aria-describedby={
+              soundType === "Solfege" ? "octave-range-help" : undefined
+            }
+          />
+        </div>
         {soundType === "Solfege" && (
           <span
             id="octave-range-help"
@@ -124,7 +132,7 @@ export function SettingsTab({
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center h-5">
           <label
             htmlFor="piano-zoom"
             className="text-[11px] font-semibold uppercase tracking-wider"
@@ -139,21 +147,23 @@ export function SettingsTab({
             {pianoScale.toFixed(2)}×
           </span>
         </div>
-        <input
-          id="piano-zoom"
-          type="range"
-          min={0.5}
-          max={2}
-          step={0.01}
-          value={pianoScale}
-          onChange={(e) => setPianoScale(parseFloat(e.target.value))}
-          className="w-full"
-          aria-valuetext={`${pianoScale.toFixed(2)} times`}
-        />
+        <div className="h-8 flex items-center">
+          <input
+            id="piano-zoom"
+            type="range"
+            min={0.5}
+            max={2}
+            step={0.01}
+            value={pianoScale}
+            onChange={(e) => setPianoScale(parseFloat(e.target.value))}
+            className="w-full"
+            aria-valuetext={`${pianoScale.toFixed(2)} times`}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center h-5">
           <label
             htmlFor="piano-volume"
             className="text-[11px] font-semibold uppercase tracking-wider"
@@ -168,34 +178,38 @@ export function SettingsTab({
             {Math.round(volume * 100)}%
           </span>
         </div>
-        <input
-          id="piano-volume"
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-full"
-          aria-valuetext={`${Math.round(volume * 100)} percent`}
-        />
+        <div className="h-8 flex items-center">
+          <input
+            id="piano-volume"
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-full"
+            aria-valuetext={`${Math.round(volume * 100)} percent`}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor="background-color"
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "var(--panel-muted)" }}
-        >
-          Background
-        </label>
-        <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center h-5">
+          <label
+            htmlFor="background-color"
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--panel-muted)" }}
+          >
+            Background
+          </label>
+        </div>
+        <div className="h-8 flex items-center gap-3">
           <input
             id="background-color"
             type="color"
             value={bgColor}
             onChange={(e) => setBgColor(e.target.value)}
-            className="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent p-0.5"
+            className="w-9.5 h-9.5 -my-1 rounded-lg border-0 cursor-pointer bg-transparent p-0"
           />
           <span
             className="text-[11px] font-mono"
@@ -206,36 +220,40 @@ export function SettingsTab({
         </div>
       </div>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: "var(--panel-muted)" }}
-        >
-          Labels
-        </legend>
-        <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={labelsEnabled}
-            onChange={(e) => setLabelsEnabled(e.target.checked)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") setLabelsEnabled(!labelsEnabled);
-            }}
-          />
-          Keyboard
-        </label>
-        <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={solfegeEnabled}
-            onChange={(e) => setSolfegeEnabled(e.target.checked)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") setSolfegeEnabled(!solfegeEnabled);
-            }}
-          />
-          Solfege
-        </label>
-      </fieldset>
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center h-5">
+          <span
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--panel-muted)" }}
+          >
+            Labels
+          </span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-2.5 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={labelsEnabled}
+              onChange={(e) => setLabelsEnabled(e.target.checked)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setLabelsEnabled(!labelsEnabled);
+              }}
+            />
+            Keyboard
+          </label>
+          <label className="flex items-center gap-2.5 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={solfegeEnabled}
+              onChange={(e) => setSolfegeEnabled(e.target.checked)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setSolfegeEnabled(!solfegeEnabled);
+              }}
+            />
+            Solfege
+          </label>
+        </div>
+      </div>
     </motion.div>
   );
 }
