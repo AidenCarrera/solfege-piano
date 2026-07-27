@@ -114,6 +114,10 @@ export function useSampler(
       const toneNote = toneNames.get(noteName);
       if (!toneNote) return;
 
+      // A backstop only: `useToneEngine` unlocks on the first gesture, well
+      // before this runs. Reaching a suspended context here means that failed,
+      // and the note is scheduled against a frozen clock — it sounds once the
+      // context resumes rather than being lost.
       if (Tone.getContext().state !== "running") {
         Tone.start();
       }
@@ -121,8 +125,10 @@ export function useSampler(
       const sampler = samplerRef.current;
 
       // Retrigger from silence so a repeated note does not layer on itself.
-      sampler.triggerRelease(toneNote, Tone.now());
-      sampler.triggerAttack(toneNote, Tone.now());
+      // Both land on one timestamp; `now` advances between calls.
+      const now = Tone.now();
+      sampler.triggerRelease(toneNote, now);
+      sampler.triggerAttack(toneNote, now);
     },
     [Tone, buffers, toneNames],
   );

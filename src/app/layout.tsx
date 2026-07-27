@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_SCRIPT } from "@/lib/theme";
 import {
@@ -160,7 +160,7 @@ export default function RootLayout({
         />
         {children}
         <SiteFooter />
-        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );

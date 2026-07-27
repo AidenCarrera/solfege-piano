@@ -9,6 +9,22 @@ const LOOK_AHEAD_S = 0.01;
 /** Headroom below 0 dBFS so stacked voices and effects cannot clip. */
 const LIMITER_THRESHOLD_DB = -1;
 
+/**
+ * Runs a silent one-frame buffer through the destination.
+ *
+ * A resumed context does not necessarily have a running output device behind
+ * it, and the device's start-up is what the first note would otherwise wait
+ * on. Pushing a throwaway sample through forces that work to happen now, while
+ * nobody is listening.
+ */
+function primeOutputDevice(Tone: typeof ToneType) {
+  const context = Tone.getContext().rawContext;
+  const source = context.createBufferSource();
+  source.buffer = context.createBuffer(1, 1, context.sampleRate);
+  source.connect(context.destination);
+  source.start(0);
+}
+
 export interface ToneEngine {
   /** `null` until the Tone bundle has loaded, or if loading failed. */
   Tone: typeof ToneType | null;
@@ -36,6 +52,7 @@ export function useToneEngine(enabled: boolean): ToneEngine {
   const [failedAttempt, setFailedAttempt] = useState<number | null>(null);
   const [contextState, setContextState] =
     useState<AudioContextState>("suspended");
+  const [hasActivated, setHasActivated] = useState(false);
   const limiterRef = useRef<ToneType.Limiter | null>(null);
 
   useEffect(() => {
@@ -66,26 +83,52 @@ export function useToneEngine(enabled: boolean): ToneEngine {
     };
   }, [enabled, attempt]);
 
-  // Browsers require AudioContext startup within a user gesture.
+  /**
+   * Watched separately from `Tone` because the gesture that triggers the
+   * import is usually the same one that has to unlock audio, and it is long
+   * over by the time the bundle arrives. Waiting for a gesture we can still
+   * see would push the unlock onto the user's *second* interaction.
+   */
   useEffect(() => {
-    if (!Tone) return;
+    if (hasActivated) return;
 
-    const resumeContext = () => {
-      if (Tone.getContext().state !== "running") {
-        Tone.start();
-      }
-    };
+    const activate = () => setHasActivated(true);
+    const options = { capture: true } as const;
 
-    window.addEventListener("pointerdown", resumeContext, { capture: true });
-    window.addEventListener("keydown", resumeContext, { capture: true });
+    window.addEventListener("pointerdown", activate, {
+      ...options,
+      passive: true,
+    });
+    window.addEventListener("keydown", activate, options);
 
     return () => {
-      window.removeEventListener("pointerdown", resumeContext, {
-        capture: true,
-      });
-      window.removeEventListener("keydown", resumeContext, { capture: true });
+      window.removeEventListener("pointerdown", activate, options);
+      window.removeEventListener("keydown", activate, options);
     };
-  }, [Tone]);
+  }, [hasActivated]);
+
+  /**
+   * Unlocks as soon as the engine and a gesture both exist, rather than at the
+   * first note. Browsers grant the page sticky activation, so `start` does not
+   * have to run inside the handler itself — and starting the output device
+   * here is what keeps its latency off the first note the user plays.
+   */
+  useEffect(() => {
+    if (!Tone || !hasActivated) return;
+    let cancelled = false;
+
+    const unlock = async () => {
+      if (Tone.getContext().state !== "running") await Tone.start();
+      if (!cancelled) primeOutputDevice(Tone);
+    };
+
+    // A rejected resume leaves the context suspended; `playNote` retries.
+    unlock().catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [Tone, hasActivated]);
 
   useEffect(() => {
     if (!Tone) return;

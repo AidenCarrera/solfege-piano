@@ -13,10 +13,6 @@ type PianoKeyProps = {
   onMouseDown: (noteName: string) => void;
   onMouseEnter: (noteName: string) => void;
   onMouseUp: () => void;
-  onTouchStart: (e: React.TouchEvent<HTMLButtonElement>, note: string) => void;
-  onTouchMove: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  onTouchEnd: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  onTouchCancel: (e: React.TouchEvent<HTMLButtonElement>) => void;
   showLabel: boolean;
   showSolfege: boolean;
 };
@@ -35,7 +31,8 @@ const ACTIVE_WHITE =
  *
  * Handlers take the note name rather than being bound to it by the parent, so
  * `Piano` can pass the same stable callbacks to every key and let `React.memo`
- * skip the keys whose active state did not change.
+ * skip the keys whose active state did not change. Touch is handled one level
+ * up, by a listener on the keyboard itself — see `useTouchControls`.
  */
 function PianoKeyComponent({
   note,
@@ -44,10 +41,6 @@ function PianoKeyComponent({
   onMouseDown,
   onMouseEnter,
   onMouseUp,
-  onTouchStart,
-  onTouchMove,
-  onTouchEnd,
-  onTouchCancel,
   showLabel,
   showSolfege,
 }: PianoKeyProps) {
@@ -68,10 +61,6 @@ function PianoKeyComponent({
       onMouseEnter={() => onMouseEnter(note.name)}
       onMouseUp={onMouseUp}
       onBlur={onMouseUp}
-      onTouchStart={(e) => onTouchStart(e, note.name)}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchCancel}
       className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
       style={{
         ...(note.isSharp ? { left: `${leftRem}rem` } : {}),

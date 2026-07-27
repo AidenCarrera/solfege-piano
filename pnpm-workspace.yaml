@@ -3,8 +3,5 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
-onlyBuiltDependencies:
-  - "@vercel/speed-insights"
-
 overrides:
   postcss@<8.5.10: 8.5.19

@@ -116,12 +116,12 @@ export function Piano() {
     clearAllNotes,
   );
 
-  const {
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-    handleTouchCancel,
-  } = useTouchControls(playNote, stopNote, activateNote, deactivateNote);
+  const keyboardRef = useTouchControls(
+    playNote,
+    stopNote,
+    activateNote,
+    deactivateNote,
+  );
 
   usePageInactive(
     useCallback(() => {
@@ -211,6 +211,7 @@ export function Piano() {
         />
 
         <div
+          ref={keyboardRef}
           className="relative flex transform-gpu"
           style={{
             backfaceVisibility: "hidden",
@@ -226,10 +227,6 @@ export function Piano() {
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onMouseUp={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              onTouchCancel={handleTouchCancel}
               showLabel={labelsEnabled}
               showSolfege={solfegeEnabled}
             />
