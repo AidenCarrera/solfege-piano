@@ -1,4 +1,4 @@
-# Solfege Piano 🎹 – Next.js Side Project
+# Solfege Piano
 
 A browser-based piano built with **Next.js**, **React**, and **Tone.js** that helps users learn and practice **solfege** efficiently.
 This project combines interactive web audio, responsive design, customizable controls, and a dynamic audio effects rack.
@@ -14,14 +14,16 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 - **Play notes** using keyboard keys, mouse clicks/drags, or touch
 - **Solfege mode**: plays solfege syllables samples on keys
 - **Dynamic Effects Rack**: add, toggle, and drag-to-reorder audio effects (Distortion, Filter, Compressor, Modulation, Delay, Reverb)
-- **Adjustable parameters** for each effect
+- **Adjustable parameters** for each effect, plus selectable modes (Chorus/Vibrato/Phaser, BitCrusher/Chebyshev, AutoWah/AutoFilter)
 - **Toggle note labels** on/off (traditional names or solfege)
 - **Dynamically scale** the piano (zoom in/out)
 - **Customizable background color** via color picker
 - **Sustain mode** with Spacebar or button toggle
-- **Preloading of audio samples** with progress indicator
+- **Preloading of audio samples** with progress indicator and retry on failure
 - **Dynamic octave ranges** with slider control
 - **Polyphony support** with automatic voice management
+- **Multi-touch input** so chords and glissandos work on phones and tablets
+- **Saved preferences**: settings persist across visits, with a reset that keeps your effects chain
 
 ## Tech Stack
 
@@ -31,6 +33,9 @@ This tool is suitable for beginners and advanced learners practicing scales, int
 - **TypeScript** – Adds static type checking and improved developer experience
 - **Tone.js & Web Audio API** – Handles audio synthesis, sampler playback, and custom effects routing
 - **Framer Motion** – Powers interface animation and effects-rack reordering
+- **Lucide React** – Icon set used across the control panel
+- **Vitest & Testing Library** – Unit tests for the input, settings, and audio hooks
+- **Vercel Analytics** – Privacy-friendly page and event metrics
 
 ## Installation and setup
 
@@ -64,22 +69,24 @@ pnpm build
 
 ## Environment Configuration
 
-Copy the template environment file and customize the site's base URL (used for metadata and sitemaps) as needed:
+Copy the example environment file:
 
 ```bash
 cp .env.example .env.local
 ```
 
-The config uses the following variable:
+Set `SITE_URL` when developing locally or deploying outside Vercel:
 
 ```env
-# The public base URL of the site
-SITE_URL=http://localhost:3000
+# Local: http://localhost:3000
+# Production: https://your-domain.com
+SITE_URL=
 ```
 
-If not provided, the app uses Vercel's stable production-domain variable so preview deployments keep the production canonical URL. It otherwise defaults to `https://solfegepiano.vercel.app`.
+If `SITE_URL` is not set, the app uses Vercel’s stable production URL and falls back to `https://solfegepiano.vercel.app`.
 
-Note that Vercel's variable always resolves to the project's `.vercel.app` domain. If you attach a custom domain, set `SITE_URL` to it explicitly — otherwise the canonical URL, sitemap, and robots entries keep pointing at the `.vercel.app` address.
+If you add a custom domain, set `SITE_URL` to that domain so canonical URLs, the sitemap, and `robots.txt` use it.
+
 
 ## Playing The Piano
 
@@ -91,12 +98,15 @@ Note that Vercel's variable always resolves to the project's `.vercel.app` domai
 - Sustain Mode: toggle button with click or Spacebar
 - Background: select color using color picker
 - Octaves: adjust octave range (except when Solfege is active, which locks to one octave)
-- Effects Rack: add effects under the "Effects" tab, tweak sliders, and drag card handles to reorder the signal chain
+- Effects Rack: add effects under the "Effects Chain" tab, tweak sliders, and drag card handles to reorder the signal chain
+- Reset Settings: restore defaults from the "Settings" tab; your effects chain is kept
+- Control Panel: collapse or expand it with the chevron button in the tab bar
+
+Your settings are saved in the browser and restored on your next visit.
 
 ## Future Improvements
 
 - Add customizable key mappings
 - Add MIDI keyboard support
-- Add recording & looping features
 - Add more instrument soundbanks (strings, synths, etc.)
-- Improve responsiveness
+- Add recording & looping features
