@@ -8,7 +8,7 @@ import type {
   EffectParamsUpdate,
   EffectType,
 } from "@/lib/effects";
-import { EFFECT_META } from "./ControlPanelTypes";
+import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import {
   EFFECT_MODES,
   EFFECT_PARAM_SLIDERS,
@@ -168,7 +168,7 @@ export function EffectCard<T extends EffectType>({
           <div
             className={`flex items-center justify-center w-6 h-6 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color} ${!effect.enabled ? "grayscale opacity-50" : ""}`}
           >
-            {meta.icon}
+            <meta.Icon size={EFFECT_ICON_SIZE} />
           </div>
           <span
             className="font-semibold text-[13px] flex-1 truncate"

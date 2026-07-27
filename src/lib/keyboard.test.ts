@@ -21,7 +21,8 @@ describe("keyboard utilities", () => {
       const origInput = globalThis.HTMLInputElement;
       try {
         globalThis.Element = MockInputElement as unknown as typeof Element;
-        globalThis.HTMLInputElement = MockInputElement as unknown as typeof HTMLInputElement;
+        globalThis.HTMLInputElement =
+          MockInputElement as unknown as typeof HTMLInputElement;
 
         const input = new MockInputElement();
         expect(isTextEntryTarget(input as unknown as EventTarget)).toBe(true);
@@ -43,7 +44,8 @@ describe("keyboard utilities", () => {
       const origInput = globalThis.HTMLInputElement;
       try {
         globalThis.Element = MockRangeElement as unknown as typeof Element;
-        globalThis.HTMLInputElement = MockRangeElement as unknown as typeof HTMLInputElement;
+        globalThis.HTMLInputElement =
+          MockRangeElement as unknown as typeof HTMLInputElement;
 
         const range = new MockRangeElement();
         expect(isTextEntryTarget(range as unknown as EventTarget)).toBe(false);

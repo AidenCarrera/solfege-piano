@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 
+/**
+ * Tracks which keys are lit.
+ *
+ * `activeNotes` is replaced rather than mutated so React sees the change, and
+ * flash timers are keyed by note so retriggering a note during its flash
+ * restarts the timer instead of stacking two.
+ */
 export function useActiveNotes() {
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const flashTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -32,20 +39,18 @@ export function useActiveNotes() {
   );
 
   const clearAllNotes = useCallback(() => {
-    flashTimers.current.forEach(clearTimeout);
+    flashTimers.current.forEach((timer) => clearTimeout(timer));
     flashTimers.current.clear();
     setActiveNotes(new Set());
   }, []);
 
   useEffect(
     () => () => {
-      flashTimers.current.forEach(clearTimeout);
+      flashTimers.current.forEach((timer) => clearTimeout(timer));
       flashTimers.current.clear();
     },
     [],
   );
-
-  const setActiveNotesRaw = setActiveNotes;
 
   return {
     activeNotes,
@@ -53,6 +58,5 @@ export function useActiveNotes() {
     deactivateNote,
     flashNote,
     clearAllNotes,
-    setActiveNotes: setActiveNotesRaw,
   };
 }

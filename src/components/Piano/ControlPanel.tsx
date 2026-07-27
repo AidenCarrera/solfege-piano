@@ -4,11 +4,33 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings2, Waves, ChevronsUpDown } from "lucide-react";
 import { getGlassPanelColor } from "@/lib/colorUtils";
-import { ControlPanelProps } from "./ControlPanelTypes";
+import type { EffectNode } from "@/lib/effects";
+import type { SoundType } from "@/lib/config";
 import { SettingsTab } from "./SettingsTab";
 import { EffectsTab } from "./EffectsTab";
 
-export default function ControlPanel({
+export interface ControlPanelProps {
+  volume: number;
+  setVolume: (v: number) => void;
+  effectChain: EffectNode[];
+  setEffectChain: React.Dispatch<React.SetStateAction<EffectNode[]>>;
+  labelsEnabled: boolean;
+  setLabelsEnabled: (b: boolean) => void;
+  solfegeEnabled: boolean;
+  setSolfegeEnabled: (b: boolean) => void;
+  pianoScale: number;
+  setPianoScale: (v: number) => void;
+  bgColor: string;
+  setBgColor: (v: string) => void;
+  soundType: SoundType;
+  setSoundType: (s: SoundType) => void;
+  startOctave: number;
+  endOctave: number;
+  onOctaveChange: (start: number, end: number) => void;
+  textColor: string;
+}
+
+export function ControlPanel({
   volume,
   setVolume,
   effectChain,

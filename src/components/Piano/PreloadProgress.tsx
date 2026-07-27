@@ -9,7 +9,7 @@ type PreloadProgressProps = {
   onRetry: () => void;
 };
 
-export default function PreloadProgress({
+export function PreloadProgress({
   progress,
   isPreloading,
   error,

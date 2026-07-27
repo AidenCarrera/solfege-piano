@@ -1,31 +1,37 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import { Note } from "@/lib/note";
 import { generateNotes } from "@/lib/noteGenerator";
-import { PIANO_CONFIG, SoundType } from "@/lib/config";
+import {
+  PIANO_CONFIG,
+  SOLFEGE_OCTAVE_RANGE,
+  scaleForOctaveSpan,
+  SoundType,
+} from "@/lib/config";
 
-import { usePianoScale } from "./usePianoScale";
-import { useNotePlayer } from "./useNotePlayer";
-import { useKeyboardControls } from "./useKeyboardControls";
-import { useMouseControls } from "./useMouseControls";
-import { useTouchControls } from "./useTouchControls";
-import { useBackgroundColor } from "./useBackgroundColor";
-import { useSustainToggle } from "./useSustainToggle";
-import { useActiveNotes } from "./useActiveNotes";
-import { useDeferredPreload } from "./useDeferredPreload";
+import { usePianoScale } from "./hooks/usePianoScale";
+import { useNotePlayer } from "./hooks/useNotePlayer";
+import { useKeyboardControls } from "./hooks/useKeyboardControls";
+import { useMouseControls } from "./hooks/useMouseControls";
+import { useTouchControls } from "./hooks/useTouchControls";
+import { useBackgroundColor } from "./hooks/useBackgroundColor";
+import { useSustainToggle } from "./hooks/useSustainToggle";
+import { useActiveNotes } from "./hooks/useActiveNotes";
+import { useDeferredPreload } from "./hooks/useDeferredPreload";
+import { usePageInactive } from "./hooks/usePageInactive";
 import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
 
-import PianoKey from "./PianoKey";
-import ControlPanel from "./ControlPanel";
-import PreloadProgress from "./PreloadProgress";
+import { PianoKey } from "./PianoKey";
+import { ControlPanel } from "./ControlPanel";
+import { PreloadProgress } from "./PreloadProgress";
 import { EffectNode, createEffectNode } from "@/lib/effects";
 
 /** Extra bottom margin per unit of zoom, keeping the keyboard clear of the fold. */
 const SCALE_MARGIN_PX = 200;
 
-export default function Piano() {
+export function Piano() {
   const {
     activeNotes,
     activateNote,
@@ -49,18 +55,20 @@ export default function Piano() {
   const [soundType, setSoundType] = useState<SoundType>("Piano");
 
   const [startOctave, setStartOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0] ?? 3,
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0],
   );
   const [endOctave, setEndOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1] ?? 4,
+    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1],
   );
 
   const handleSoundTypeChange = useCallback(
     (newSoundType: SoundType) => {
+      // Solfege is only sampled for one octave, so pin the range and zoom.
       if (newSoundType === "Solfege") {
-        setStartOctave(3);
-        setEndOctave(4);
-        setPianoScale(1.5);
+        const [start, end] = SOLFEGE_OCTAVE_RANGE;
+        setStartOctave(start);
+        setEndOctave(end);
+        setPianoScale(scaleForOctaveSpan(end - start + 1));
       }
       setSoundType(newSoundType);
     },
@@ -74,7 +82,7 @@ export default function Piano() {
 
   const [enablePreload, setEnablePreload] = useState(false);
   const beginPreload = useCallback(() => setEnablePreload(true), []);
-  useDeferredPreload(beginPreload, 1500);
+  useDeferredPreload(beginPreload, PIANO_CONFIG.PRELOAD_DELAY_MS);
 
   const [sustainActive, setSustainActive] = useState(false);
 
@@ -118,38 +126,28 @@ export default function Piano() {
     handleTouchCancel,
   } = useTouchControls(playNote, stopNote, activateNote, deactivateNote);
 
-  useEffect(() => {
-    const releaseNotes = () => {
+  usePageInactive(
+    useCallback(() => {
       stopAllNotes();
       clearAllNotes();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") releaseNotes();
-    };
-
-    window.addEventListener("blur", releaseNotes);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      window.removeEventListener("blur", releaseNotes);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [stopAllNotes, clearAllNotes]);
+    }, [stopAllNotes, clearAllNotes]),
+  );
 
   /**
    * Sharp keys are absolutely positioned over the boundary between their
-   * preceding white key and the next one. Offsets are derived once per note
+   * preceding natural key and the next one. Offsets are derived once per note
    * range rather than per render, so every key can be memoized.
    */
   const keys = useMemo(() => {
-    const whiteKeyIndex = new Map<string, number>();
+    const naturalIndex = new Map<string, number>();
     notes
       .filter((note) => !note.isSharp)
-      .forEach((note, index) => whiteKeyIndex.set(note.name, index));
+      .forEach((note, index) => naturalIndex.set(note.name, index));
 
     return notes.map((note) => {
-      if (!note.isSharp) return { note, leftRem: 0 };
-      const precedingWhite = note.name.replace("s", "");
-      const index = whiteKeyIndex.get(precedingWhite);
+      const index = note.isSharp
+        ? naturalIndex.get(note.naturalName)
+        : undefined;
       return {
         note,
         leftRem:

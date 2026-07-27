@@ -7,7 +7,7 @@ import {
   EFFECT_BUILDERS,
   type EffectAdapter,
   type EffectBuilder,
-} from "./effectSpecs";
+} from "@/lib/audio/effectSpecs";
 
 interface ActiveEffect {
   mode: string;

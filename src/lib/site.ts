@@ -1,4 +1,12 @@
 export const SITE_NAME = "Solfege Piano";
+
+/** Full title for the home page, its Open Graph card, and its Twitter card. */
+export const SITE_TITLE = "Solfege Piano | Free Online Piano";
+
+/** Alt text for the shared social preview image. */
+export const SITE_OG_IMAGE_ALT =
+  "Solfege Piano — an interactive online piano for ear training";
+
 export const SITE_DESCRIPTION =
   "Practice piano, solfege, ear training, and music theory online with an interactive keyboard, realistic samples, sustain, note labels, and audio effects.";
 

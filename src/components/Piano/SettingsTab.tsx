@@ -1,7 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { SoundType, SOUND_OPTIONS } from "@/lib/config";
-import { OCTAVE_MAP } from "./ControlPanelTypes";
+import {
+  OCTAVE_RANGES,
+  PIANO_SCALE,
+  scaleForOctaveSpan,
+  SoundType,
+  SOUND_OPTIONS,
+} from "@/lib/config";
 
 export interface SettingsTabProps {
   volume: number;
@@ -38,18 +43,17 @@ export function SettingsTab({
   solfegeEnabled,
   setSolfegeEnabled,
 }: SettingsTabProps) {
-  const sliderValue =
-    Object.entries(OCTAVE_MAP).find(
-      ([, range]) => range[0] === startOctave && range[1] === endOctave,
-    )?.[0] ?? "2";
+  const selectedRange = OCTAVE_RANGES.findIndex(
+    ([start, end]) => start === startOctave && end === endOctave,
+  );
 
-  const handleOctaveSlider = (val: number) => {
-    const range = OCTAVE_MAP[val];
+  const handleOctaveSlider = (index: number) => {
+    const range = OCTAVE_RANGES[index];
     if (!range) return;
+
     const [start, end] = range;
     onOctaveChange(start, end);
-    const scaleMap: Record<number, number> = { 2: 1.5, 3: 1.4, 4: 1.0, 5: 0.8 };
-    setPianoScale(scaleMap[end - start + 1] ?? 1.5);
+    setPianoScale(scaleForOctaveSpan(end - start + 1));
   };
 
   return (
@@ -107,11 +111,11 @@ export function SettingsTab({
           <input
             id="octave-range"
             type="range"
-            min={1}
-            max={4}
+            min={0}
+            max={OCTAVE_RANGES.length - 1}
             step={1}
-            value={parseInt(sliderValue)}
-            onChange={(e) => handleOctaveSlider(parseInt(e.target.value))}
+            value={Math.max(0, selectedRange)}
+            onChange={(e) => handleOctaveSlider(Number(e.target.value))}
             className="w-full"
             disabled={soundType === "Solfege"}
             aria-valuetext={`C${startOctave} to C${endOctave}`}
@@ -151,9 +155,9 @@ export function SettingsTab({
           <input
             id="piano-zoom"
             type="range"
-            min={0.5}
-            max={2}
-            step={0.01}
+            min={PIANO_SCALE.MIN}
+            max={PIANO_SCALE.MAX}
+            step={PIANO_SCALE.STEP}
             value={pianoScale}
             onChange={(e) => setPianoScale(parseFloat(e.target.value))}
             className="w-full"

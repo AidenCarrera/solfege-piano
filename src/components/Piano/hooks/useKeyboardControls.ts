@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
 import { Note } from "@/lib/note";
 import { isTextEntryTarget, refocusSustainPedal } from "@/lib/keyboard";
+import { usePageInactive } from "./usePageInactive";
 
 export function useKeyboardControls(
   notes: Note[],
@@ -13,6 +14,14 @@ export function useKeyboardControls(
 ) {
   const pressedKeys = useRef<Set<string>>(new Set());
 
+  const notesByShortcut = useMemo(() => {
+    const map = new Map<string, Note>();
+    notes.forEach((note) => {
+      if (note.shortcut) map.set(note.shortcut, note);
+    });
+    return map;
+  }, [notes]);
+
   // Piano rebuilds these on nearly every render: activateNote is an inline
   // arrow and playNote changes with volume. Reading them through a ref keeps
   // the listener effect mounted for the component's lifetime. When it re-ran
@@ -20,6 +29,7 @@ export function useKeyboardControls(
   // pressed, cutting each keystroke off within a few milliseconds.
   const latest = useRef({
     notes,
+    notesByShortcut,
     playNote,
     stopNote,
     activateNote,
@@ -28,6 +38,7 @@ export function useKeyboardControls(
   useEffect(() => {
     latest.current = {
       notes,
+      notesByShortcut,
       playNote,
       stopNote,
       activateNote,
@@ -36,24 +47,24 @@ export function useKeyboardControls(
   });
 
   const triggerNote = useCallback((noteObj: Note) => {
-    if (pressedKeys.current.has(noteObj.key)) return;
+    if (pressedKeys.current.has(noteObj.shortcut)) return;
 
     refocusSustainPedal();
-    pressedKeys.current.add(noteObj.key);
+    pressedKeys.current.add(noteObj.shortcut);
     latest.current.playNote(noteObj.name);
     latest.current.activateNote(noteObj.name);
   }, []);
 
   const stopNoteIfPressed = useCallback((noteObj: Note) => {
-    if (!pressedKeys.current.has(noteObj.key)) return;
+    if (!pressedKeys.current.has(noteObj.shortcut)) return;
 
-    pressedKeys.current.delete(noteObj.key);
+    pressedKeys.current.delete(noteObj.shortcut);
     latest.current.stopNote(noteObj.name);
     latest.current.deactivateNote(noteObj.name);
   }, []);
 
   const releasePressedKeys = useCallback(() => {
-    latest.current.notes.forEach(stopNoteIfPressed);
+    latest.current.notes.forEach((note) => stopNoteIfPressed(note));
     pressedKeys.current.clear();
   }, [stopNoteIfPressed]);
 
@@ -69,8 +80,7 @@ export function useKeyboardControls(
       )
         return;
 
-      const key = e.key.toLowerCase();
-      const noteObj = latest.current.notes.find((n) => n.key === key);
+      const noteObj = latest.current.notesByShortcut.get(e.key.toLowerCase());
       if (!noteObj) return;
 
       e.preventDefault();
@@ -83,30 +93,23 @@ export function useKeyboardControls(
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") return;
 
-      const key = e.key.toLowerCase();
-      const noteObj = latest.current.notes.find((n) => n.key === key);
+      const noteObj = latest.current.notesByShortcut.get(e.key.toLowerCase());
       if (!noteObj) return;
 
       stopNoteIfPressed(noteObj);
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") releasePressedKeys();
-    };
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", releasePressedKeys);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("blur", releasePressedKeys);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       releasePressedKeys();
     };
   }, [triggerNote, stopNoteIfPressed, releasePressedKeys]);
+
+  usePageInactive(releasePressedKeys);
 
   // The shortcut map moves with the octave range, so release whatever is still
   // held against the outgoing note set before it is swapped out.
@@ -114,7 +117,7 @@ export function useKeyboardControls(
     const boundNotes = notes;
     const heldKeys = pressedKeys.current;
     return () => {
-      boundNotes.forEach(stopNoteIfPressed);
+      boundNotes.forEach((note) => stopNoteIfPressed(note));
       heldKeys.clear();
     };
   }, [notes, stopNoteIfPressed]);

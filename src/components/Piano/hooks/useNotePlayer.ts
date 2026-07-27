@@ -75,9 +75,7 @@ export function useNotePlayer({
     playNote: sampler.playNote,
     stopNote: sampler.stopNote,
     stopAllNotes: sampler.stopAllNotes,
-    // Tone reports sample loading as a single completion callback, so progress
-    // is only ever "not started" or "done".
-    preloadProgress: samples.buffers ? 1 : 0,
+    preloadProgress: samples.progress,
     isPreloading,
     preloadError,
     retryPreload,

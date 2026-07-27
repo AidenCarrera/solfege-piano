@@ -10,7 +10,7 @@ import type {
   ModulationParams,
   ReverbParams,
 } from "@/lib/effects";
-import { NativeBitCrusher, NativeFreeverb, NativeReverb } from "./audioEffects";
+import { NativeBitCrusher, NativeFreeverb, NativeReverb } from "./nodes";
 
 /** The live audio graph a builder attaches its nodes to. */
 export interface EffectBuildContext {

@@ -4,7 +4,7 @@ import {
   type EffectType,
   type EffectParams,
 } from "@/lib/effects";
-import { EFFECT_BUILDERS } from "./effectSpecs";
+import { EFFECT_BUILDERS } from "@/lib/audio/effectSpecs";
 import { EFFECT_MODES, EFFECT_PARAM_SLIDERS } from "./effectControls";
 
 const effectTypes = Object.keys(EFFECT_PRESETS) as EffectType[];

@@ -107,9 +107,13 @@ export function useTouchControls(
 
   useEffect(
     () => () => {
-      new Set(activeTouches.current.values()).forEach(stopNote);
+      // Wrapped rather than passed directly: `Set.forEach` also supplies the
+      // key and the set itself, which would leak into `stopNote`'s arguments.
+      new Set(activeTouches.current.values()).forEach((noteName) =>
+        stopNote(noteName),
+      );
       activeTouches.current.clear();
-      activeTimeouts.current.forEach(clearTimeout);
+      activeTimeouts.current.forEach((timeout) => clearTimeout(timeout));
       activeTimeouts.current.clear();
     },
     [stopNote],

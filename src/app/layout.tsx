@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_OG_IMAGE_ALT,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
+import { DEFAULT_THEME_COLOR } from "@/lib/config";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,7 +25,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: SITE_NAME,
   title: {
-    default: "Solfege Piano | Free Online Piano",
+    default: SITE_TITLE,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -45,7 +52,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Solfege Piano | Free Online Piano",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -56,19 +63,19 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Solfege Piano — an interactive online piano for ear training",
+        alt: SITE_OG_IMAGE_ALT,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Solfege Piano | Free Online Piano",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     creator: "@aidencarrera",
     images: [
       {
         url: "/og-image.png",
-        alt: "Solfege Piano — an interactive online piano for ear training",
+        alt: SITE_OG_IMAGE_ALT,
       },
     ],
   },
@@ -97,7 +104,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: DEFAULT_THEME_COLOR,
 };
 
 export default function RootLayout({

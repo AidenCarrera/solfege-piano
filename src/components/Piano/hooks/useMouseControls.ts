@@ -3,6 +3,7 @@
 import { useRef, useCallback, useEffect } from "react";
 import { PIANO_CONFIG } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
+import { usePageInactive } from "./usePageInactive";
 
 export function useMouseControls(
   playNote: (noteName: string) => void,
@@ -52,27 +53,20 @@ export function useMouseControls(
     isMouseDown.current = false;
   }, [stopNote]);
 
+  const releaseMouse = useCallback(() => {
+    if (currentNote.current) stopNote(currentNote.current);
+    currentNote.current = null;
+    isMouseDown.current = false;
+    clearAllNotes();
+  }, [stopNote, clearAllNotes]);
+
   // Release notes even when the pointer leaves the key before mouseup.
   useEffect(() => {
-    const releaseMouse = () => {
-      if (currentNote.current) stopNote(currentNote.current);
-      currentNote.current = null;
-      isMouseDown.current = false;
-      clearAllNotes();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") releaseMouse();
-    };
-
     window.addEventListener("mouseup", releaseMouse);
-    window.addEventListener("blur", releaseMouse);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      window.removeEventListener("mouseup", releaseMouse);
-      window.removeEventListener("blur", releaseMouse);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [stopNote, clearAllNotes]);
+    return () => window.removeEventListener("mouseup", releaseMouse);
+  }, [releaseMouse]);
+
+  usePageInactive(releaseMouse);
 
   return { handleMouseDown, handleMouseEnter, handleMouseUp };
 }

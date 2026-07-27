@@ -37,7 +37,7 @@ const ACTIVE_WHITE =
  * `Piano` can pass the same stable callbacks to every key and let `React.memo`
  * skip the keys whose active state did not change.
  */
-function PianoKey({
+function PianoKeyComponent({
   note,
   isActive,
   leftRem,
@@ -87,7 +87,7 @@ function PianoKey({
       // Keys are played with the mapped letter shortcuts rather than by
       // tabbing through 49 buttons.
       tabIndex={-1}
-      aria-label={`${note.name.replace("s", " sharp ")} piano key${note.key ? `, shortcut ${note.key.toUpperCase()}` : ""}`}
+      aria-label={`${note.spokenName} piano key${note.shortcut ? `, shortcut ${note.shortcut.toUpperCase()}` : ""}`}
       aria-pressed={isActive}
     >
       {showSolfege && (
@@ -106,11 +106,11 @@ function PianoKey({
             note.isSharp ? "text-white/80" : "text-gray-500"
           }`}
         >
-          {note.key.toUpperCase()}
+          {note.shortcut.toUpperCase()}
         </span>
       )}
     </button>
   );
 }
 
-export default React.memo(PianoKey);
+export const PianoKey = React.memo(PianoKeyComponent);

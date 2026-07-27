@@ -7,7 +7,7 @@ import {
   createEffectNode,
   EffectParamsUpdate,
 } from "@/lib/effects";
-import { EFFECT_META } from "./ControlPanelTypes";
+import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import { EffectCard } from "./EffectCard";
 
 export interface EffectsTabProps {
@@ -37,7 +37,7 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
         <div
           className={`flex items-center justify-center w-6 h-6 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color}`}
         >
-          {meta.icon}
+          <meta.Icon size={EFFECT_ICON_SIZE} />
         </div>
         <span
           className="font-semibold text-[13px] flex-1 truncate"
@@ -283,7 +283,7 @@ export function EffectsTab({
                     damping: 25,
                   }}
                 >
-                  {meta.icon}
+                  <meta.Icon size={EFFECT_ICON_SIZE} />
                   <span>{type}</span>
                 </motion.button>
               );

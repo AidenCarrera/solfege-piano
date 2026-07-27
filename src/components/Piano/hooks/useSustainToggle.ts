@@ -8,7 +8,6 @@ import { isTextEntryTarget } from "@/lib/keyboard";
 const SPACE_ACTIVATED_SELECTOR =
   'button, select, summary, input, [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [role="option"], [role="slider"]';
 
-
 export function useSustainToggle(
   stopAllNotes: () => void,
   setSustainActive: React.Dispatch<React.SetStateAction<boolean>>,

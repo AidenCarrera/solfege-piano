@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type * as ToneType from "tone";
-import { toToneNote, type Note } from "@/lib/note";
+import type { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
 
@@ -21,11 +21,10 @@ function createSampler(
 ): ToneType.Sampler {
   const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
   notes.forEach((note) => {
-    const toneNote = toToneNote(note.name);
     try {
-      if (buffers.has && !buffers.has(toneNote)) return;
-      const buffer = buffers.get(toneNote);
-      if (buffer) bufferMap[toneNote] = buffer;
+      if (buffers.has && !buffers.has(note.toneName)) return;
+      const buffer = buffers.get(note.toneName);
+      if (buffer) bufferMap[note.toneName] = buffer;
     } catch {
       // Buffers can disappear briefly while the sound bank changes.
     }
@@ -65,7 +64,14 @@ export function useSampler(
   limiterRef: React.RefObject<ToneType.Limiter | null>,
 ): SamplerControls {
   const samplerRef = useRef<ToneType.Sampler | null>(null);
-  const activeVoices = useRef<string[]>([]);
+
+  // The UI identifies keys by sample name; Tone wants scientific pitch. This
+  // is the one boundary where the two notations meet.
+  const toneNames = useMemo(() => {
+    const map = new Map<string, string>();
+    notes.forEach((note) => map.set(note.name, note.toneName));
+    return map;
+  }, [notes]);
 
   // Read when building a sampler, but deliberately not a dependency of that
   // effect: rebuilding on every slider movement would cut off sounding notes.
@@ -105,46 +111,36 @@ export function useSampler(
       refocusSustainPedal();
       if (!Tone || !buffers?.loaded || !samplerRef.current) return;
 
+      const toneNote = toneNames.get(noteName);
+      if (!toneNote) return;
+
       if (Tone.getContext().state !== "running") {
         Tone.start();
       }
 
       const sampler = samplerRef.current;
-      const toneNote = toToneNote(noteName);
 
       // Retrigger from silence so a repeated note does not layer on itself.
       sampler.triggerRelease(toneNote, Tone.now());
-      activeVoices.current = activeVoices.current.filter((v) => v !== toneNote);
-
-      activeVoices.current.push(toneNote);
-      if (activeVoices.current.length > PIANO_CONFIG.MAX_POLYPHONY) {
-        const oldestNote = activeVoices.current.shift();
-        if (oldestNote) {
-          sampler.triggerRelease(oldestNote, Tone.now());
-        }
-      }
-
       sampler.triggerAttack(toneNote, Tone.now());
     },
-    [Tone, buffers],
+    [Tone, buffers, toneNames],
   );
 
   const stopNote = useCallback(
     (noteName: string) => {
       if (sustainMode || !Tone || !samplerRef.current) return;
 
-      const toneNote = toToneNote(noteName);
-      samplerRef.current.triggerRelease(toneNote, Tone.now());
-      activeVoices.current = activeVoices.current.filter((v) => v !== toneNote);
+      const toneNote = toneNames.get(noteName);
+      if (toneNote) samplerRef.current.triggerRelease(toneNote, Tone.now());
     },
-    [sustainMode, Tone],
+    [sustainMode, Tone, toneNames],
   );
 
   const stopAllNotes = useCallback(() => {
     if (samplerRef.current && Tone) {
       samplerRef.current.releaseAll(Tone.now());
     }
-    activeVoices.current = [];
   }, [Tone]);
 
   return { samplerRef, playNote, stopNote, stopAllNotes };
