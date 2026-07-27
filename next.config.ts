@@ -2,14 +2,17 @@ import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
+// Vercel Analytics uses a cross-origin debug script only during development.
+const analyticsOrigin = isDevelopment ? " https://va.vercel-scripts.com" : "";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${analyticsOrigin}${isDevelopment ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
   "media-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self'${analyticsOrigin}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
