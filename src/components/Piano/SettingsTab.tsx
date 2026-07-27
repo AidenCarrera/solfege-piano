@@ -235,9 +235,6 @@ export function SettingsTab({
               type="checkbox"
               checked={labelsEnabled}
               onChange={(e) => setLabelsEnabled(e.target.checked)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setLabelsEnabled(!labelsEnabled);
-              }}
             />
             Keyboard
           </label>
@@ -246,9 +243,6 @@ export function SettingsTab({
               type="checkbox"
               checked={solfegeEnabled}
               onChange={(e) => setSolfegeEnabled(e.target.checked)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSolfegeEnabled(!solfegeEnabled);
-              }}
             />
             Solfege
           </label>

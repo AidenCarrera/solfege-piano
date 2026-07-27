@@ -6,6 +6,14 @@ export type Note = {
   solfege: string;
 };
 
+/**
+ * Converts a sample-style name (`"Cs4"`) to the scientific pitch notation
+ * Tone.js expects (`"C#4"`).
+ */
+export function toToneNote(name: string): string {
+  return name.replace("s", "#");
+}
+
 /** Chromatic note metadata; `s` encodes sharps in sample filenames. */
 export const BASE_NOTES = [
   { base: "C", isSharp: false, solfege: "Do" },

@@ -1,77 +1,126 @@
 import React from "react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import { GripVertical, Power, Trash2 } from "lucide-react";
-import { EffectNode, EffectParamsUpdate } from "@/lib/effects";
+import type {
+  EffectMode,
+  EffectNode,
+  EffectNodeOf,
+  EffectParamsUpdate,
+  EffectType,
+} from "@/lib/effects";
 import { EFFECT_META } from "./ControlPanelTypes";
+import {
+  EFFECT_MODES,
+  EFFECT_PARAM_SLIDERS,
+  MIX_SLIDER_RANGE,
+  formatMix,
+  readParam,
+  type ParamSliderSpec,
+} from "./effectControls";
 
-export function EffectCard({
+function ParamSlider({
+  id,
+  label,
+  min,
+  max,
+  step,
+  value,
+  displayValue,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  displayValue: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex justify-between items-center">
+        <label
+          htmlFor={id}
+          className="text-[11px] font-medium"
+          style={{ color: "var(--panel-muted)" }}
+        >
+          {label}
+        </label>
+        <span
+          className="text-[11px] font-mono px-1.5 py-px rounded"
+          style={{
+            background: "var(--panel-surface)",
+            color: "var(--panel-fg)",
+          }}
+        >
+          {displayValue}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full"
+        // Keep slider drags from starting a card reorder.
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-valuetext={displayValue}
+      />
+    </div>
+  );
+}
+
+/**
+ * One effect in the rack: a drag handle, bypass and remove buttons, and the
+ * controls for the effect's current mode.
+ *
+ * The mode selector and sliders are driven by the tables in `effectControls`,
+ * so the markup does not need a branch per effect type.
+ */
+export function EffectCard<T extends EffectType>({
   effect,
   borderColor,
   onToggle,
   onRemove,
   onUpdate,
 }: {
-  effect: EffectNode;
+  effect: EffectNodeOf<T>;
   borderColor: string;
   onToggle: () => void;
   onRemove: () => void;
-  onUpdate: (params: EffectParamsUpdate) => void;
+  onUpdate: (params: EffectParamsUpdate<T>) => void;
 }) {
   const dragControls = useDragControls();
   const meta = EFFECT_META[effect.type];
-  const p = effect.params as typeof effect.params & EffectParamsUpdate;
+  const modes = EFFECT_MODES[effect.type];
+  const sliders = EFFECT_PARAM_SLIDERS[effect.type];
 
-  const renderSlider = (
-    label: string,
-    field: string,
-    min: number,
-    max: number,
-    step: number,
-    val: number,
-    format?: (v: number) => string,
-  ) => {
-    const inputId = `${effect.id}-${field}`;
-    const displayValue = format ? format(val) : val.toFixed(2);
-
+  const renderSlider = (spec: ParamSliderSpec<T>) => {
+    const value = readParam(effect.params, spec.field);
     return (
-      <div key={field} className="flex flex-col gap-1">
-        <div className="flex justify-between items-center">
-          <label
-            htmlFor={inputId}
-            className="text-[11px] font-medium"
-            style={{ color: "var(--panel-muted)" }}
-          >
-            {label}
-          </label>
-          <span
-            className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{
-              background: "var(--panel-surface)",
-              color: "var(--panel-fg)",
-            }}
-          >
-            {displayValue}
-          </span>
-        </div>
-        <input
-          id={inputId}
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={val}
-          onChange={(e) => onUpdate({ [field]: parseFloat(e.target.value) })}
-          className="w-full"
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-valuetext={displayValue}
-        />
-      </div>
+      <ParamSlider
+        key={spec.field as string}
+        id={`${effect.id}-${String(spec.field)}`}
+        label={spec.label}
+        min={spec.min}
+        max={spec.max}
+        step={spec.step}
+        value={value}
+        displayValue={spec.format(value)}
+        onChange={(next) =>
+          onUpdate({ [spec.field]: next } as EffectParamsUpdate<T>)
+        }
+      />
     );
   };
 
   return (
     <Reorder.Item
-      value={effect}
+      value={effect as EffectNode}
       dragListener={false}
       dragControls={dragControls}
       as="div"
@@ -173,284 +222,47 @@ export function EffectCard({
             className="flex flex-col gap-2 pt-1 border-t"
             style={{ borderColor }}
           >
-            {effect.type === "Reverb" && (
+            {modes.length > 0 && (
               <select
-                aria-label="Reverb mode"
-                value={p.mode}
+                aria-label={`${effect.type} mode`}
+                value={effect.params.mode}
                 onChange={(e) =>
                   onUpdate({
-                    mode: e.target.value as NonNullable<
-                      EffectParamsUpdate["mode"]
-                    >,
-                  })
+                    mode: e.target.value as EffectMode<T>,
+                  } as EffectParamsUpdate<T>)
                 }
                 className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <option value="Native" className="bg-gray-800">
-                  Convolver
-                </option>
-                <option value="Chamber" className="bg-gray-800">
-                  Chamber
-                </option>
-              </select>
-            )}
-            {effect.type === "Delay" && (
-              <select
-                aria-label="Delay mode"
-                value={p.mode}
-                onChange={(e) =>
-                  onUpdate({
-                    mode: e.target.value as NonNullable<
-                      EffectParamsUpdate["mode"]
-                    >,
-                  })
-                }
-                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <option value="Feedback" className="bg-gray-800">
-                  Feedback
-                </option>
-                <option value="PingPong" className="bg-gray-800">
-                  Ping-Pong
-                </option>
-              </select>
-            )}
-            {effect.type === "Modulation" && (
-              <select
-                aria-label="Modulation mode"
-                value={p.mode}
-                onChange={(e) =>
-                  onUpdate({
-                    mode: e.target.value as NonNullable<
-                      EffectParamsUpdate["mode"]
-                    >,
-                  })
-                }
-                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <option value="Chorus" className="bg-gray-800">
-                  Chorus
-                </option>
-                <option value="Vibrato" className="bg-gray-800">
-                  Vibrato
-                </option>
-                <option value="Phaser" className="bg-gray-800">
-                  Phaser
-                </option>
-              </select>
-            )}
-            {effect.type === "Distortion" && (
-              <select
-                aria-label="Distortion mode"
-                value={p.mode}
-                onChange={(e) =>
-                  onUpdate({
-                    mode: e.target.value as NonNullable<
-                      EffectParamsUpdate["mode"]
-                    >,
-                  })
-                }
-                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <option value="Distortion" className="bg-gray-800">
-                  Overdrive
-                </option>
-                <option value="BitCrusher" className="bg-gray-800">
-                  BitCrusher
-                </option>
-                <option value="Chebyshev" className="bg-gray-800">
-                  Wavefolder
-                </option>
-              </select>
-            )}
-            {effect.type === "Filter" && (
-              <select
-                aria-label="Filter mode"
-                value={p.mode}
-                onChange={(e) =>
-                  onUpdate({
-                    mode: e.target.value as NonNullable<
-                      EffectParamsUpdate["mode"]
-                    >,
-                  })
-                }
-                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <option value="AutoWah" className="bg-gray-800">
-                  AutoWah
-                </option>
-                <option value="AutoFilter" className="bg-gray-800">
-                  AutoFilter
-                </option>
+                {modes.map((mode) => (
+                  <option
+                    key={mode.value}
+                    value={mode.value}
+                    className="bg-gray-800"
+                  >
+                    {mode.label}
+                  </option>
+                ))}
               </select>
             )}
 
-            {renderSlider(
-              "Mix",
-              "mix",
-              0,
-              1,
-              0.01,
-              p.mix,
-              (v) => `${Math.round(v * 100)}%`,
-            )}
+            <ParamSlider
+              id={`${effect.id}-mix`}
+              label="Mix"
+              {...MIX_SLIDER_RANGE}
+              value={effect.params.mix}
+              displayValue={formatMix(effect.params.mix)}
+              onChange={(mix) => onUpdate({ mix } as EffectParamsUpdate<T>)}
+            />
 
             <div className="flex flex-col gap-2 mt-1">
-              {effect.type === "Reverb" && (
-                <>
-                  {p.mode === "Native" && (
-                    <>
-                      {renderSlider(
-                        "Decay",
-                        "decay",
-                        0.5,
-                        10,
-                        0.1,
-                        p.decay ?? 2.5,
-                        (v) => `${v.toFixed(1)}s`,
-                      )}
-                      {renderSlider(
-                        "Pre-Delay",
-                        "preDelay",
-                        0,
-                        0.15,
-                        0.005,
-                        p.preDelay ?? 0.01,
-                        (v) => `${Math.round(v * 1000)}ms`,
-                      )}
-                    </>
-                  )}
-                  {p.mode === "Chamber" && (
-                    <>
-                      {renderSlider(
-                        "Pre-Delay",
-                        "preDelay",
-                        0,
-                        0.15,
-                        0.005,
-                        p.preDelay ?? 0.01,
-                        (v) => `${Math.round(v * 1000)}ms`,
-                      )}
-                      {renderSlider(
-                        "Room Size",
-                        "roomSize",
-                        0,
-                        1,
-                        0.01,
-                        p.roomSize ?? 0.5,
-                        (v) => `${Math.round(v * 100)}%`,
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-              {effect.type === "Delay" && (
-                <>
-                  {renderSlider(
-                    "Time",
-                    "delayTime",
-                    0.01,
-                    1,
-                    0.01,
-                    p.delayTime ?? 0.25,
-                    (v) => `${Math.round(v * 1000)}ms`,
-                  )}
-                  {renderSlider(
-                    "Feedback",
-                    "feedback",
-                    0,
-                    0.9,
-                    0.01,
-                    p.feedback ?? 0.4,
-                    (v) => `${Math.round(v * 100)}%`,
-                  )}
-                </>
-              )}
-              {effect.type === "Modulation" && (
-                <>
-                  {renderSlider(
-                    "Rate",
-                    "frequency",
-                    0.1,
-                    10,
-                    0.1,
-                    p.frequency ?? 1.5,
-                    (v) => `${v.toFixed(1)}Hz`,
-                  )}
-                  {p.mode !== "Phaser" &&
-                    renderSlider(
-                      "Depth",
-                      "depth",
-                      0,
-                      1,
-                      0.01,
-                      p.depth ?? 0.5,
-                      (v) => `${Math.round(v * 100)}%`,
-                    )}
-                </>
-              )}
-              {effect.type === "Distortion" && (
-                <>
-                  {renderSlider(
-                    "Amount",
-                    "amount",
-                    0,
-                    1,
-                    0.01,
-                    p.amount ?? 0.5,
-                    (v) => `${Math.round(v * 100)}%`,
-                  )}
-                </>
-              )}
-              {effect.type === "Compressor" && (
-                <>
-                  {renderSlider(
-                    "Threshold",
-                    "threshold",
-                    -60,
-                    0,
-                    1,
-                    p.threshold ?? -24,
-                    (v) => `${v}dB`,
-                  )}
-                  {renderSlider(
-                    "Ratio",
-                    "ratio",
-                    1,
-                    20,
-                    0.5,
-                    p.ratio ?? 4,
-                    (v) => `${v}:1`,
-                  )}
-                </>
-              )}
-              {effect.type === "Filter" && (
-                <>
-                  {renderSlider(
-                    "Base Freq",
-                    "baseFrequency",
-                    50,
-                    2000,
-                    10,
-                    p.baseFrequency ?? 150,
-                    (v) => `${v}Hz`,
-                  )}
-                  {renderSlider(
-                    "Octaves",
-                    "octaves",
-                    1,
-                    8,
-                    0.5,
-                    p.octaves ?? 4,
-                    (v) => `${v}`,
-                  )}
-                </>
-              )}
+              {sliders
+                .filter(
+                  (spec) =>
+                    !spec.appliesTo ||
+                    spec.appliesTo.includes(effect.params.mode),
+                )
+                .map(renderSlider)}
             </div>
           </div>
         </div>

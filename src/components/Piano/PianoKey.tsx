@@ -4,22 +4,43 @@ import type { Note } from "@/lib/note";
 
 type PianoKeyProps = {
   note: Note;
-  activeNotes: Set<string>;
-  onMouseDown: (fileName: string, noteName: string) => void;
-  onMouseEnter: (fileName: string, noteName: string) => void;
-  onMouseUp: (noteName: string) => void;
-  onTouchStart?: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  onTouchMove?: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  onTouchEnd?: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  onTouchCancel?: (e: React.TouchEvent<HTMLButtonElement>) => void;
-  getSharpKeyPosition: (note: Note) => number;
-  showLabel?: boolean;
-  showSolfege?: boolean;
+  isActive: boolean;
+  /**
+   * Absolute offset for sharp keys, in rem. Ignored by natural keys, which
+   * flow normally.
+   */
+  leftRem: number;
+  onMouseDown: (noteName: string) => void;
+  onMouseEnter: (noteName: string) => void;
+  onMouseUp: () => void;
+  onTouchStart: (e: React.TouchEvent<HTMLButtonElement>, note: string) => void;
+  onTouchMove: (e: React.TouchEvent<HTMLButtonElement>) => void;
+  onTouchEnd: (e: React.TouchEvent<HTMLButtonElement>) => void;
+  onTouchCancel: (e: React.TouchEvent<HTMLButtonElement>) => void;
+  showLabel: boolean;
+  showSolfege: boolean;
 };
 
+const BASE_WHITE =
+  "relative w-16 h-64 rounded-b-lg border-x border-b border-t-0 border-gray-300/20 bg-gradient-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 transform-gpu";
+const BASE_BLACK =
+  "absolute w-10 h-40 -mx-5 z-20 -top-px rounded-b-lg bg-gradient-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5 transform-gpu";
+const ACTIVE_BLACK =
+  "from-gray-800 to-black ring-2 ring-blue-500/50 !shadow-none !translate-y-0.5";
+const ACTIVE_WHITE =
+  "!bg-blue-50 !from-blue-100 !to-white !shadow-none !translate-y-0.5 ring-2 ring-blue-400/30";
+
+/**
+ * A single key.
+ *
+ * Handlers take the note name rather than being bound to it by the parent, so
+ * `Piano` can pass the same stable callbacks to every key and let `React.memo`
+ * skip the keys whose active state did not change.
+ */
 function PianoKey({
   note,
-  activeNotes,
+  isActive,
+  leftRem,
   onMouseDown,
   onMouseEnter,
   onMouseUp,
@@ -27,58 +48,33 @@ function PianoKey({
   onTouchMove,
   onTouchEnd,
   onTouchCancel,
-  getSharpKeyPosition,
-  showLabel = true,
-  showSolfege = true,
+  showLabel,
+  showSolfege,
 }: PianoKeyProps) {
-  const isActive = activeNotes.has(note.name);
-
-  const baseWhite =
-    "relative w-16 h-64 rounded-b-lg border-x border-b border-t-0 border-gray-300/20 bg-gradient-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 transform-gpu";
-  const baseBlack =
-    "absolute w-10 h-40 -mx-5 z-20 -top-px rounded-b-lg bg-gradient-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5 transform-gpu";
-
-  const base = note.isSharp ? baseBlack : baseWhite;
-
+  const base = note.isSharp ? BASE_BLACK : BASE_WHITE;
   const activeClass = isActive
     ? note.isSharp
-      ? "from-gray-800 to-black ring-2 ring-blue-500/50 !shadow-none !translate-y-0.5"
-      : "!bg-blue-50 !from-blue-100 !to-white !shadow-none !translate-y-0.5 ring-2 ring-blue-400/30"
+      ? ACTIVE_BLACK
+      : ACTIVE_WHITE
     : "";
-
-  const position = note.isSharp
-    ? { left: `${getSharpKeyPosition(note)}rem` }
-    : {};
 
   return (
     <button
       type="button"
       onMouseDown={(e) => {
         e.preventDefault();
-        onMouseDown(note.fileName, note.name);
+        onMouseDown(note.name);
       }}
-      onMouseEnter={() => onMouseEnter(note.fileName, note.name)}
-      onMouseUp={() => onMouseUp(note.name)}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
-          e.preventDefault();
-          onMouseDown(note.fileName, note.name);
-        }
-      }}
-      onKeyUp={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onMouseUp(note.name);
-        }
-      }}
-      onBlur={() => onMouseUp(note.name)}
-      onTouchStart={onTouchStart}
+      onMouseEnter={() => onMouseEnter(note.name)}
+      onMouseUp={onMouseUp}
+      onBlur={onMouseUp}
+      onTouchStart={(e) => onTouchStart(e, note.name)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchCancel}
       className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
       style={{
-        ...position,
+        ...(note.isSharp ? { left: `${leftRem}rem` } : {}),
         touchAction: "none",
         userSelect: "none",
         WebkitUserSelect: "none",
@@ -86,8 +82,10 @@ function PianoKey({
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
       }}
+      // Read by touch hit-testing, which tracks fingers across key boundaries.
       data-note-name={note.name}
-      data-file-name={note.fileName}
+      // Keys are played with the mapped letter shortcuts rather than by
+      // tabbing through 49 buttons.
       tabIndex={-1}
       aria-label={`${note.name.replace("s", " sharp ")} piano key${note.key ? `, shortcut ${note.key.toUpperCase()}` : ""}`}
       aria-pressed={isActive}

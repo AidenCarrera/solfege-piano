@@ -1,13 +1,14 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
 import { PIANO_CONFIG } from "@/lib/config";
+import { refocusSustainPedal } from "@/lib/keyboard";
 
 /** Tracks each touch independently so chords and glissandos remain polyphonic. */
 export function useTouchControls(
-  playNote: (fileName: string, noteName: string, isKeyboard: boolean) => void,
-  stopNote: (noteName: string, isKeyboard: boolean) => void,
-  activateNote?: (note: string) => void,
-  deactivateNote?: (note: string) => void,
+  playNote: (noteName: string) => void,
+  stopNote: (noteName: string) => void,
+  activateNote: (noteName: string) => void,
+  deactivateNote: (noteName: string) => void,
 ) {
   const activeTouches = useRef<Map<number, string>>(new Map());
   const activeTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -25,8 +26,8 @@ export function useTouchControls(
       );
       if (stillHeld) return;
 
-      stopNote(noteName, false);
-      deactivateNote?.(noteName);
+      stopNote(noteName);
+      deactivateNote(noteName);
       const timeout = activeTimeouts.current.get(noteName);
       if (timeout) clearTimeout(timeout);
       activeTimeouts.current.delete(noteName);
@@ -35,7 +36,7 @@ export function useTouchControls(
   );
 
   const triggerNote = useCallback(
-    (fileName: string, noteName: string, touchId: number) => {
+    (noteName: string, touchId: number) => {
       const currentNote = activeTouches.current.get(touchId);
 
       if (currentNote && currentNote !== noteName) {
@@ -43,24 +44,18 @@ export function useTouchControls(
       }
 
       activeTouches.current.set(touchId, noteName);
-      playNote(fileName, noteName, false);
+      playNote(noteName);
+      activateNote(noteName);
 
-      if (activateNote) {
-        activateNote(noteName);
-      }
-
-      if (activeTimeouts.current.has(noteName)) {
-        clearTimeout(activeTimeouts.current.get(noteName)!);
-      }
+      const existingTimeout = activeTimeouts.current.get(noteName);
+      if (existingTimeout) clearTimeout(existingTimeout);
 
       // Retain the highlight while another finger still holds the same note.
       const timeout = setTimeout(() => {
         const stillActive = Array.from(activeTouches.current.values()).includes(
           noteName,
         );
-        if (!stillActive && deactivateNote) {
-          deactivateNote(noteName);
-        }
+        if (!stillActive) deactivateNote(noteName);
         activeTimeouts.current.delete(noteName);
       }, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
 
@@ -70,14 +65,11 @@ export function useTouchControls(
   );
 
   const handleTouchStart = useCallback(
-    (
-      e: React.TouchEvent<HTMLButtonElement>,
-      fileName: string,
-      noteName: string,
-    ) => {
+    (e: React.TouchEvent<HTMLButtonElement>, noteName: string) => {
       e.preventDefault();
+      refocusSustainPedal();
       Array.from(e.changedTouches).forEach((touch) => {
-        triggerNote(fileName, noteName, touch.identifier);
+        triggerNote(noteName, touch.identifier);
       });
     },
     [triggerNote],
@@ -89,24 +81,15 @@ export function useTouchControls(
       e.preventDefault();
       Array.from(e.touches).forEach((touch) => {
         const element = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (!element) return;
-
-        const keyElement = element.closest(
-          "[data-note-name]",
-        ) as HTMLButtonElement;
-        if (!keyElement) return;
-
-        const newNoteName = keyElement.dataset.noteName;
-        const newFileName = keyElement.dataset.fileName;
-        if (!newNoteName || !newFileName) return;
+        const keyElement = element?.closest<HTMLElement>("[data-note-name]");
+        const newNoteName = keyElement?.dataset.noteName;
+        if (!newNoteName) return;
 
         const currentNote = activeTouches.current.get(touch.identifier);
-        if (currentNote !== newNoteName) {
-          if (currentNote) {
-            releaseTouch(touch.identifier);
-          }
-          triggerNote(newFileName, newNoteName, touch.identifier);
-        }
+        if (currentNote === newNoteName) return;
+
+        if (currentNote) releaseTouch(touch.identifier);
+        triggerNote(newNoteName, touch.identifier);
       });
     },
     [releaseTouch, triggerNote],
@@ -124,9 +107,7 @@ export function useTouchControls(
 
   useEffect(
     () => () => {
-      new Set(activeTouches.current.values()).forEach((noteName) => {
-        stopNote(noteName, false);
-      });
+      new Set(activeTouches.current.values()).forEach(stopNote);
       activeTouches.current.clear();
       activeTimeouts.current.forEach(clearTimeout);
       activeTimeouts.current.clear();

@@ -1,4 +1,33 @@
+/**
+ * Hand-built Web Audio effects used in place of their Tone.js equivalents.
+ *
+ * Tone ships `Reverb`, `Freeverb`, and `BitCrusher`, but none of them suit a
+ * live, user-tweakable rack here:
+ *
+ * - `Tone.Reverb` needs an `await generate()` before it passes audio, so a
+ *   decay change would silence the chain until the promise settles. The
+ *   convolver below swaps its impulse response in place instead.
+ * - `Tone.Freeverb` and `Tone.BitCrusher` run in an AudioWorklet, which loads
+ *   its processor from a `blob:` URL. That is a moving part in the strict CSP
+ *   declared in `next.config.ts`, and a worklet cannot be created at all while
+ *   the context is suspended.
+ *
+ * Each class exposes `input`/`output` plus setter-only properties, so the
+ * builders in `effectSpecs.ts` can treat them like any other Tone node.
+ */
 import type * as ToneType from "tone";
+
+/**
+ * Exponent applied to the impulse tail. Higher values decay faster than a
+ * linear ramp; 3 approximates a small room's energy falloff.
+ */
+const IMPULSE_DECAY_EXPONENT = 3.0;
+
+/**
+ * Rebuilding an impulse response allocates and fills a stereo buffer seconds
+ * long, so coalesce the bursts of updates a dragged slider produces.
+ */
+const IMPULSE_REBUILD_DEBOUNCE_MS = 120;
 
 function createImpulseResponse(
   context: AudioContext,
@@ -46,7 +75,11 @@ export class NativeReverb {
     this.delayNode.delayTime.setValueAtTime(preDelay, context.currentTime);
 
     this.convolver = context.createConvolver();
-    this.convolver.buffer = createImpulseResponse(context, decay, 3.0);
+    this.convolver.buffer = createImpulseResponse(
+      context,
+      decay,
+      IMPULSE_DECAY_EXPONENT,
+    );
 
     this.wetGain = context.createGain();
     this.dryGain = context.createGain();
@@ -74,10 +107,10 @@ export class NativeReverb {
         this.convolver.buffer = createImpulseResponse(
           this.context,
           this.currentDecay,
-          3.0,
+          IMPULSE_DECAY_EXPONENT,
         );
         this.impulseTimer = null;
-      }, 120);
+      }, IMPULSE_REBUILD_DEBOUNCE_MS);
     }
   }
 
@@ -96,11 +129,15 @@ export class NativeReverb {
   }
 }
 
+/** Resolution of the waveshaper transfer function mapping -1..1 to -1..1. */
+const CRUSHER_CURVE_SIZE = 1024;
+
+/** Quantizes the signal to `2^bits` levels via a waveshaper transfer curve. */
 function createCrusherCurve(bits: number) {
   const steps = Math.pow(2, bits);
-  const curve = new Float32Array(1024);
-  for (let i = 0; i < 1024; i++) {
-    const x = (i * 2) / 1024 - 1;
+  const curve = new Float32Array(CRUSHER_CURVE_SIZE);
+  for (let i = 0; i < CRUSHER_CURVE_SIZE; i++) {
+    const x = (i * 2) / CRUSHER_CURVE_SIZE - 1;
     curve[i] = Math.round(x * steps) / steps;
   }
   return curve;
@@ -149,6 +186,12 @@ export class NativeBitCrusher {
   }
 }
 
+/**
+ * Butterworth response for the comb filters' lowpass stage: -10·log₁₀(2), the
+ * Q at which a biquad's passband is maximally flat.
+ */
+const BUTTERWORTH_Q = -3.0102999566398125;
+
 class NativeLowpassCombFilter {
   input: GainNode;
   output: GainNode;
@@ -171,7 +214,7 @@ class NativeLowpassCombFilter {
     this.filterNode = context.createBiquadFilter();
     this.filterNode.type = "lowpass";
     this.filterNode.frequency.setValueAtTime(dampening, context.currentTime);
-    this.filterNode.Q.setValueAtTime(-3.0102999566398125, context.currentTime);
+    this.filterNode.Q.setValueAtTime(BUTTERWORTH_Q, context.currentTime);
 
     this.feedbackGain = context.createGain();
     this.feedbackGain.gain.setValueAtTime(resonance, context.currentTime);
@@ -245,6 +288,34 @@ class NativeAllpassFilter {
   }
 }
 
+/**
+ * Schroeder's Freeverb topology: eight parallel lowpass comb filters feeding
+ * four series allpass filters.
+ *
+ * The reference implementation specifies its delay lines as sample counts at
+ * 44.1 kHz, so they are divided by that rate to get the seconds a `DelayNode`
+ * expects. This is deliberately independent of the output device's sample
+ * rate — the tunings are mutually prime lengths chosen to avoid resonant
+ * ringing, and rescaling them to another rate would detune the network.
+ */
+const FREEVERB_REFERENCE_SAMPLE_RATE = 44100;
+const FREEVERB_COMB_TUNINGS_IN_SAMPLES = [
+  1557, 1617, 1491, 1422, 1277, 1356, 1188, 1116,
+];
+const FREEVERB_ALLPASS_FREQUENCIES = [225, 556, 441, 341];
+const FREEVERB_ALLPASS_GAIN = 0.5;
+
+/** Lowpass cutoff of the comb feedback path; higher values sound brighter. */
+const FREEVERB_DAMPENING_HZ = 3000;
+
+/**
+ * Maps room size (0..1) onto comb feedback. The range stops short of 1 because
+ * feedback at or above unity never decays.
+ */
+function roomSizeToResonance(roomSize: number): number {
+  return roomSize * 0.28 + 0.7;
+}
+
 export class NativeFreeverb {
   input: ToneType.Gain;
   output: ToneType.Gain;
@@ -268,36 +339,22 @@ export class NativeFreeverb {
     this.delayNode = context.createDelay(1.0);
     this.delayNode.delayTime.setValueAtTime(preDelay, context.currentTime);
 
-    const combTunings = [
-      1557 / 44100,
-      1617 / 44100,
-      1491 / 44100,
-      1422 / 44100,
-      1277 / 44100,
-      1356 / 44100,
-      1188 / 44100,
-      1116 / 44100,
-    ];
-
-    const allpassFrequencies = [225, 556, 441, 341];
-
     this.wetGain = context.createGain();
     this.dryGain = context.createGain();
 
-    const resonance = roomSize * 0.28 + 0.7;
-    const dampening = 3000;
+    const resonance = roomSizeToResonance(roomSize);
 
-    this.combFilters = combTunings.map((delayTime) => {
+    this.combFilters = FREEVERB_COMB_TUNINGS_IN_SAMPLES.map((samples) => {
       return new NativeLowpassCombFilter(
         context,
-        delayTime,
+        samples / FREEVERB_REFERENCE_SAMPLE_RATE,
         resonance,
-        dampening,
+        FREEVERB_DAMPENING_HZ,
       );
     });
 
-    this.allpassFilters = allpassFrequencies.map((freq) => {
-      return new NativeAllpassFilter(context, 1 / freq, 0.5);
+    this.allpassFilters = FREEVERB_ALLPASS_FREQUENCIES.map((freq) => {
+      return new NativeAllpassFilter(context, 1 / freq, FREEVERB_ALLPASS_GAIN);
     });
 
     Tone.connect(this.input, this.dryGain);
@@ -330,7 +387,7 @@ export class NativeFreeverb {
   }
 
   set roomSize(value: number) {
-    const resonance = value * 0.28 + 0.7;
+    const resonance = roomSizeToResonance(value);
     this.combFilters.forEach((cf) => {
       cf.resonance = resonance;
     });
@@ -349,49 +406,4 @@ export class NativeFreeverb {
     this.combFilters.forEach((cf) => cf.dispose());
     this.allpassFilters.forEach((ap) => ap.dispose());
   }
-}
-
-interface NumericValue {
-  value: unknown;
-}
-
-export interface EffectInstance {
-  input?: ToneType.InputNode;
-  output?: ToneType.OutputNode;
-  dispose: () => unknown;
-  wet?: NumericValue;
-  mix?: number;
-  decay?: number;
-  preDelay?: number;
-  roomSize?: number;
-  delayTime?: NumericValue | number;
-  feedback?: NumericValue;
-  frequency?: NumericValue | number;
-  depth?: NumericValue | number;
-  distortion?: number;
-  bits?: number;
-  order?: number;
-  baseFrequency?: NumericValue | number;
-  octaves?: NumericValue | number;
-  sensitivity?: NumericValue | number;
-  _comp?: ToneType.Compressor;
-  _inputGain?: ToneType.Gain;
-  _outputGain?: ToneType.Gain;
-  _wetGain?: GainNode;
-  _dryGain?: GainNode;
-}
-
-export function asEffectInstance(value: unknown): EffectInstance {
-  return value as EffectInstance;
-}
-
-export function setNumericValue(
-  target: NumericValue | number | undefined,
-  value: number,
-): boolean {
-  if (typeof target === "object" && target !== null) {
-    target.value = value;
-    return true;
-  }
-  return false;
 }

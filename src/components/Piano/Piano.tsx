@@ -22,6 +22,9 @@ import ControlPanel from "./ControlPanel";
 import PreloadProgress from "./PreloadProgress";
 import { EffectNode, createEffectNode } from "@/lib/effects";
 
+/** Extra bottom margin per unit of zoom, keeping the keyboard clear of the fold. */
+const SCALE_MARGIN_PX = 200;
+
 export default function Piano() {
   const {
     activeNotes,
@@ -83,24 +86,23 @@ export default function Piano() {
     isPreloading,
     preloadError,
     retryPreload,
-  } = useNotePlayer(
+  } = useNotePlayer({
     volume,
     effectChain,
     soundType,
-    sustainActive,
+    sustainMode: sustainActive,
     notes,
     enablePreload,
-  );
+  });
 
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
-  useKeyboardControls(
-    notes,
-    playNote,
-    stopNote,
-    (note) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),
-    deactivateNote,
+  const flashHeldNote = useCallback(
+    (note: string) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),
+    [flashNote],
   );
+
+  useKeyboardControls(notes, playNote, stopNote, flashHeldNote, deactivateNote);
 
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
     playNote,
@@ -133,22 +135,30 @@ export default function Piano() {
     };
   }, [stopAllNotes, clearAllNotes]);
 
-  // Sharp keys are positioned against their preceding white key.
-  const whiteNotes = useMemo(() => notes.filter((n) => !n.isSharp), [notes]);
-  const getSharpKeyPosition = (note: Note) => {
-    const match = note.name.match(/^([A-G]s?)(\d+)$/);
-    if (!match || !match[1] || !match[2]) return 0;
-    const base = match[1].replace("s", "");
-    const octave = match[2];
-    const whiteIndex = whiteNotes.findIndex(
-      (n) => n.name === `${base}${octave}`,
-    );
-    if (whiteIndex === -1) return 0;
-    return (
-      whiteIndex * PIANO_CONFIG.WHITE_KEY_WIDTH_REM +
-      PIANO_CONFIG.WHITE_KEY_WIDTH_REM
-    );
-  };
+  /**
+   * Sharp keys are absolutely positioned over the boundary between their
+   * preceding white key and the next one. Offsets are derived once per note
+   * range rather than per render, so every key can be memoized.
+   */
+  const keys = useMemo(() => {
+    const whiteKeyIndex = new Map<string, number>();
+    notes
+      .filter((note) => !note.isSharp)
+      .forEach((note, index) => whiteKeyIndex.set(note.name, index));
+
+    return notes.map((note) => {
+      if (!note.isSharp) return { note, leftRem: 0 };
+      const precedingWhite = note.name.replace("s", "");
+      const index = whiteKeyIndex.get(precedingWhite);
+      return {
+        note,
+        leftRem:
+          index === undefined
+            ? 0
+            : (index + 1) * PIANO_CONFIG.WHITE_KEY_WIDTH_REM,
+      };
+    });
+  }, [notes]);
 
   const textColor = useMemo(() => getContrastColor(bgColor), [bgColor]);
   const shadowColor = useMemo(() => getShadowColor(bgColor), [bgColor]);
@@ -199,7 +209,7 @@ export default function Piano() {
         style={{
           transform: `scale(${pianoScale})`,
           transformOrigin: "top center",
-          marginBottom: `${(pianoScale - 1) * 200}px`,
+          marginBottom: `${(pianoScale - 1) * SCALE_MARGIN_PX}px`,
         }}
       >
         <PreloadProgress
@@ -216,21 +226,19 @@ export default function Piano() {
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {notes.map((note) => (
+          {keys.map(({ note, leftRem }) => (
             <PianoKey
               key={note.name}
               note={note}
-              activeNotes={activeNotes}
-              onMouseDown={() => handleMouseDown(note.fileName, note.name)}
-              onMouseEnter={() => handleMouseEnter(note.fileName, note.name)}
+              isActive={activeNotes.has(note.name)}
+              leftRem={leftRem}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
               onMouseUp={handleMouseUp}
-              onTouchStart={(e) =>
-                handleTouchStart(e, note.fileName, note.name)
-              }
+              onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchCancel}
-              getSharpKeyPosition={getSharpKeyPosition}
               showLabel={labelsEnabled}
               showSolfege={solfegeEnabled}
             />

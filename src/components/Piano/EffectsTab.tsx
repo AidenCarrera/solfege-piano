@@ -5,7 +5,6 @@ import {
   EffectNode,
   EffectType,
   createEffectNode,
-  EffectParams,
   EffectParamsUpdate,
 } from "@/lib/effects";
 import { EFFECT_META } from "./ControlPanelTypes";
@@ -115,11 +114,13 @@ export function EffectsTab({
   );
 
   const updateEffect = useCallback(
-    (id: string, params: EffectParamsUpdate) => {
+    <T extends EffectType>(id: string, params: EffectParamsUpdate<T>) => {
       setEffectChain((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, params: { ...e.params, ...params } as EffectParams }
+            ? // The update is typed against the card's own effect, but the
+              // merge happens against the erased union, so restate the node.
+              ({ ...e, params: { ...e.params, ...params } } as EffectNode)
             : e,
         ),
       );

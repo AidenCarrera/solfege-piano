@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { Note } from "@/lib/note";
-import { isTextEntryTarget } from "@/lib/keyboard";
+import { isTextEntryTarget, refocusSustainPedal } from "@/lib/keyboard";
 
 export function useKeyboardControls(
   notes: Note[],
-  playNote: (fileName: string, note: string, isKeyboard: boolean) => void,
-  stopNote: (note: string, isKeyboard: boolean) => void,
-  activateNote?: (note: string) => void,
-  deactivateNote?: (note: string) => void,
+  playNote: (noteName: string) => void,
+  stopNote: (noteName: string) => void,
+  activateNote: (noteName: string) => void,
+  deactivateNote: (noteName: string) => void,
 ) {
   const pressedKeys = useRef<Set<string>>(new Set());
 
@@ -38,17 +38,18 @@ export function useKeyboardControls(
   const triggerNote = useCallback((noteObj: Note) => {
     if (pressedKeys.current.has(noteObj.key)) return;
 
+    refocusSustainPedal();
     pressedKeys.current.add(noteObj.key);
-    latest.current.playNote(noteObj.fileName, noteObj.name, true);
-    latest.current.activateNote?.(noteObj.name);
+    latest.current.playNote(noteObj.name);
+    latest.current.activateNote(noteObj.name);
   }, []);
 
   const stopNoteIfPressed = useCallback((noteObj: Note) => {
     if (!pressedKeys.current.has(noteObj.key)) return;
 
     pressedKeys.current.delete(noteObj.key);
-    latest.current.stopNote(noteObj.name, true);
-    latest.current.deactivateNote?.(noteObj.name);
+    latest.current.stopNote(noteObj.name);
+    latest.current.deactivateNote(noteObj.name);
   }, []);
 
   const releasePressedKeys = useCallback(() => {
