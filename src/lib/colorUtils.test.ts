@@ -8,9 +8,9 @@ describe("color utilities", () => {
     expect(getContrastColor("#ffffff")).toBe("#000000");
   });
 
-  it("uses a shadow opposite the foreground color", () => {
-    expect(getShadowColor("#0f172a")).toBe("rgba(0, 0, 0, 0.5)");
-    expect(getShadowColor("#ffffff")).toBe("rgba(255, 255, 255, 0.5)");
+  it("provides soft drop shadows without harsh glows", () => {
+    expect(getShadowColor("#0f172a")).toBe("rgba(0, 0, 0, 0.3)");
+    expect(getShadowColor("#ffffff")).toBe("rgba(0, 0, 0, 0.12)");
   });
 
   it("clamps adjusted channels to valid RGB values", () => {

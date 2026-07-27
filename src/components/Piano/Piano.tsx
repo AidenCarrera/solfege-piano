@@ -11,12 +11,13 @@ import {
   SoundType,
 } from "@/lib/config";
 
-import { usePianoScale } from "./hooks/usePianoScale";
+import { useSettings } from "./hooks/useSettings";
+import { useViewportScale } from "./hooks/useViewportScale";
 import { useNotePlayer } from "./hooks/useNotePlayer";
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useMouseControls } from "./hooks/useMouseControls";
 import { useTouchControls } from "./hooks/useTouchControls";
-import { useBackgroundColor } from "./hooks/useBackgroundColor";
+import { useThemeTokens } from "./hooks/useThemeTokens";
 import { useSustainToggle } from "./hooks/useSustainToggle";
 import { useActiveNotes } from "./hooks/useActiveNotes";
 import { useDeferredPreload } from "./hooks/useDeferredPreload";
@@ -26,7 +27,6 @@ import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
 import { PianoKey } from "./PianoKey";
 import { ControlPanel } from "./ControlPanel";
 import { PreloadProgress } from "./PreloadProgress";
-import { EffectNode, createEffectNode } from "@/lib/effects";
 
 /** Extra bottom margin per unit of zoom, keeping the keyboard clear of the fold. */
 const SCALE_MARGIN_PX = 200;
@@ -35,39 +35,45 @@ export function Piano() {
   const { activeNotes, activateNote, deactivateNote, clearAllNotes } =
     useActiveNotes();
 
-  const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
-  const [effectChain, setEffectChain] = useState<EffectNode[]>(() => [
-    createEffectNode("Reverb"),
-  ]);
-  const [labelsEnabled, setLabelsEnabled] = useState(
-    PIANO_CONFIG.DEFAULT_LABELS_ENABLED,
-  );
-  const [solfegeEnabled, setSolfegeEnabled] = useState(
-    PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED,
-  );
-  const [pianoScale, setPianoScale] = usePianoScale();
-  const [bgColor, setBgColor] = useBackgroundColor();
-  const [soundType, setSoundType] = useState<SoundType>("Piano");
+  const { settings, updateSetting, patchSettings, resetSettings } =
+    useSettings();
+  const {
+    volume,
+    effectChain,
+    labelsEnabled,
+    solfegeEnabled,
+    bgColor,
+    soundType,
+    startOctave,
+    endOctave,
+  } = settings;
 
-  const [startOctave, setStartOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[0],
+  // A stored zoom is an explicit choice and wins; otherwise follow the viewport.
+  const viewportScale = useViewportScale();
+  const pianoScale = settings.pianoScale ?? viewportScale;
+  const setPianoScale = useCallback(
+    (value: number) => updateSetting("pianoScale", value),
+    [updateSetting],
   );
-  const [endOctave, setEndOctave] = useState(
-    PIANO_CONFIG.DEFAULT_OCTAVE_RANGE[1],
-  );
+
+  useThemeTokens(bgColor);
 
   const handleSoundTypeChange = useCallback(
     (newSoundType: SoundType) => {
       // Solfege is only sampled for one octave, so pin the range and zoom.
       if (newSoundType === "Solfege") {
         const [start, end] = SOLFEGE_OCTAVE_RANGE;
-        setStartOctave(start);
-        setEndOctave(end);
-        setPianoScale(scaleForOctaveSpan(end - start + 1));
+        patchSettings({
+          soundType: newSoundType,
+          startOctave: start,
+          endOctave: end,
+          pianoScale: scaleForOctaveSpan(end - start + 1),
+        });
+        return;
       }
-      setSoundType(newSoundType);
+      updateSetting("soundType", newSoundType);
     },
-    [setPianoScale],
+    [patchSettings, updateSetting],
   );
 
   const notes: Note[] = useMemo(
@@ -155,41 +161,37 @@ export function Piano() {
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen pb-16 md:pb-36 select-none transition-colors duration-500"
-      style={
-        {
-          color: textColor,
-          "--foreground": textColor,
-        } as React.CSSProperties
-      }
+      // `--foreground` is published on :root by useThemeTokens.
+      style={{ color: textColor }}
     >
       <h1
         className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 tracking-tight"
-        style={{ textShadow: `0 4px 12px ${shadowColor}` }}
+        style={{ textShadow: `0 2px 8px ${shadowColor}` }}
       >
         Solfege Piano
       </h1>
 
       <ControlPanel
         volume={volume}
-        setVolume={setVolume}
+        setVolume={(value) => updateSetting("volume", value)}
         effectChain={effectChain}
-        setEffectChain={setEffectChain}
+        setEffectChain={(value) => updateSetting("effectChain", value)}
         labelsEnabled={labelsEnabled}
-        setLabelsEnabled={setLabelsEnabled}
+        setLabelsEnabled={(value) => updateSetting("labelsEnabled", value)}
         solfegeEnabled={solfegeEnabled}
-        setSolfegeEnabled={setSolfegeEnabled}
+        setSolfegeEnabled={(value) => updateSetting("solfegeEnabled", value)}
         pianoScale={pianoScale}
         setPianoScale={setPianoScale}
         bgColor={bgColor}
-        setBgColor={setBgColor}
+        setBgColor={(value) => updateSetting("bgColor", value)}
         soundType={soundType}
         setSoundType={handleSoundTypeChange}
         startOctave={startOctave}
         endOctave={endOctave}
-        onOctaveChange={(start, end) => {
-          setStartOctave(start);
-          setEndOctave(end);
-        }}
+        onOctaveChange={(start, end) =>
+          patchSettings({ startOctave: start, endOctave: end })
+        }
+        onResetSettings={resetSettings}
         textColor={textColor}
       />
 

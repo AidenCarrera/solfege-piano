@@ -260,7 +260,7 @@ export function EffectsTab({
             className="text-[11px] font-semibold uppercase tracking-widest mb-3"
             style={{ color: "var(--panel-fg)" }}
           >
-            Add Effect — click or drag into chain
+            Add Effect: click or drag into chain
           </p>
           <div className="flex flex-wrap gap-2 items-center">
             {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {

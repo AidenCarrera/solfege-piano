@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SiteFooter } from "@/components/SiteFooter";
+import { THEME_SCRIPT } from "@/lib/theme";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -145,13 +147,19 @@ export default function RootLayout({
   const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   return (
-    <html lang="en">
+    // The pre-paint script below sets --background/--foreground on this element
+    // before React hydrates, so its `style` attribute legitimately differs from
+    // the server's. Suppression applies to this element only, not its children.
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
+        {/* Must run before the body paints, so it stays ahead of the content. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializedJsonLd }}
         />
         {children}
+        <SiteFooter />
         <SpeedInsights />
       </body>
     </html>

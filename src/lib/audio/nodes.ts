@@ -295,7 +295,7 @@ class NativeAllpassFilter {
  * The reference implementation specifies its delay lines as sample counts at
  * 44.1 kHz, so they are divided by that rate to get the seconds a `DelayNode`
  * expects. This is deliberately independent of the output device's sample
- * rate — the tunings are mutually prime lengths chosen to avoid resonant
+ * rate: the tunings are mutually prime lengths chosen to avoid resonant
  * ringing, and rescaling them to another rate would detune the network.
  */
 const FREEVERB_REFERENCE_SAMPLE_RATE = 44100;

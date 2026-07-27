@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings2, Waves, ChevronsUpDown } from "lucide-react";
+import { Settings2, Waves, ChevronsUpDown, RotateCcw } from "lucide-react";
 import { getGlassPanelColor } from "@/lib/colorUtils";
 import type { EffectNode } from "@/lib/effects";
 import type { SoundType } from "@/lib/config";
@@ -27,6 +27,7 @@ export interface ControlPanelProps {
   startOctave: number;
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
+  onResetSettings: () => void;
   textColor: string;
 }
 
@@ -56,6 +57,7 @@ export function ControlPanel({
   startOctave,
   endOctave,
   onOctaveChange,
+  onResetSettings,
   textColor,
 }: ControlPanelProps) {
   const [activeTab, setActiveTab] = useState<"settings" | "effects">(
@@ -115,28 +117,53 @@ export function ControlPanel({
           </button>
         ))}
 
-        <motion.button
-          onClick={() => setIsCollapsed((c) => !c)}
-          className="ml-auto mr-3 p-1.5 rounded-lg cursor-pointer"
-          style={{
-            color: "var(--panel-fg)",
-            background: "var(--panel-surface)",
-          }}
-          whileHover={{
-            color: "var(--panel-fg)",
-            background: "var(--panel-surface-hover)",
-          }}
-          whileTap={{ scale: 0.9 }}
-          animate={{ rotate: isCollapsed ? 180 : 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          title={isCollapsed ? "Expand panel" : "Collapse panel"}
-          aria-label={
-            isCollapsed ? "Expand control panel" : "Collapse control panel"
-          }
-          aria-expanded={!isCollapsed}
-        >
-          <ChevronsUpDown size={15} />
-        </motion.button>
+        <div className="ml-auto flex items-center gap-2 mr-3">
+          {activeTab === "settings" && !isCollapsed && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              type="button"
+              onClick={onResetSettings}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] sm:text-xs font-medium cursor-pointer transition-colors"
+              style={{
+                color: "var(--panel-fg)",
+                background: "var(--panel-surface)",
+              }}
+              whileHover={{
+                background: "var(--panel-surface-hover)",
+              }}
+              whileTap={{ scale: 0.95 }}
+              title="Restore default settings. Your effects chain is kept."
+            >
+              <RotateCcw size={12} />
+              <span>Reset settings</span>
+            </motion.button>
+          )}
+
+          <motion.button
+            onClick={() => setIsCollapsed((c) => !c)}
+            className="p-1.5 rounded-lg cursor-pointer"
+            style={{
+              color: "var(--panel-fg)",
+              background: "var(--panel-surface)",
+            }}
+            whileHover={{
+              color: "var(--panel-fg)",
+              background: "var(--panel-surface-hover)",
+            }}
+            whileTap={{ scale: 0.9 }}
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            title={isCollapsed ? "Expand panel" : "Collapse panel"}
+            aria-label={
+              isCollapsed ? "Expand control panel" : "Collapse control panel"
+            }
+            aria-expanded={!isCollapsed}
+          >
+            <ChevronsUpDown size={15} />
+          </motion.button>
+        </div>
       </div>
 
       <AnimatePresence initial={false}>
@@ -167,6 +194,7 @@ export function ControlPanel({
                   startOctave={startOctave}
                   endOctave={endOctave}
                   onOctaveChange={onOctaveChange}
+                  onResetSettings={onResetSettings}
                   pianoScale={pianoScale}
                   setPianoScale={setPianoScale}
                   bgColor={bgColor}

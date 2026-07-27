@@ -8,7 +8,7 @@ import { useState, useCallback } from "react";
  * than relying on a timer to clear the highlight.
  *
  * The set is replaced rather than mutated so React sees the change, but only
- * when the contents actually differ — a repeated activate must not re-render
+ * when the contents actually differ: a repeated activate must not re-render
  * every key.
  */
 export function useActiveNotes() {

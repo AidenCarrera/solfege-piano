@@ -16,6 +16,7 @@ export interface SettingsTabProps {
   startOctave: number;
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
+  onResetSettings?: () => void;
   pianoScale: number;
   setPianoScale: (v: number) => void;
   bgColor: string;

@@ -127,16 +127,24 @@ export const EFFECT_PRESETS: { [T in EffectType]: EffectParamsByType[T] } = {
 };
 
 /**
- * Ids only have to be unique within a session — they key React lists and the
- * live audio-node map, and are never persisted — so a counter beats a random
+ * Ids only have to be unique within a session (they key React lists and the
+ * live audio-node map, and are never persisted), so a counter beats a random
  * string and stays readable in devtools.
  */
 let nextEffectId = 0;
 
-export function createEffectNode(type: EffectType): EffectNode {
+/**
+ * Mints an id for an effect node. Restored settings take fresh ids from here
+ * too, so a rehydrated chain can never collide with one added afterwards.
+ */
+export function createEffectId(): string {
   nextEffectId += 1;
+  return `effect-${nextEffectId}`;
+}
+
+export function createEffectNode(type: EffectType): EffectNode {
   return {
-    id: `effect-${nextEffectId}`,
+    id: createEffectId(),
     type,
     enabled: true,
     params: { ...EFFECT_PRESETS[type] },
