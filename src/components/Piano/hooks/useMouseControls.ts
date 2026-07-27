@@ -1,30 +1,42 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import { PIANO_CONFIG } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
 import { usePageInactive } from "./usePageInactive";
 
+/**
+ * Plays notes with the mouse, including drag-glissando across keys.
+ *
+ * Only one note sounds at a time: the pointer has a single position, so
+ * entering a new key releases the previous one.
+ */
 export function useMouseControls(
   playNote: (noteName: string) => void,
   stopNote: (noteName: string) => void,
-  flashNote: (noteName: string, durationMs: number) => void,
+  activateNote: (noteName: string) => void,
+  deactivateNote: (noteName: string) => void,
   clearAllNotes: () => void,
 ) {
   const isMouseDown = useRef(false);
   const currentNote = useRef<string | null>(null);
 
+  const releaseCurrentNote = useCallback(() => {
+    if (!currentNote.current) return;
+    stopNote(currentNote.current);
+    deactivateNote(currentNote.current);
+    currentNote.current = null;
+  }, [stopNote, deactivateNote]);
+
   const triggerNote = useCallback(
     (name: string) => {
-      if (currentNote.current && currentNote.current !== name) {
-        stopNote(currentNote.current);
-      }
+      if (currentNote.current === name) return;
+      releaseCurrentNote();
 
       currentNote.current = name;
       playNote(name);
-      flashNote(name, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
+      activateNote(name);
     },
-    [playNote, stopNote, flashNote],
+    [playNote, activateNote, releaseCurrentNote],
   );
 
   const handleMouseDown = useCallback(
@@ -46,19 +58,15 @@ export function useMouseControls(
   );
 
   const handleMouseUp = useCallback(() => {
-    if (currentNote.current) {
-      stopNote(currentNote.current);
-      currentNote.current = null;
-    }
+    releaseCurrentNote();
     isMouseDown.current = false;
-  }, [stopNote]);
+  }, [releaseCurrentNote]);
 
   const releaseMouse = useCallback(() => {
-    if (currentNote.current) stopNote(currentNote.current);
-    currentNote.current = null;
+    releaseCurrentNote();
     isMouseDown.current = false;
     clearAllNotes();
-  }, [stopNote, clearAllNotes]);
+  }, [releaseCurrentNote, clearAllNotes]);
 
   // Release notes even when the pointer leaves the key before mouseup.
   useEffect(() => {

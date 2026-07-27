@@ -31,6 +31,10 @@ export function getContrastColor(hexColor: string): string {
   return blackContrast >= whiteContrast ? "#000000" : "#ffffff";
 }
 
+/**
+ * A drop-shadow that stays visible against `hexColor`: dark text casts a light
+ * shadow and vice versa, so the glow reads on either background.
+ */
 export function getShadowColor(
   hexColor: string,
   opacity: number = 0.5,
@@ -62,18 +66,30 @@ export function adjustColor(hex: string, amount: number): string {
   return "#" + (b | (g << 8) | (r << 16)).toString(16).padStart(6, "0");
 }
 
+/** Converts a hex color to `rgba()`, falling back to black if unparseable. */
 export function hexToRgba(hex: string, alpha: number): string {
   const rgb = hexToRgb(hex);
   if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
+/** How far the panel's tint steps away from the page background, per channel. */
+const GLASS_PANEL_CONTRAST_STEP = 20;
+
+/** Low enough that the backdrop blur behind the panel still shows through. */
+const GLASS_PANEL_ALPHA = 0.3;
+
+/**
+ * Tints the control panel so it separates from the user's chosen background.
+ *
+ * The panel moves *away* from the background — lighter over a dark page,
+ * darker over a light one — which keeps it distinct at any hue.
+ */
 export function getGlassPanelColor(bgColor: string): string {
-  const contrast = getContrastColor(bgColor);
-  const isDarkBg = contrast === "#ffffff";
+  const isDarkBg = getContrastColor(bgColor) === "#ffffff";
+  const adjustment = isDarkBg
+    ? GLASS_PANEL_CONTRAST_STEP
+    : -GLASS_PANEL_CONTRAST_STEP;
 
-  const adjustment = isDarkBg ? 20 : -20;
-  const adjustedHex = adjustColor(bgColor, adjustment);
-
-  return hexToRgba(adjustedHex, 0.3);
+  return hexToRgba(adjustColor(bgColor, adjustment), GLASS_PANEL_ALPHA);
 }

@@ -73,8 +73,6 @@ export const PIANO_CONFIG = {
   DEFAULT_BG_COLOR: DEFAULT_THEME_COLOR as string,
   DEFAULT_VOLUME: 0.75,
 
-  KEY_HIGHLIGHT_DURATION_MS: 250,
-
   /** How long to wait for a first interaction before loading samples anyway. */
   PRELOAD_DELAY_MS: 1500,
 

@@ -32,13 +32,8 @@ import { EffectNode, createEffectNode } from "@/lib/effects";
 const SCALE_MARGIN_PX = 200;
 
 export function Piano() {
-  const {
-    activeNotes,
-    activateNote,
-    deactivateNote,
-    flashNote,
-    clearAllNotes,
-  } = useActiveNotes();
+  const { activeNotes, activateNote, deactivateNote, clearAllNotes } =
+    useActiveNotes();
 
   const [volume, setVolume] = useState(PIANO_CONFIG.DEFAULT_VOLUME);
   const [effectChain, setEffectChain] = useState<EffectNode[]>(() => [
@@ -105,17 +100,13 @@ export function Piano() {
 
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
-  const flashHeldNote = useCallback(
-    (note: string) => flashNote(note, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS),
-    [flashNote],
-  );
-
-  useKeyboardControls(notes, playNote, stopNote, flashHeldNote, deactivateNote);
+  useKeyboardControls(notes, playNote, stopNote, activateNote, deactivateNote);
 
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
     playNote,
     stopNote,
-    flashNote,
+    activateNote,
+    deactivateNote,
     clearAllNotes,
   );
 

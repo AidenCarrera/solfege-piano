@@ -30,6 +30,14 @@ export interface ControlPanelProps {
   textColor: string;
 }
 
+/**
+ * Collapsible panel holding the settings and effects tabs.
+ *
+ * Because the page background is user-chosen, the panel cannot rely on fixed
+ * colours. It derives a tint and border from `bgColor`, then publishes them as
+ * `--panel-*` custom properties so its children style themselves without each
+ * needing the background passed down.
+ */
 export function ControlPanel({
   volume,
   setVolume,
@@ -61,8 +69,6 @@ export function ControlPanel({
   const usesLightText = textColor === "#ffffff";
   const panelTheme = {
     "--panel-fg": textColor,
-    "--panel-muted": textColor,
-    "--panel-subtle": textColor,
     "--panel-surface": usesLightText
       ? "rgba(255,255,255,0.08)"
       : "rgba(0,0,0,0.08)",
@@ -94,8 +100,7 @@ export function ControlPanel({
             }}
             className="relative flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors duration-150 cursor-pointer"
             style={{
-              color:
-                activeTab === tab ? "rgb(129,140,248)" : "var(--panel-muted)",
+              color: activeTab === tab ? "rgb(129,140,248)" : "var(--panel-fg)",
             }}
           >
             {tab === "effects" ? <Waves size={14} /> : <Settings2 size={14} />}
@@ -114,7 +119,7 @@ export function ControlPanel({
           onClick={() => setIsCollapsed((c) => !c)}
           className="ml-auto mr-3 p-1.5 rounded-lg cursor-pointer"
           style={{
-            color: "var(--panel-muted)",
+            color: "var(--panel-fg)",
             background: "var(--panel-surface)",
           }}
           whileHover={{

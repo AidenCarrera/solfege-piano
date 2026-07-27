@@ -8,7 +8,11 @@ import type {
   EffectParamsUpdate,
   EffectType,
 } from "@/lib/effects";
-import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
+import {
+  EFFECT_META,
+  EFFECT_ICON_SIZE,
+  EFFECT_CARD_WIDTH_PX,
+} from "./effectMeta";
 import {
   EFFECT_MODES,
   EFFECT_PARAM_SLIDERS,
@@ -43,7 +47,7 @@ function ParamSlider({
         <label
           htmlFor={id}
           className="text-[11px] font-medium"
-          style={{ color: "var(--panel-muted)" }}
+          style={{ color: "var(--panel-fg)" }}
         >
           {label}
         </label>
@@ -125,7 +129,7 @@ export function EffectCard<T extends EffectType>({
       dragControls={dragControls}
       as="div"
       className="shrink-0"
-      style={{ width: 200 }}
+      style={{ width: EFFECT_CARD_WIDTH_PX }}
       initial={{ opacity: 0, scale: 0.85, x: -20 }}
       animate={{ opacity: effect.enabled ? 1 : 0.45, scale: 1, x: 0 }}
       exit={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -162,7 +166,7 @@ export function EffectCard<T extends EffectType>({
         >
           <GripVertical
             size={14}
-            style={{ color: "var(--panel-subtle)", flexShrink: 0 }}
+            style={{ color: "var(--panel-fg)", flexShrink: 0 }}
           />
 
           <div
@@ -185,7 +189,7 @@ export function EffectCard<T extends EffectType>({
               background: effect.enabled
                 ? "rgba(74,222,128,0.12)"
                 : "var(--panel-surface)",
-              color: effect.enabled ? "rgb(74,222,128)" : "var(--panel-muted)",
+              color: effect.enabled ? "rgb(74,222,128)" : "var(--panel-fg)",
             }}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}

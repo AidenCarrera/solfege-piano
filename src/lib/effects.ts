@@ -126,9 +126,17 @@ export const EFFECT_PRESETS: { [T in EffectType]: EffectParamsByType[T] } = {
   },
 };
 
+/**
+ * Ids only have to be unique within a session — they key React lists and the
+ * live audio-node map, and are never persisted — so a counter beats a random
+ * string and stays readable in devtools.
+ */
+let nextEffectId = 0;
+
 export function createEffectNode(type: EffectType): EffectNode {
+  nextEffectId += 1;
   return {
-    id: `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `effect-${nextEffectId}`,
     type,
     enabled: true,
     params: { ...EFFECT_PRESETS[type] },

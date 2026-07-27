@@ -26,6 +26,13 @@ export interface SettingsTabProps {
   setSolfegeEnabled: (b: boolean) => void;
 }
 
+/**
+ * Sound bank, octave range, zoom, volume, background, and label toggles.
+ *
+ * The octave slider selects an index into `OCTAVE_RANGES` rather than an
+ * octave number, so the presets stay in one table and the slider needs no
+ * validation of its own.
+ */
 export function SettingsTab({
   volume,
   setVolume,
@@ -70,7 +77,7 @@ export function SettingsTab({
           <label
             htmlFor="sound-type"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Sound Type
           </label>
@@ -96,7 +103,7 @@ export function SettingsTab({
           <label
             htmlFor="octave-range"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Octave Range
           </label>
@@ -128,7 +135,7 @@ export function SettingsTab({
           <span
             id="octave-range-help"
             className="text-[10px]"
-            style={{ color: "var(--panel-subtle)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Locked to 1 octave in Solfege mode
           </span>
@@ -140,7 +147,7 @@ export function SettingsTab({
           <label
             htmlFor="piano-zoom"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Zoom
           </label>
@@ -171,7 +178,7 @@ export function SettingsTab({
           <label
             htmlFor="piano-volume"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Volume
           </label>
@@ -202,7 +209,7 @@ export function SettingsTab({
           <label
             htmlFor="background-color"
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Background
           </label>
@@ -217,7 +224,7 @@ export function SettingsTab({
           />
           <span
             className="text-[11px] font-mono"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             {bgColor}
           </span>
@@ -228,7 +235,7 @@ export function SettingsTab({
         <div className="flex justify-between items-center h-5">
           <span
             className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Labels
           </span>

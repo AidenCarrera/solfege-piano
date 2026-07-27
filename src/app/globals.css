@@ -18,7 +18,12 @@
   --input-border: rgba(255, 255, 255, 0.1);
 }
 
-/* Expose Next.js font variables to Tailwind. */
+/*
+ * Bridges the tokens above and the next/font variables into Tailwind's theme,
+ * so `bg-background`, `font-sans`, and friends resolve to them. `inline` keeps
+ * the values as var() references, which is what lets Piano recolor the page at
+ * runtime by reassigning --background on :root.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -1,11 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { useActiveNotes } from "./useActiveNotes";
 
 describe("useActiveNotes", () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-
   it("replaces the set so React sees each change", () => {
     const { result } = renderHook(() => useActiveNotes());
     const initial = result.current.activeNotes;
@@ -16,58 +13,52 @@ describe("useActiveNotes", () => {
     expect(result.current.activeNotes).not.toBe(initial);
   });
 
-  it("clears a flashed note once its duration elapses", () => {
+  it("keeps a note lit until it is explicitly released", () => {
     const { result } = renderHook(() => useActiveNotes());
 
-    act(() => result.current.flashNote("C4", 250));
+    act(() => result.current.activateNote("C4"));
     expect(result.current.activeNotes.has("C4")).toBe(true);
 
-    act(() => vi.advanceTimersByTime(249));
-    expect(result.current.activeNotes.has("C4")).toBe(true);
-
-    act(() => vi.advanceTimersByTime(1));
+    act(() => result.current.deactivateNote("C4"));
     expect(result.current.activeNotes.has("C4")).toBe(false);
   });
 
-  it("restarts the timer when a note is reflashed mid-flash", () => {
-    const { result } = renderHook(() => useActiveNotes());
-
-    act(() => result.current.flashNote("C4", 250));
-    act(() => vi.advanceTimersByTime(200));
-    act(() => result.current.flashNote("C4", 250));
-
-    // The first timer must not fire and cut the second flash short.
-    act(() => vi.advanceTimersByTime(100));
-    expect(result.current.activeNotes.has("C4")).toBe(true);
-
-    act(() => vi.advanceTimersByTime(150));
-    expect(result.current.activeNotes.has("C4")).toBe(false);
-  });
-
-  it("cancels pending flashes when cleared", () => {
+  it("holds a note lit while any input still has it down", () => {
     const { result } = renderHook(() => useActiveNotes());
 
     act(() => {
-      result.current.flashNote("C4", 250);
+      result.current.activateNote("C4");
+      result.current.activateNote("E4");
+    });
+    act(() => result.current.deactivateNote("E4"));
+
+    expect(result.current.activeNotes.has("C4")).toBe(true);
+    expect(result.current.activeNotes.has("E4")).toBe(false);
+  });
+
+  it("does not churn the set on redundant updates", () => {
+    const { result } = renderHook(() => useActiveNotes());
+
+    act(() => result.current.activateNote("C4"));
+    const afterActivate = result.current.activeNotes;
+
+    // A repeated activate would otherwise re-render every key.
+    act(() => result.current.activateNote("C4"));
+    expect(result.current.activeNotes).toBe(afterActivate);
+
+    act(() => result.current.deactivateNote("G4"));
+    expect(result.current.activeNotes).toBe(afterActivate);
+  });
+
+  it("clears everything at once", () => {
+    const { result } = renderHook(() => useActiveNotes());
+
+    act(() => {
+      result.current.activateNote("C4");
       result.current.activateNote("E4");
     });
     act(() => result.current.clearAllNotes());
 
     expect(result.current.activeNotes.size).toBe(0);
-
-    // A surviving timer would deactivate a note the user has since pressed.
-    act(() => result.current.activateNote("C4"));
-    act(() => vi.advanceTimersByTime(300));
-    expect(result.current.activeNotes.has("C4")).toBe(true);
-  });
-
-  it("drops flash timers on unmount", () => {
-    const { result, unmount } = renderHook(() => useActiveNotes());
-
-    act(() => result.current.flashNote("C4", 250));
-    unmount();
-
-    expect(() => vi.advanceTimersByTime(300)).not.toThrow();
-    expect(vi.getTimerCount()).toBe(0);
   });
 });

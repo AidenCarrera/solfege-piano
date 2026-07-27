@@ -9,6 +9,10 @@ type PreloadProgressProps = {
   onRetry: () => void;
 };
 
+/**
+ * Sample-loading status. Renders nothing once loading finishes, so it does not
+ * reserve layout above the keyboard during normal play.
+ */
 export function PreloadProgress({
   progress,
   isPreloading,

@@ -100,14 +100,18 @@ describe("useTouchControls", () => {
     expect(handlers.playNote).toHaveBeenCalledWith("D3");
   });
 
-  it("holds the highlight past the flash timeout while a finger stays down", () => {
+  it("keeps the key lit for as long as the finger is down", () => {
     render(<Keyboard />);
     const key = screen.getByTestId("C3");
 
     fireEvent.touchStart(key, { changedTouches: [touch(0)] });
     vi.advanceTimersByTime(1000);
 
+    expect(handlers.activateNote).toHaveBeenCalledWith("C3");
     expect(handlers.deactivateNote).not.toHaveBeenCalled();
+
+    fireEvent.touchEnd(key, { changedTouches: [touch(0)] });
+    expect(handlers.deactivateNote).toHaveBeenCalledWith("C3");
   });
 
   it("releases sounding notes on unmount", () => {

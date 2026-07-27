@@ -60,3 +60,9 @@ export const EFFECT_META: Record<EffectType, EffectMeta> = {
 
 /** Size used for the icon wherever an effect is represented in the rack. */
 export const EFFECT_ICON_SIZE = 14;
+
+/**
+ * Width of an effect card, in pixels. Shared by the real card and the drag
+ * ghost so the ghost is a true preview of what will be dropped.
+ */
+export const EFFECT_CARD_WIDTH_PX = 200;

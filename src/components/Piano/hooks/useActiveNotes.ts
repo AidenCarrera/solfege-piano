@@ -1,62 +1,35 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 
 /**
  * Tracks which keys are lit.
  *
- * `activeNotes` is replaced rather than mutated so React sees the change, and
- * flash timers are keyed by note so retriggering a note during its flash
- * restarts the timer instead of stacking two.
+ * A key stays lit for exactly as long as it is held, whichever input started
+ * it, so every input path pairs `activateNote` with `deactivateNote` rather
+ * than relying on a timer to clear the highlight.
+ *
+ * The set is replaced rather than mutated so React sees the change, but only
+ * when the contents actually differ — a repeated activate must not re-render
+ * every key.
  */
 export function useActiveNotes() {
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
-  const flashTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const activateNote = useCallback((note: string) => {
-    setActiveNotes((prev) => new Set(prev).add(note));
+    setActiveNotes((prev) => (prev.has(note) ? prev : new Set(prev).add(note)));
   }, []);
 
   const deactivateNote = useCallback((note: string) => {
     setActiveNotes((prev) => {
-      const copy = new Set(prev);
-      copy.delete(note);
-      return copy;
+      if (!prev.has(note)) return prev;
+      const next = new Set(prev);
+      next.delete(note);
+      return next;
     });
   }, []);
 
-  const flashNote = useCallback(
-    (note: string, durationMs: number) => {
-      activateNote(note);
-      const existingTimer = flashTimers.current.get(note);
-      if (existingTimer) clearTimeout(existingTimer);
-
-      const timer = setTimeout(() => {
-        deactivateNote(note);
-        flashTimers.current.delete(note);
-      }, durationMs);
-      flashTimers.current.set(note, timer);
-    },
-    [activateNote, deactivateNote],
-  );
-
   const clearAllNotes = useCallback(() => {
-    flashTimers.current.forEach((timer) => clearTimeout(timer));
-    flashTimers.current.clear();
-    setActiveNotes(new Set());
+    setActiveNotes((prev) => (prev.size === 0 ? prev : new Set()));
   }, []);
 
-  useEffect(
-    () => () => {
-      flashTimers.current.forEach((timer) => clearTimeout(timer));
-      flashTimers.current.clear();
-    },
-    [],
-  );
-
-  return {
-    activeNotes,
-    activateNote,
-    deactivateNote,
-    flashNote,
-    clearAllNotes,
-  };
+  return { activeNotes, activateNote, deactivateNote, clearAllNotes };
 }

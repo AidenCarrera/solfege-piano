@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { PIANO_CONFIG } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
 
 /** Tracks each touch independently so chords and glissandos remain polyphonic. */
@@ -11,9 +10,6 @@ export function useTouchControls(
   deactivateNote: (noteName: string) => void,
 ) {
   const activeTouches = useRef<Map<number, string>>(new Map());
-  const activeTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
 
   const releaseTouch = useCallback(
     (touchId: number) => {
@@ -21,6 +17,8 @@ export function useTouchControls(
       if (!noteName) return;
 
       activeTouches.current.delete(touchId);
+
+      // Two fingers can land on the same key; only the last one to lift ends it.
       const stillHeld = Array.from(activeTouches.current.values()).includes(
         noteName,
       );
@@ -28,9 +26,6 @@ export function useTouchControls(
 
       stopNote(noteName);
       deactivateNote(noteName);
-      const timeout = activeTimeouts.current.get(noteName);
-      if (timeout) clearTimeout(timeout);
-      activeTimeouts.current.delete(noteName);
     },
     [stopNote, deactivateNote],
   );
@@ -46,22 +41,8 @@ export function useTouchControls(
       activeTouches.current.set(touchId, noteName);
       playNote(noteName);
       activateNote(noteName);
-
-      const existingTimeout = activeTimeouts.current.get(noteName);
-      if (existingTimeout) clearTimeout(existingTimeout);
-
-      // Retain the highlight while another finger still holds the same note.
-      const timeout = setTimeout(() => {
-        const stillActive = Array.from(activeTouches.current.values()).includes(
-          noteName,
-        );
-        if (!stillActive) deactivateNote(noteName);
-        activeTimeouts.current.delete(noteName);
-      }, PIANO_CONFIG.KEY_HIGHLIGHT_DURATION_MS);
-
-      activeTimeouts.current.set(noteName, timeout);
     },
-    [playNote, activateNote, deactivateNote, releaseTouch],
+    [playNote, activateNote, releaseTouch],
   );
 
   const handleTouchStart = useCallback(
@@ -113,8 +94,6 @@ export function useTouchControls(
         stopNote(noteName),
       );
       activeTouches.current.clear();
-      activeTimeouts.current.forEach((timeout) => clearTimeout(timeout));
-      activeTimeouts.current.clear();
     },
     [stopNote],
   );

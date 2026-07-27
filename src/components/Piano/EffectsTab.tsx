@@ -7,8 +7,27 @@ import {
   createEffectNode,
   EffectParamsUpdate,
 } from "@/lib/effects";
-import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
+import {
+  EFFECT_META,
+  EFFECT_ICON_SIZE,
+  EFFECT_CARD_WIDTH_PX,
+} from "./effectMeta";
 import { EffectCard } from "./EffectCard";
+
+/**
+ * Pointer travel before a press on an "Add Effect" button becomes a drag.
+ * Below this, the gesture stays a click and appends to the end of the chain.
+ */
+const DRAG_ACTIVATION_DISTANCE_PX = 6;
+
+/**
+ * Vertical slack around the rack that still counts as "over" it, so a drop
+ * does not require pixel-accurate aim at a short row.
+ */
+const RACK_DROP_TOLERANCE_PX = 30;
+
+/** Offset of the ghost from the cursor, placing it under the grab point. */
+const GHOST_OFFSET_Y_PX = 20;
 
 export interface EffectsTabProps {
   effectChain: EffectNode[];
@@ -16,14 +35,16 @@ export interface EffectsTabProps {
   borderColor: string;
 }
 
+/** The card that follows the cursor while dragging a new effect into the rack. */
 function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   const meta = EFFECT_META[type];
   return (
     <div
-      className="fixed pointer-events-none z-9999 w-[200px] rounded-xl overflow-hidden shadow-2xl"
+      className="fixed pointer-events-none z-9999 rounded-xl overflow-hidden shadow-2xl"
       style={{
-        left: x - 100,
-        top: y - 20,
+        width: EFFECT_CARD_WIDTH_PX,
+        left: x - EFFECT_CARD_WIDTH_PX / 2,
+        top: y - GHOST_OFFSET_Y_PX,
         transform: "rotate(3deg) scale(1.05)",
         background: "rgba(20,20,35,0.95)",
         border: "1px solid rgba(99,102,241,0.7)",
@@ -68,6 +89,7 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   );
 }
 
+/** Vertical bar marking where a dragged effect would be inserted. */
 function DropIndicator() {
   return (
     <motion.div
@@ -83,6 +105,17 @@ function DropIndicator() {
   );
 }
 
+/**
+ * The effects rack: a palette of effects to add, and the ordered signal chain.
+ *
+ * Reordering existing cards uses framer-motion's `Reorder`, but *adding* one
+ * is hand-rolled on pointer events. Neither alternative works here: HTML5
+ * drag-and-drop cannot render a live React preview and is unreliable on touch,
+ * while framer's `drag` only moves an element within its own layout and cannot
+ * hand an item off to a different list. So a press on a palette button starts
+ * a global pointer capture, a fixed-position ghost tracks the cursor, and the
+ * drop index is hit-tested against the cards' midpoints.
+ */
 export function EffectsTab({
   effectChain,
   setEffectChain,
@@ -157,8 +190,8 @@ export function EffectsTab({
         const inRack =
           e.clientX >= rackRect.left &&
           e.clientX <= rackRect.right &&
-          e.clientY >= rackRect.top - 30 &&
-          e.clientY <= rackRect.bottom + 30;
+          e.clientY >= rackRect.top - RACK_DROP_TOLERANCE_PX &&
+          e.clientY <= rackRect.bottom + RACK_DROP_TOLERANCE_PX;
         const nextDropIndex = inRack ? computeDropIndex(e.clientX) : null;
         dropIndexRef.current = nextDropIndex;
         setDropIndex(nextDropIndex);
@@ -225,7 +258,7 @@ export function EffectsTab({
         <div className="mb-4">
           <p
             className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-            style={{ color: "var(--panel-muted)" }}
+            style={{ color: "var(--panel-fg)" }}
           >
             Add Effect — click or drag into chain
           </p>
@@ -252,8 +285,10 @@ export function EffectsTab({
                     const startY = e.clientY;
                     const onMove = (me: PointerEvent) => {
                       if (
-                        Math.abs(me.clientX - startX) > 6 ||
-                        Math.abs(me.clientY - startY) > 6
+                        Math.abs(me.clientX - startX) >
+                          DRAG_ACTIVATION_DISTANCE_PX ||
+                        Math.abs(me.clientY - startY) >
+                          DRAG_ACTIVATION_DISTANCE_PX
                       ) {
                         isDraggingNew.current = true;
                         startAddDrag(type, e as unknown as React.PointerEvent);
@@ -322,7 +357,7 @@ export function EffectsTab({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-10 gap-3 rounded-xl border-2 border-dashed"
-              style={{ borderColor, color: "var(--panel-muted)" }}
+              style={{ borderColor, color: "var(--panel-fg)" }}
             >
               <Waves size={26} />
               <p className="text-sm">Drag effects here or click to add.</p>
@@ -332,7 +367,7 @@ export function EffectsTab({
               ref={rackRef}
               role="region"
               aria-label="Active effects chain"
-              className="flex items-start overflow-x-auto pb-3 min-h-[80px]"
+              className="flex items-start overflow-x-auto pb-3 min-h-20"
               style={{
                 scrollbarWidth: "thin",
                 outline: draggingNewType
@@ -378,7 +413,7 @@ export function EffectsTab({
                         >
                           <ChevronRight
                             size={16}
-                            style={{ color: "var(--panel-subtle)" }}
+                            style={{ color: "var(--panel-fg)" }}
                           />
                         </motion.div>
                       )}
