@@ -1,32 +1,12 @@
 /**
- * Hand-built Web Audio effects used in place of their Tone.js equivalents.
- *
- * Tone ships `Reverb`, `Freeverb`, and `BitCrusher`, but none of them suit a
- * live, user-tweakable rack here:
- *
- * - `Tone.Reverb` needs an `await generate()` before it passes audio, so a
- *   decay change would silence the chain until the promise settles. The
- *   convolver below swaps its impulse response in place instead.
- * - `Tone.Freeverb` and `Tone.BitCrusher` run in an AudioWorklet, which loads
- *   its processor from a `blob:` URL. That is a moving part in the strict CSP
- *   declared in `next.config.ts`, and a worklet cannot be created at all while
- *   the context is suspended.
- *
- * Each class exposes `input`/`output` plus setter-only properties, so the
- * builders in `effectSpecs.ts` can treat them like any other Tone node.
+ * Native effects avoid asynchronous rebuilds and AudioWorklet blob URLs,
+ * which conflict with live controls and the app's CSP.
  */
 import type * as ToneType from "tone";
 
-/**
- * Exponent applied to the impulse tail. Higher values decay faster than a
- * linear ramp; 3 approximates a small room's energy falloff.
- */
 const IMPULSE_DECAY_EXPONENT = 3.0;
 
-/**
- * Rebuilding an impulse response allocates and fills a stereo buffer seconds
- * long, so coalesce the bursts of updates a dragged slider produces.
- */
+// Coalesce expensive impulse rebuilds while dragging the decay slider.
 const IMPULSE_REBUILD_DEBOUNCE_MS = 120;
 
 function createImpulseResponse(
@@ -35,7 +15,6 @@ function createImpulseResponse(
   decay: number,
 ) {
   const sampleRate = context.sampleRate;
-  // Floored to match createBuffer frame count and avoid index overflow.
   const length = Math.max(1, Math.floor(sampleRate * duration));
   const impulse = context.createBuffer(2, length, sampleRate);
   const left = impulse.getChannelData(0);
@@ -68,7 +47,6 @@ export class NativeReverb {
     this.context = context;
     this.currentDecay = decay;
 
-    // Tone.Gain bridges Tone.js and native Web Audio graph boundaries.
     this.input = new Tone.Gain();
     this.output = new Tone.Gain();
 
@@ -130,10 +108,8 @@ export class NativeReverb {
   }
 }
 
-/** Resolution of the waveshaper transfer function mapping -1..1 to -1..1. */
 const CRUSHER_CURVE_SIZE = 1024;
 
-/** Quantizes the signal to `2^bits` levels via a waveshaper transfer curve. */
 function createCrusherCurve(bits: number) {
   const steps = Math.pow(2, bits);
   const curve = new Float32Array(CRUSHER_CURVE_SIZE);
@@ -187,10 +163,7 @@ export class NativeBitCrusher {
   }
 }
 
-/**
- * Butterworth response for the comb filters' lowpass stage: -10·log₁₀(2), the
- * Q at which a biquad's passband is maximally flat.
- */
+// Maximally flat Butterworth response: -10·log₁₀(2).
 const BUTTERWORTH_Q = -3.0102999566398125;
 
 class NativeLowpassCombFilter {
@@ -290,14 +263,8 @@ class NativeAllpassFilter {
 }
 
 /**
- * Schroeder's Freeverb topology: eight parallel lowpass comb filters feeding
- * four series allpass filters.
- *
- * The reference implementation specifies its delay lines as sample counts at
- * 44.1 kHz, so they are divided by that rate to get the seconds a `DelayNode`
- * expects. This is deliberately independent of the output device's sample
- * rate: the tunings are mutually prime lengths chosen to avoid resonant
- * ringing, and rescaling them to another rate would detune the network.
+ * Freeverb delay tunings are fixed to their 44.1 kHz reference values.
+ * Rescaling them would detune the mutually prime delay network.
  */
 const FREEVERB_REFERENCE_SAMPLE_RATE = 44100;
 const FREEVERB_COMB_TUNINGS_IN_SAMPLES = [
@@ -306,13 +273,9 @@ const FREEVERB_COMB_TUNINGS_IN_SAMPLES = [
 const FREEVERB_ALLPASS_FREQUENCIES = [225, 556, 441, 341];
 const FREEVERB_ALLPASS_GAIN = 0.5;
 
-/** Lowpass cutoff of the comb feedback path; higher values sound brighter. */
 const FREEVERB_DAMPENING_HZ = 3000;
 
-/**
- * Maps room size (0..1) onto comb feedback. The range stops short of 1 because
- * feedback at or above unity never decays.
- */
+// Stay below unity so the feedback decays.
 function roomSizeToResonance(roomSize: number): number {
   return roomSize * 0.28 + 0.7;
 }

@@ -73,13 +73,6 @@ function ParamSlider({
   );
 }
 
-/**
- * One effect in the rack: a drag handle, bypass and remove buttons, and the
- * controls for the effect's current mode.
- *
- * The mode selector and sliders are driven by the tables in `effectControls`,
- * so the markup does not need a branch per effect type.
- */
 export function EffectCard<T extends EffectType>({
   effect,
   borderColor,
@@ -153,7 +146,7 @@ export function EffectCard<T extends EffectType>({
         <div
           className="flex items-center gap-2 px-3 pt-2.5 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
           onPointerDown={(e) => {
-            // Preserve button interactions inside the drag handle.
+            // Buttons inside the drag handle keep their own pointer behavior.
             if ((e.target as HTMLElement).closest("button")) return;
             dragControls.start(e);
           }}

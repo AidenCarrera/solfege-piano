@@ -5,7 +5,6 @@ import { refocusSustainPedal } from "@/lib/keyboard";
 const noteNameOf = (element: Element | null | undefined) =>
   element?.closest<HTMLElement>("[data-note-name]")?.dataset.noteName;
 
-/** Tracks each touch independently so chords and glissandos remain polyphonic. */
 export function useTouchControls(
   playNote: (noteName: string) => void,
   stopNote: (noteName: string) => void,
@@ -15,11 +14,7 @@ export function useTouchControls(
   const activeTouches = useRef<Map<number, string>>(new Map());
   const keyboardRef = useRef<HTMLDivElement>(null);
 
-  // For the same reason as `useKeyboardControls`: Piano rebuilds these on
-  // nearly every render, and depending on them directly would re-run both
-  // effects below — tearing the listeners down mid-glissando and firing the
-  // unmount cleanup, which cuts every held note off, on something as ordinary
-  // as a volume change.
+  // Keep listeners stable while callbacks change.
   const latest = useRef({ playNote, stopNote, activateNote, deactivateNote });
   useEffect(() => {
     latest.current = { playNote, stopNote, activateNote, deactivateNote };
@@ -31,7 +26,7 @@ export function useTouchControls(
 
     activeTouches.current.delete(touchId);
 
-    // Two fingers can land on the same key; only the last one to lift ends it.
+    // A note ends only after every finger leaves it.
     const stillHeld = Array.from(activeTouches.current.values()).includes(
       noteName,
     );
@@ -58,8 +53,6 @@ export function useTouchControls(
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
-      // Each touch reports the element it landed on, so one listener on the
-      // keyboard can serve every key.
       const started = Array.from(e.changedTouches).filter((touch) => {
         const noteName = noteNameOf(touch.target as Element | null);
         if (!noteName) return false;
@@ -68,16 +61,14 @@ export function useTouchControls(
       });
       if (started.length === 0) return;
 
-      // Suppresses the compatibility mouse events the browser would otherwise
-      // replay after the tap, which `useMouseControls` would hear as a second
-      // press of the same key.
+      // Prevent the browser from replaying the touch as a mouse press.
       e.preventDefault();
       refocusSustainPedal();
     },
     [triggerNote],
   );
 
-  // Touch events stay bound to their origin, so hit-test each finger while moving.
+  // Touch targets do not update during a drag, so hit-test the current point.
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
       if (activeTouches.current.size === 0) return;
@@ -89,7 +80,6 @@ export function useTouchControls(
         );
         if (!newNoteName) return;
 
-        // `triggerNote` releases whatever this finger was holding.
         if (activeTouches.current.get(touch.identifier) === newNoteName) return;
         triggerNote(newNoteName, touch.identifier);
       });
@@ -97,8 +87,6 @@ export function useTouchControls(
     [triggerNote],
   );
 
-  // No `preventDefault` here: touchstart already cancelled the compatibility
-  // mouse events, and touchend is uncancelable once a scroll has begun.
   const handleTouchEnd = useCallback(
     (e: TouchEvent) => {
       Array.from(e.changedTouches).forEach((touch) => {
@@ -108,8 +96,7 @@ export function useTouchControls(
     [releaseTouch],
   );
 
-  // React binds touchstart and touchmove passively at the root, which makes
-  // `preventDefault` a no-op there, so the keyboard binds them itself.
+  // Native listeners allow preventDefault on touch movement.
   useEffect(() => {
     const keyboard = keyboardRef.current;
     if (!keyboard) return;
@@ -132,8 +119,6 @@ export function useTouchControls(
   useEffect(() => {
     const heldTouches = activeTouches.current;
     return () => {
-      // Wrapped rather than passed directly: `Set.forEach` also supplies the
-      // key and the set itself, which would leak into `stopNote`'s arguments.
       new Set(heldTouches.values()).forEach((noteName) =>
         latest.current.stopNote(noteName),
       );

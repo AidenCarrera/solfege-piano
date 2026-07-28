@@ -60,14 +60,10 @@ describe("useToneEngine", () => {
   it("leaves the context alone until the user has interacted", async () => {
     render(<Probe enabled />);
 
-    // Long enough for the dynamic import to settle.
     await waitFor(() => expect(mocks.start).not.toHaveBeenCalled());
   });
 
   it("unlocks with no second gesture when the engine loads after the click", async () => {
-    // `enabled` off stands in for the bundle still being in flight: the click
-    // that starts the import is the one that has to unlock audio, and it is
-    // over before the engine can attach a listener of its own.
     const view = render(<Probe enabled={false} />);
     fireEvent.pointerDown(window);
     expect(mocks.start).not.toHaveBeenCalled();

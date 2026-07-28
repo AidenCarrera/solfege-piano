@@ -3,20 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type * as ToneType from "tone";
 
-/** Keeps note attacks tight; the default look-ahead is audible when playing. */
+// Reduce Tone's default scheduling delay for live input.
 const LOOK_AHEAD_S = 0.01;
 
-/** Headroom below 0 dBFS so stacked voices and effects cannot clip. */
+// Leave a small amount of output headroom.
 const LIMITER_THRESHOLD_DB = -1;
 
-/**
- * Runs a silent one-frame buffer through the destination.
- *
- * A resumed context does not necessarily have a running output device behind
- * it, and the device's start-up is what the first note would otherwise wait
- * on. Pushing a throwaway sample through forces that work to happen now, while
- * nobody is listening.
- */
+// Warm the output device so its startup latency does not affect the first note.
 function primeOutputDevice(Tone: typeof ToneType) {
   const context = Tone.getContext().rawContext;
   const source = context.createBufferSource();
@@ -26,29 +19,16 @@ function primeOutputDevice(Tone: typeof ToneType) {
 }
 
 export interface ToneEngine {
-  /** `null` until the Tone bundle has loaded, or if loading failed. */
   Tone: typeof ToneType | null;
-  /** Final node before the destination; every chain terminates here. */
   limiterRef: React.RefObject<ToneType.Limiter | null>;
-  /**
-   * Mirrors the raw context's state. Effects that need a running context read
-   * this so they can be built once the browser unlocks audio.
-   */
   contextState: AudioContextState;
   error: string | null;
   retry: () => void;
 }
 
-/**
- * Loads Tone.js on demand and owns the master output chain.
- *
- * Tone is imported dynamically because it is by far the largest dependency and
- * is not needed to render the keyboard.
- */
 export function useToneEngine(enabled: boolean): ToneEngine {
   const [Tone, setTone] = useState<typeof ToneType | null>(null);
   const [attempt, setAttempt] = useState(0);
-  /** The attempt that failed, so a retry clears the error without an effect. */
   const [failedAttempt, setFailedAttempt] = useState<number | null>(null);
   const [contextState, setContextState] =
     useState<AudioContextState>("suspended");
@@ -63,7 +43,7 @@ export function useToneEngine(enabled: boolean): ToneEngine {
       .then((tone) => {
         if (!mounted) return;
         tone.getContext().lookAhead = LOOK_AHEAD_S;
-        // Instantiate the Transport up front so LFO-driven effects can schedule.
+        // Initialize scheduling before constructing LFO effects.
         tone.getTransport();
 
         const limiter = new tone.Limiter(LIMITER_THRESHOLD_DB);
@@ -83,12 +63,7 @@ export function useToneEngine(enabled: boolean): ToneEngine {
     };
   }, [enabled, attempt]);
 
-  /**
-   * Watched separately from `Tone` because the gesture that triggers the
-   * import is usually the same one that has to unlock audio, and it is long
-   * over by the time the bundle arrives. Waiting for a gesture we can still
-   * see would push the unlock onto the user's *second* interaction.
-   */
+  // Remember activation that occurs before the Tone bundle finishes loading.
   useEffect(() => {
     if (hasActivated) return;
 
@@ -107,12 +82,6 @@ export function useToneEngine(enabled: boolean): ToneEngine {
     };
   }, [hasActivated]);
 
-  /**
-   * Unlocks as soon as the engine and a gesture both exist, rather than at the
-   * first note. Browsers grant the page sticky activation, so `start` does not
-   * have to run inside the handler itself — and starting the output device
-   * here is what keeps its latency off the first note the user plays.
-   */
   useEffect(() => {
     if (!Tone || !hasActivated) return;
     let cancelled = false;
@@ -122,7 +91,6 @@ export function useToneEngine(enabled: boolean): ToneEngine {
       if (!cancelled) primeOutputDevice(Tone);
     };
 
-    // A rejected resume leaves the context suspended; `playNote` retries.
     unlock().catch(() => {});
 
     return () => {
@@ -137,7 +105,6 @@ export function useToneEngine(enabled: boolean): ToneEngine {
 
     const handleStateChange = () => setContextState(rawContext.state);
     rawContext.addEventListener("statechange", handleStateChange);
-    // Seed initial state in case context is already running.
     handleStateChange();
     return () => {
       rawContext.removeEventListener("statechange", handleStateChange);

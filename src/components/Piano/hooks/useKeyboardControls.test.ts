@@ -108,7 +108,6 @@ describe("useKeyboardControls", () => {
 
     rerender({ currentNotes: generateNotes(2, 6) });
 
-    // The shortcut map moves with the range; a note left held would stick.
     expect(handlers.stopNote).toHaveBeenCalledWith("C3");
   });
 

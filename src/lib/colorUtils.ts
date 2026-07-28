@@ -1,4 +1,3 @@
-/** Calculates WCAG relative luminance for an RGB color. */
 function getLuminance(r: number, g: number, b: number): number {
   const a = [r, g, b].map((v) => {
     v /= 255;
@@ -7,7 +6,6 @@ function getLuminance(r: number, g: number, b: number): number {
   return (a[0] ?? 0) * 0.2126 + (a[1] ?? 0) * 0.7152 + (a[2] ?? 0) * 0.0722;
 }
 
-/** Parses a six-digit hex color. */
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -19,7 +17,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     : null;
 }
 
-/** Selects whichever of black or white has the stronger WCAG contrast ratio. */
 export function getContrastColor(hexColor: string): string {
   const rgb = hexToRgb(hexColor);
   if (!rgb) return "#ffffff";
@@ -31,13 +28,11 @@ export function getContrastColor(hexColor: string): string {
   return blackContrast >= whiteContrast ? "#000000" : "#ffffff";
 }
 
-/** Legibility drop-shadow color based on background luminance. */
 export function getShadowColor(hexColor: string): string {
   const isDarkBg = getContrastColor(hexColor) === "#ffffff";
   return isDarkBg ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.12)";
 }
 
-/** Adjusts each RGB channel by a signed amount. */
 export function adjustColor(hex: string, amount: number): string {
   let color = hex.replace("#", "");
   if (color.length === 3) {
@@ -59,25 +54,16 @@ export function adjustColor(hex: string, amount: number): string {
   return "#" + (b | (g << 8) | (r << 16)).toString(16).padStart(6, "0");
 }
 
-/** Converts a hex color to `rgba()`, falling back to black if unparseable. */
 export function hexToRgba(hex: string, alpha: number): string {
   const rgb = hexToRgb(hex);
   if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
-/** How far the panel's tint steps away from the page background, per channel. */
 const GLASS_PANEL_CONTRAST_STEP = 20;
 
-/** Low enough that the backdrop blur behind the panel still shows through. */
 const GLASS_PANEL_ALPHA = 0.3;
 
-/**
- * Tints the control panel so it separates from the user's chosen background.
- *
- * The panel moves *away* from the background (lighter over a dark page,
- * darker over a light one), which keeps it distinct at any hue.
- */
 export function getGlassPanelColor(bgColor: string): string {
   const isDarkBg = getContrastColor(bgColor) === "#ffffff";
   const adjustment = isDarkBg

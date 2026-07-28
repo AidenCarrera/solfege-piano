@@ -12,17 +12,11 @@ import type {
 } from "@/lib/effects";
 import { NativeBitCrusher, NativeFreeverb, NativeReverb } from "./nodes";
 
-/** The live audio graph a builder attaches its nodes to. */
 export interface EffectBuildContext {
   Tone: typeof ToneType;
   nativeContext: AudioContext;
 }
 
-/**
- * Uniform handle over a built effect. Each builder closes over its own
- * concrete node type, so `update` assigns statically-checked properties
- * instead of probing an untyped instance at runtime.
- */
 export interface EffectAdapter<T extends EffectType = EffectType> {
   readonly input: ToneType.InputNode;
   readonly output: ToneType.OutputNode;
@@ -31,10 +25,7 @@ export interface EffectAdapter<T extends EffectType = EffectType> {
 }
 
 export interface EffectBuilder<T extends EffectType> {
-  /**
-   * Nodes with an internal LFO produce silence when built against a suspended
-   * context, so the caller defers creating them until it is running.
-   */
+  /** LFO effects require an unlocked audio context. */
   requiresRunningContext?: boolean;
   create(
     ctx: EffectBuildContext,
@@ -42,10 +33,6 @@ export interface EffectBuilder<T extends EffectType> {
   ): EffectAdapter<T>;
 }
 
-/**
- * Wraps a self-contained Tone node. Tone nodes route through themselves, so
- * they serve as both ends of the adapter.
- */
 function toneAdapter<T extends EffectType, N extends ToneType.ToneAudioNode>(
   node: N,
   applyParams: (node: N, params: EffectParamsByType[T]) => void,
@@ -60,12 +47,10 @@ function toneAdapter<T extends EffectType, N extends ToneType.ToneAudioNode>(
   };
 }
 
-/** Bit depth falls as the user raises the amount, bottoming out at 1 bit. */
 function amountToBits(amount: number): number {
   return Math.max(1, Math.round((1 - amount) * 8));
 }
 
-/** Chebyshev order sets how many harmonics are folded in. */
 function amountToChebyshevOrder(amount: number): number {
   return Math.max(1, Math.round(amount * 50));
 }
@@ -151,7 +136,6 @@ const delayBuilders: Record<EffectMode<"Delay">, EffectBuilder<"Delay">> = {
   },
 };
 
-/** Chorus voices are spread around this delay; it is not user-adjustable. */
 const CHORUS_DELAY_TIME_MS = 2.5;
 
 const PHASER_SETTINGS = {
@@ -207,7 +191,7 @@ const modulationBuilders: Record<
           ...PHASER_SETTINGS,
           wet: params.mix,
         }),
-        // Phaser sweeps a fixed filter bank, so it has no depth control.
+        // Phaser has no depth control.
         (node, next: ModulationParams) => {
           node.wet.value = next.mix;
           node.frequency.value = next.frequency;
@@ -265,7 +249,6 @@ const distortionBuilders: Record<
   },
 };
 
-/** Sweep rate of the auto-filter's LFO; the UI exposes no rate control. */
 const AUTO_FILTER_FREQUENCY_HZ = 2;
 
 const filterBuilders: Record<EffectMode<"Filter">, EffectBuilder<"Filter">> = {
@@ -295,7 +278,7 @@ const filterBuilders: Record<EffectMode<"Filter">, EffectBuilder<"Filter">> = {
           baseFrequency: params.baseFrequency,
           octaves: params.octaves,
         }).start(),
-        // Sensitivity is an envelope-follower control that AutoFilter lacks.
+        // AutoFilter has no envelope sensitivity control.
         (node, next: FilterParams) => {
           node.wet.value = next.mix;
           node.baseFrequency = next.baseFrequency;
@@ -358,11 +341,7 @@ const compressorBuilders: Record<
   },
 };
 
-/**
- * Every buildable effect, keyed by type and then mode. Switching an effect's
- * mode selects a different node topology, so the chain disposes and rebuilds
- * rather than trying to update in place.
- */
+// A mode change selects a different node topology.
 export const EFFECT_BUILDERS: {
   [T in EffectType]: Record<EffectMode<T>, EffectBuilder<T>>;
 } = {

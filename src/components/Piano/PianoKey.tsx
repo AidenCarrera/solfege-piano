@@ -5,10 +5,6 @@ import type { Note } from "@/lib/note";
 type PianoKeyProps = {
   note: Note;
   isActive: boolean;
-  /**
-   * Absolute offset for sharp keys, in rem. Ignored by natural keys, which
-   * flow normally.
-   */
   leftRem: number;
   onMouseDown: (noteName: string) => void;
   onMouseEnter: (noteName: string) => void;
@@ -26,14 +22,6 @@ const ACTIVE_BLACK =
 const ACTIVE_WHITE =
   "!bg-blue-50 !from-blue-100 !to-white !shadow-none !translate-y-0.5 ring-2 ring-blue-400/30";
 
-/**
- * A single key.
- *
- * Handlers take the note name rather than being bound to it by the parent, so
- * `Piano` can pass the same stable callbacks to every key and let `React.memo`
- * skip the keys whose active state did not change. Touch is handled one level
- * up, by a listener on the keyboard itself — see `useTouchControls`.
- */
 function PianoKeyComponent({
   note,
   isActive,
@@ -71,10 +59,8 @@ function PianoKeyComponent({
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
       }}
-      // Read by touch hit-testing, which tracks fingers across key boundaries.
       data-note-name={note.name}
-      // Keys are played with the mapped letter shortcuts rather than by
-      // tabbing through 49 buttons.
+      // Letter shortcuts avoid a tab stop for every piano key.
       tabIndex={-1}
       aria-label={`${note.spokenName} piano key${note.shortcut ? `, shortcut ${note.shortcut.toUpperCase()}` : ""}`}
       aria-pressed={isActive}

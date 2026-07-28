@@ -1,13 +1,8 @@
 import { SETTINGS_STORAGE_KEY } from "./settings";
 
 /**
- * Applies the stored background before first paint.
- *
- * This is serialised into a blocking inline script, so it must stay entirely
- * self-contained — no imports, no references to module scope.
- *
- * The contrast rule deliberately mirrors `getContrastColor` in `colorUtils`,
- * which remains the source of truth; `theme.test.ts` asserts the two agree.
+ * Self-contained because this function is serialized into an inline script.
+ * Keep its contrast calculation aligned with getContrastColor.
  */
 export function applyStoredTheme(storageKey: string) {
   try {
@@ -35,14 +30,10 @@ export function applyStoredTheme(storageKey: string) {
         : "#ffffff",
     );
   } catch {
-    // Storage can be unavailable or malformed; the CSS defaults still apply.
+    // CSS defaults remain active when storage is unavailable.
   }
 }
 
-/**
- * Runs before the body renders, so a user who picked a light background does
- * not get a flash of the dark default on every load.
- */
 export const THEME_SCRIPT = `(${applyStoredTheme.toString()})(${JSON.stringify(
   SETTINGS_STORAGE_KEY,
 )})`;

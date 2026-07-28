@@ -42,7 +42,6 @@ describe("useActiveNotes", () => {
     act(() => result.current.activateNote("C4"));
     const afterActivate = result.current.activeNotes;
 
-    // A repeated activate would otherwise re-render every key.
     act(() => result.current.activateNote("C4"));
     expect(result.current.activeNotes).toBe(afterActivate);
 

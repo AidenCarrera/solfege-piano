@@ -14,28 +14,19 @@ interface ActiveEffect {
   adapter: EffectAdapter;
 }
 
-/**
- * Builds or updates the adapter for one node.
- *
- * Generic over the node's type so its parameters and its entry in
- * `EFFECT_BUILDERS` are checked against the same effect. Returns `null` when
- * the node cannot be built yet, leaving it out of the chain until it can be.
- */
 function reconcileNode<T extends EffectType>(
   node: EffectNodeOf<T>,
   existing: ActiveEffect | undefined,
   Tone: typeof ToneType,
   nativeContext: AudioContext,
 ): ActiveEffect | null {
-  // A different mode is a different node topology, so it cannot update in place.
   if (existing && existing.mode === node.params.mode) {
     existing.adapter.update(node.params);
     return existing;
   }
   existing?.adapter.dispose();
 
-  // Indexing by type and then by mode is correlated, which TypeScript checks
-  // one step at a time; the table's declared shape guarantees the pairing.
+  // TypeScript cannot infer the correlation between effect type and mode.
   const builders = EFFECT_BUILDERS[node.type] as Record<
     string,
     EffectBuilder<T> | undefined
@@ -53,18 +44,7 @@ function reconcileNode<T extends EffectType>(
   };
 }
 
-/**
- * Routes the sampler through the user's effect chain.
- *
- * Adapters are keyed by node id and reused across renders so that dragging a
- * slider adjusts a live node instead of rebuilding it, which would click.
- *
- * @param sourceRevision - Any value that changes whenever `source.current` is
- *   replaced. The source lives in a ref, so it cannot be a dependency itself;
- *   passing what drives its rebuild keeps the graph wired to the live node.
- * @param contextState - Rebuilds LFO-driven effects that had to be skipped
- *   while the context was still suspended.
- */
+// Reconcile when the source ref changes or the audio context unlocks.
 export function useEffectChain(
   Tone: typeof ToneType | null,
   source: React.RefObject<ToneType.ToneAudioNode | null>,
@@ -91,13 +71,11 @@ export function useEffectChain(
       if (effect) nextActive.set(node.id, effect);
     });
 
-    // Dispose removed nodes before rebuilding graph connections.
     activeEffectsRef.current.forEach((effect, id) => {
       if (!nextActive.has(id)) effect.adapter.dispose();
     });
     activeEffectsRef.current = nextActive;
 
-    // Clear stale outgoing edges before reconnecting the ordered chain.
     sourceNode.disconnect();
     nextActive.forEach(({ adapter }) => adapter.output.disconnect());
 
@@ -105,7 +83,6 @@ export function useEffectChain(
     effectChain.forEach((node) => {
       const effect = node.enabled ? nextActive.get(node.id) : undefined;
       if (!effect) return;
-      // Tone.connect normalizes native and Tone.js node semantics.
       Tone.connect(currentOutput, effect.adapter.input);
       currentOutput = effect.adapter.output;
     });
@@ -116,8 +93,6 @@ export function useEffectChain(
     );
   }, [Tone, source, sourceRevision, effectChain, limiterRef, contextState]);
 
-  // Read through the ref rather than capturing the map, which is replaced
-  // wholesale on every reconcile.
   useEffect(
     () => () => {
       activeEffectsRef.current.forEach((effect) => effect.adapter.dispose());

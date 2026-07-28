@@ -71,7 +71,6 @@ describe("applyStoredTheme", () => {
   });
 
   it("serialises to a self-contained script", () => {
-    // A reference to module scope would throw once inlined into the page.
     expect(THEME_SCRIPT).toContain(JSON.stringify(SETTINGS_STORAGE_KEY));
     expect(THEME_SCRIPT.startsWith("(")).toBe(true);
 

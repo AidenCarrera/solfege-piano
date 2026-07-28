@@ -9,11 +9,6 @@ import { EFFECT_MODES, EFFECT_PARAM_SLIDERS } from "./effectControls";
 
 const effectTypes = Object.keys(EFFECT_PRESETS) as EffectType[];
 
-/**
- * The rack is driven by three parallel tables: what the user can select, what
- * can be built, and what defaults a new node starts with. Nothing at runtime
- * cross-checks them, so assert they agree.
- */
 describe("effect tables", () => {
   it("can build every mode the UI offers", () => {
     effectTypes.forEach((type) => {
@@ -29,7 +24,6 @@ describe("effect tables", () => {
       const offered = EFFECT_MODES[type].map((mode) => mode.value as string);
       const buildable = Object.keys(EFFECT_BUILDERS[type]);
 
-      // Compressor has a single mode and renders no selector for it.
       if (offered.length === 0) {
         expect(buildable).toHaveLength(1);
         return;

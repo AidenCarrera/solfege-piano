@@ -1,10 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { isTextEntryTarget } from "@/lib/keyboard";
 
-/**
- * Elements for which Space is the native activation key. Swallowing it here
- * would make focused controls unusable from the keyboard.
- */
 const SPACE_ACTIVATED_SELECTOR =
   'button, select, summary, input, [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [role="option"], [role="slider"]';
 
@@ -15,7 +11,6 @@ export function useSustainToggle(
   const toggleSustain = useCallback(() => {
     setSustainActive((prev) => {
       const newState = !prev;
-      // Release voices that were retained by sustain.
       if (!newState) {
         stopAllNotes();
       }
@@ -23,9 +18,6 @@ export function useSustainToggle(
     });
   }, [stopAllNotes, setSustainActive]);
 
-  // Space toggles sustain, but only as a global shortcut: when a control has
-  // focus it keeps its native meaning, since this listener sits on `window`
-  // and preventing the default here would cancel activation everywhere.
   useEffect(() => {
     const handleSpace = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;

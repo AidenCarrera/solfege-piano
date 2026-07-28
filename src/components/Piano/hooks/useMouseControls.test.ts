@@ -54,7 +54,6 @@ describe("useMouseControls", () => {
     act(() => result.current.handleMouseDown("C3"));
     act(() => result.current.handleMouseEnter("D3"));
 
-    // The previous key must go dark, or a glissando leaves a lit trail.
     expect(handlers.stopNote).toHaveBeenCalledWith("C3");
     expect(handlers.deactivateNote).toHaveBeenCalledWith("C3");
     expect(handlers.playNote).toHaveBeenCalledWith("D3");

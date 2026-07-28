@@ -4,12 +4,6 @@ import { useRef, useCallback, useEffect } from "react";
 import { refocusSustainPedal } from "@/lib/keyboard";
 import { usePageInactive } from "./usePageInactive";
 
-/**
- * Plays notes with the mouse, including drag-glissando across keys.
- *
- * Only one note sounds at a time: the pointer has a single position, so
- * entering a new key releases the previous one.
- */
 export function useMouseControls(
   playNote: (noteName: string) => void,
   stopNote: (noteName: string) => void,
@@ -48,7 +42,6 @@ export function useMouseControls(
     [triggerNote],
   );
 
-  // Dragging across keys glissandos; entering with the button up does nothing.
   const handleMouseEnter = useCallback(
     (name: string) => {
       if (!isMouseDown.current) return;
@@ -68,7 +61,6 @@ export function useMouseControls(
     clearAllNotes();
   }, [releaseCurrentNote, clearAllNotes]);
 
-  // Release notes even when the pointer leaves the key before mouseup.
   useEffect(() => {
     window.addEventListener("mouseup", releaseMouse);
     return () => window.removeEventListener("mouseup", releaseMouse);

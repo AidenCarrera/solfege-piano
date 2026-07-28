@@ -5,16 +5,8 @@ import type {
   EffectType,
 } from "@/lib/effects";
 
-/**
- * Presentation metadata for the effect rack's controls.
- *
- * The tables are indexed by effect type, so a mode or parameter that does not
- * belong to an effect is a compile error rather than a runtime surprise.
- */
-
 export interface EffectModeOption<T extends EffectType> {
   value: EffectMode<T>;
-  /** Shown to the user; several modes are named after what they sound like. */
   label: string;
 }
 
@@ -43,7 +35,6 @@ export const EFFECT_MODES: {
     { value: "AutoWah", label: "AutoWah" },
     { value: "AutoFilter", label: "AutoFilter" },
   ],
-  // Compressor has a single mode, so the rack renders no selector for it.
   Compressor: [],
 };
 
@@ -54,7 +45,6 @@ export interface ParamSliderSpec<T extends EffectType> {
   max: number;
   step: number;
   format: (value: number) => string;
-  /** Omitted when the parameter does not apply to the current mode. */
   appliesTo?: readonly EffectMode<T>[];
 }
 
@@ -63,10 +53,6 @@ const milliseconds = (value: number) => `${Math.round(value * 1000)}ms`;
 const seconds = (value: number) => `${value.toFixed(1)}s`;
 const hertz = (value: number) => `${value}Hz`;
 
-/**
- * Bounds for the dry/wet slider every effect shares. `mix` is rendered
- * directly by the card rather than living in the per-effect tables below.
- */
 export const MIX_SLIDER_RANGE = { min: 0, max: 1, step: 0.01 } as const;
 export const formatMix = percent;
 
@@ -183,12 +169,9 @@ export const EFFECT_PARAM_SLIDERS: {
       step: 0.5,
       format: (value) => `${value}`,
     },
-    // `sensitivity` is intentionally absent: only AutoWah reads it, and the
-    // preset value works across the whole base-frequency range.
   ],
 };
 
-/** Reads a numeric parameter without losing the correlation to its effect. */
 export function readParam<T extends EffectType>(
   params: EffectParamsByType[T],
   field: EffectParamField<T>,

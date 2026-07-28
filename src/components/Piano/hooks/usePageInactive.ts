@@ -2,18 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
-/**
- * Runs a callback when the page stops receiving input.
- *
- * Notes are released on key-up and pointer-up, neither of which fires if the
- * user switches tabs or windows mid-press. Both `blur` and `visibilitychange`
- * are needed: alt-tabbing away fires only `blur`, while backgrounding the tab
- * on mobile may fire only `visibilitychange`.
- *
- * The callback is read through a ref, so callers can pass an inline function
- * without re-subscribing on every render.
- */
+// Covers desktop blur and mobile tab backgrounding.
 export function usePageInactive(onInactive: () => void) {
+  // Keep subscriptions stable while the callback changes.
   const callbackRef = useRef(onInactive);
 
   useEffect(() => {

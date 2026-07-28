@@ -102,9 +102,7 @@ describe("useSettings", () => {
       startOctave: 3,
       endOctave: 4,
     });
-    // Zoom returns to following the viewport rather than a pinned value.
     expect(result.current.settings.pianoScale).toBeNull();
-    // Rebuilding a rack is expensive, so a settings reset leaves it alone.
     expect(result.current.settings.effectChain).toBe(chain);
   });
 

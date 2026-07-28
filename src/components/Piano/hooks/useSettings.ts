@@ -9,24 +9,16 @@ import {
   type PianoSettings,
 } from "@/lib/settings";
 
-/** Sliders fire continuously; coalesce writes rather than serialising per frame. */
 const SAVE_DEBOUNCE_MS = 250;
 
-/**
- * Settings live in a module-level store read through `useSyncExternalStore`.
- *
- * `localStorage` does not exist while prerendering, and this is the API that
- * lets the server and the hydrating client agree on defaults before the stored
- * values swap in. A `useState` initialiser reading storage would render markup
- * that disagrees with the server's and break hydration.
- */
+// SSR uses defaults; the client store hydrates from localStorage.
 const serverSnapshot = createDefaultSettings();
 let snapshot: PianoSettings | null = null;
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getSnapshot(): PianoSettings {
-  // Cached, so repeated reads return an identical reference as React requires.
+  // React requires repeated reads to return the same object until a change.
   snapshot ??= loadSettings();
   return snapshot;
 }
@@ -53,7 +45,6 @@ function commit(next: PianoSettings): void {
   }, SAVE_DEBOUNCE_MS);
 }
 
-/** Discards the in-memory store. Exported for tests, which share the module. */
 export function resetSettingsStore(): void {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = null;
@@ -68,17 +59,14 @@ export function useSettings() {
     getServerSnapshot,
   );
 
-  /** Replaces several settings at once, in a single render and a single write. */
   const patchSettings = useCallback((patch: Partial<PianoSettings>) => {
     commit({ ...getSnapshot(), ...patch });
   }, []);
 
-  /** Restores default preferences, keeping the user's effect chain intact. */
   const resetSettings = useCallback(() => {
     commit({ ...getSnapshot(), ...DEFAULT_PREFERENCES });
   }, []);
 
-  /** Accepts a value or an updater, mirroring a `useState` setter. */
   const updateSetting = useCallback(
     <K extends keyof PianoSettings>(
       key: K,

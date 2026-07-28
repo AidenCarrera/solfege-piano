@@ -22,11 +22,7 @@ export function useKeyboardControls(
     return map;
   }, [notes]);
 
-  // Piano rebuilds these on nearly every render: activateNote is an inline
-  // arrow and playNote changes with volume. Reading them through a ref keeps
-  // the listener effect mounted for the component's lifetime. When it re-ran
-  // per render instead, its cleanup released the note that had just been
-  // pressed, cutting each keystroke off within a few milliseconds.
+  // Keep listeners stable while callbacks change.
   const latest = useRef({
     notes,
     notesByShortcut,
@@ -70,7 +66,6 @@ export function useKeyboardControls(
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Space is reserved for sustain; modified shortcuts belong to the browser.
       if (
         e.code === "Space" ||
         e.metaKey ||
@@ -111,8 +106,7 @@ export function useKeyboardControls(
 
   usePageInactive(releasePressedKeys);
 
-  // The shortcut map moves with the octave range, so release whatever is still
-  // held against the outgoing note set before it is swapped out.
+  // Release keys before replacing their shortcut map.
   useEffect(() => {
     const boundNotes = notes;
     const heldKeys = pressedKeys.current;

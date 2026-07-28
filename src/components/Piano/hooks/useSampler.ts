@@ -6,10 +6,7 @@ import type { Note } from "@/lib/note";
 import { PIANO_CONFIG } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
 
-/**
- * Trimmed from the requested gain so a full chord through a boosting effect
- * chain still leaves headroom before the master limiter engages.
- */
+// Leave headroom for chords and boosting effects.
 const HEADROOM_DB = 3;
 
 function createSampler(
@@ -26,7 +23,7 @@ function createSampler(
       const buffer = buffers.get(note.toneName);
       if (buffer) bufferMap[note.toneName] = buffer;
     } catch {
-      // Buffers can disappear briefly while the sound bank changes.
+      // A bank change can dispose buffers during this read.
     }
   });
 
@@ -49,12 +46,6 @@ export interface SamplerControls {
   stopAllNotes: () => void;
 }
 
-/**
- * Owns the sampler and the note-triggering API.
- *
- * The sampler is rebuilt whenever its buffers change and is connected straight
- * to the limiter, so audio is available before `useEffectChain` reroutes it.
- */
 export function useSampler(
   Tone: typeof ToneType | null,
   buffers: ToneType.ToneAudioBuffers | null,
@@ -65,17 +56,13 @@ export function useSampler(
 ): SamplerControls {
   const samplerRef = useRef<ToneType.Sampler | null>(null);
 
-  // The UI identifies keys by sample name; Tone wants scientific pitch. This
-  // is the one boundary where the two notations meet.
   const toneNames = useMemo(() => {
     const map = new Map<string, string>();
     notes.forEach((note) => map.set(note.name, note.toneName));
     return map;
   }, [notes]);
 
-  // Read when building a sampler, but deliberately not a dependency of that
-  // effect: rebuilding on every slider movement would cut off sounding notes.
-  // The effect below keeps both the ref and the live sampler current.
+  // Volume updates should not rebuild the sampler and cut off notes.
   const volumeRef = useRef(volume);
 
   useEffect(() => {
@@ -114,18 +101,13 @@ export function useSampler(
       const toneNote = toneNames.get(noteName);
       if (!toneNote) return;
 
-      // A backstop only: `useToneEngine` unlocks on the first gesture, well
-      // before this runs. Reaching a suspended context here means that failed,
-      // and the note is scheduled against a frozen clock — it sounds once the
-      // context resumes rather than being lost.
       if (Tone.getContext().state !== "running") {
         Tone.start();
       }
 
       const sampler = samplerRef.current;
 
-      // Retrigger from silence so a repeated note does not layer on itself.
-      // Both land on one timestamp; `now` advances between calls.
+      // Retrigger from silence instead of layering the same note.
       const now = Tone.now();
       sampler.triggerRelease(toneNote, now);
       sampler.triggerAttack(toneNote, now);

@@ -5,7 +5,6 @@ import type * as ToneType from "tone";
 import type { Note } from "@/lib/note";
 import type { SoundType } from "@/lib/config";
 
-/** State carried from a load, tagged with the request that produced it. */
 interface KeyedState<T> {
   key: string;
   value: T;
@@ -17,25 +16,12 @@ interface LoadOutcome {
 }
 
 export interface SampleBuffers {
-  /** `null` while loading, after an error, or when the sound bank changes. */
   buffers: ToneType.ToneAudioBuffers | null;
-  /** Fraction of the sample set decoded so far, from 0 to 1. */
   progress: number;
   error: string | null;
   retry: () => void;
 }
 
-/**
- * Loads the sample set for the current sound bank and note range.
- *
- * Samples are added one at a time rather than through the constructor's url
- * map, because that form reports only a single terminal `onload` and cannot
- * drive a progress bar.
- *
- * State carries the key of the request that produced it and is compared
- * against the current key during render, so a slow load that resolves after
- * the user has switched banks is ignored rather than briefly displayed.
- */
 export function useSampleBuffers(
   Tone: typeof ToneType | null,
   soundType: SoundType,
@@ -48,9 +34,7 @@ export function useSampleBuffers(
   );
   const [attempt, setAttempt] = useState(0);
 
-  // Describes the sample set by content, so it changes exactly when the loader
-  // below re-runs. `notes` is derived from the octave range, so a new array
-  // always means a different set of notes.
+  // Tag async results so an older request cannot replace the current bank.
   const requestKey = useMemo(
     () => [soundType, attempt, notes.map((note) => note.name).join()].join("|"),
     [soundType, attempt, notes],

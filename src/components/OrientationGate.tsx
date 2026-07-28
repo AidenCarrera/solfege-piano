@@ -4,23 +4,10 @@ import { useState } from "react";
 import { RotateCw, Smartphone } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
-/**
- * Phones held upright. `pointer: coarse` keeps the prompt away from a narrow
- * desktop window, and the width bound keeps it away from tablets, which have
- * room for a keyboard either way up.
- */
+// Limit the prompt to portrait touch devices.
 const PORTRAIT_PHONE =
   "(orientation: portrait) and (pointer: coarse) and (max-width: 900px)";
 
-/**
- * Asks for a landscape screen before showing the piano.
- *
- * A portrait phone is barely two octaves wide once the keys are legible, so
- * the keyboard is asked for sideways rather than shrunk to fit. The dismissal
- * exists because a device with rotation locked cannot answer the prompt, and
- * it sticks for the session: the keyboard scales to whatever space it is
- * given, so someone who has chosen to play in portrait is not asked twice.
- */
 export function OrientationGate() {
   const isPortraitPhone = useMediaQuery(PORTRAIT_PHONE);
   const [dismissed, setDismissed] = useState(false);

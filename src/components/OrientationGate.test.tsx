@@ -4,10 +4,6 @@ import { OrientationGate } from "./OrientationGate";
 
 const originalMatchMedia = window.matchMedia;
 
-/**
- * jsdom has no `matchMedia`. This stands in for one, and hands back a way to
- * flip the answer and notify subscribers the way a real rotation would.
- */
 function stubMatchMedia(initiallyMatches: boolean) {
   const listeners = new Set<() => void>();
   let matches = initiallyMatches;

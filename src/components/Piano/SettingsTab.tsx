@@ -28,7 +28,6 @@ export interface SettingsTabProps {
   setSolfegeEnabled: (b: boolean) => void;
 }
 
-/** Sound bank, octave range, zoom, volume, background, and label toggles. */
 export function SettingsTab({
   volume,
   setVolume,
@@ -47,8 +46,6 @@ export function SettingsTab({
   solfegeEnabled,
   setSolfegeEnabled,
 }: SettingsTabProps) {
-  // The widest ranges are unplayable on a phone, so the slider stops short of
-  // them. The ranges are ordered narrowest first, so this is a prefix.
   const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
   const lastRange =
     (isShortScreen ? SHORT_SCREEN_OCTAVE_RANGES : OCTAVE_RANGES.length) - 1;
@@ -56,7 +53,6 @@ export function SettingsTab({
   const selectedRange = OCTAVE_RANGES.findIndex(
     ([start, end]) => start === startOctave && end === endOctave,
   );
-  // A range stored on a roomier screen can sit past the end of this slider.
   const sliderRange = Math.min(Math.max(selectedRange, 0), lastRange);
 
   const handleOctaveSlider = (index: number) => {
@@ -65,9 +61,7 @@ export function SettingsTab({
 
     const [start, end] = range;
     onOctaveChange(start, end);
-    // Hand the zoom back to the fit measurement rather than pinning a level
-    // per octave span: the new key count and the viewport together decide
-    // what actually fits, and only one of those is known here.
+    // Refit after changing the number of keys.
     setPianoScale(null);
   };
 
@@ -78,9 +72,6 @@ export function SettingsTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18 }}
-      // Opens to its full height rather than scrolling inside itself: on a
-      // short screen the page scrolls instead, and a panel with its own
-      // scrollbar nested in a scrolling page is worse than a taller one.
       className="grid grid-cols-2 gap-4 p-3 sm:grid-cols-3 sm:gap-6 sm:p-5 lg:grid-cols-4"
     >
       <div className="flex flex-col gap-2">
@@ -98,7 +89,7 @@ export function SettingsTab({
             id="sound-type"
             value={soundType}
             onChange={(e) => setSoundType(e.target.value as SoundType)}
-            // 16px on touch, below which iOS zooms the page on focus.
+            // Prevent iOS from zooming on focus.
             className="h-8 w-full rounded-md pl-2.5 pr-6 text-left text-base font-medium sm:text-sm"
           >
             {SOUND_OPTIONS.map((s) => (
@@ -164,8 +155,6 @@ export function SettingsTab({
             Zoom
           </label>
           <div className="flex items-center gap-1.5">
-            {/* Only offered once a manual zoom has overridden the fit, since
-                that is the only state it can return from. */}
             {!autoScale && (
               <button
                 type="button"

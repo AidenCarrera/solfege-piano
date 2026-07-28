@@ -1,4 +1,3 @@
-/** Parameters every effect exposes: a dry/wet blend and a variant selector. */
 export interface BaseEffectParams {
   mix: number;
   mode: string;
@@ -41,11 +40,6 @@ export interface CompressorParams extends BaseEffectParams {
   ratio: number;
 }
 
-/**
- * The single source of truth pairing each effect with its parameters.
- * `EffectType`, the node union, and the preset table are all derived from it,
- * so adding an effect here forces every dependent table to be updated.
- */
 export interface EffectParamsByType {
   Distortion: DistortionParams;
   Filter: FilterParams;
@@ -58,11 +52,9 @@ export interface EffectParamsByType {
 export type EffectType = keyof EffectParamsByType;
 export type EffectParams = EffectParamsByType[EffectType];
 
-/** The variants a given effect can switch between, e.g. `"Chorus" | "Vibrato"`. */
 export type EffectMode<T extends EffectType = EffectType> =
   EffectParamsByType[T]["mode"];
 
-/** Numeric (slider-adjustable) parameter names for a given effect. */
 export type EffectParamField<T extends EffectType = EffectType> = Exclude<
   keyof EffectParamsByType[T],
   "mode"
@@ -75,21 +67,12 @@ export interface EffectNodeOf<T extends EffectType> {
   params: EffectParamsByType[T];
 }
 
-/**
- * Discriminated on `type`, so narrowing a node also narrows its parameters.
- */
 export type EffectNode = { [T in EffectType]: EffectNodeOf<T> }[EffectType];
 
-/** A partial parameter edit, constrained to the effect being edited. */
 export type EffectParamsUpdate<T extends EffectType = EffectType> = Partial<
   EffectParamsByType[T]
 >;
 
-/**
- * Default parameters for a newly added effect. Presets are the only source of
- * defaults: `createEffectNode` copies a complete parameter set, so consumers
- * can read every field without fallbacks.
- */
 export const EFFECT_PRESETS: { [T in EffectType]: EffectParamsByType[T] } = {
   Distortion: { mix: 0.5, mode: "Distortion", amount: 0.5 },
   Filter: {
@@ -126,17 +109,8 @@ export const EFFECT_PRESETS: { [T in EffectType]: EffectParamsByType[T] } = {
   },
 };
 
-/**
- * Ids only have to be unique within a session (they key React lists and the
- * live audio-node map, and are never persisted), so a counter beats a random
- * string and stays readable in devtools.
- */
 let nextEffectId = 0;
 
-/**
- * Mints an id for an effect node. Restored settings take fresh ids from here
- * too, so a rehydrated chain can never collide with one added afterwards.
- */
 export function createEffectId(): string {
   nextEffectId += 1;
   return `effect-${nextEffectId}`;
@@ -148,7 +122,6 @@ export function createEffectNode(type: EffectType): EffectNode {
     type,
     enabled: true,
     params: { ...EFFECT_PRESETS[type] },
-    // TypeScript checks `type` and `params` independently and cannot see that
-    // indexing the preset table with `type` keeps them in step.
+    // TypeScript cannot infer the correlation between type and params.
   } as EffectNode;
 }

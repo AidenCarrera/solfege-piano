@@ -9,12 +9,6 @@ type PreloadProgressProps = {
   onRetry: () => void;
 };
 
-/**
- * Sample-loading status. Positioned as an absolute overlay hanging up over the
- * control panel, so it never shifts the layout when appearing or disappearing
- * and costs the keyboard no height — and, being outside the zoomed keyboard,
- * it reads at the same size however far the keyboard is scaled.
- */
 export function PreloadProgress({
   progress,
   isPreloading,

@@ -15,19 +15,9 @@ export interface NotePlayerOptions {
   soundType: SoundType;
   sustainMode: boolean;
   notes: Note[];
-  /** Held back until the user is likely to play, to keep the first paint cheap. */
   enablePreload?: boolean;
 }
 
-/**
- * Composes the audio stack and exposes the piano's playback API.
- *
- * The stages are ordered by dependency: the engine provides Tone and the
- * master limiter, the buffers depend on Tone, the sampler depends on the
- * buffers, and the effect chain reroutes the sampler's output. `useSampler`
- * must run before `useEffectChain` so the source node exists when the chain
- * first wires itself up.
- */
 export function useNotePlayer({
   volume,
   effectChain,
@@ -52,10 +42,10 @@ export function useNotePlayer({
     engine.limiterRef,
   );
 
+  // Build the source before routing it through the effect graph.
   useEffectChain(
     engine.Tone,
     sampler.samplerRef,
-    // The sampler is rebuilt exactly when its buffers change.
     samples.buffers,
     effectChain,
     engine.limiterRef,
@@ -66,7 +56,6 @@ export function useNotePlayer({
   const isPreloading =
     enablePreload && preloadError === null && samples.buffers === null;
 
-  // Destructured to prevent callback recreation on every render.
   const { Tone, retry: retryEngine } = engine;
   const { retry: retrySamples } = samples;
   const retryPreload = useCallback(() => {

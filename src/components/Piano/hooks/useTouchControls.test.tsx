@@ -9,10 +9,7 @@ const handlers = {
   deactivateNote: vi.fn(),
 };
 
-/** Two keys, so a finger can slide from one to the other. */
 function Keyboard() {
-  // Passed as inline arrows, as `Piano` does: every render hands the hook a
-  // fresh set of identities.
   const keyboardRef = useTouchControls(
     (note) => handlers.playNote(note),
     (note) => handlers.stopNote(note),
@@ -29,10 +26,6 @@ function Keyboard() {
   );
 }
 
-/**
- * Touches carry the element they landed on; the hook reads the note from there
- * rather than from the listener's own element.
- */
 const touch = (identifier: number, target?: Element) => ({
   identifier,
   target,
@@ -101,9 +94,6 @@ describe("useTouchControls", () => {
 
     fireEvent.touchStart(from, { changedTouches: [touch(0, from)] });
 
-    // Once moving, hit-testing goes through the point under the finger rather
-    // than the touch's target, which stays pinned to the key it started on.
-    // jsdom does no layout, so it has no `elementFromPoint` to spy on.
     document.elementFromPoint = () => to;
     fireEvent.touchMove(from, { touches: [touch(0)] });
 
@@ -130,11 +120,9 @@ describe("useTouchControls", () => {
     const key = screen.getByTestId("C3");
 
     fireEvent.touchStart(key, { changedTouches: [touch(0, key)] });
-    // Piano does this whenever a setting like volume changes.
     view.rerender(<Keyboard />);
     expect(handlers.stopNote).not.toHaveBeenCalled();
 
-    // The listeners have to survive it too, or the finger can never lift.
     fireEvent.touchEnd(key, { changedTouches: [touch(0)] });
     expect(handlers.stopNote).toHaveBeenCalledExactlyOnceWith("C3");
   });

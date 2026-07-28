@@ -64,7 +64,6 @@ describe("parseSettings", () => {
       endOctave: 5,
     });
 
-    // Not a selectable pair, so both ends fall back together.
     expect(parseSettings({ startOctave: 1, endOctave: 9 })).toMatchObject({
       startOctave: defaults.startOctave,
       endOctave: defaults.endOctave,
@@ -90,7 +89,6 @@ describe("parseSettings", () => {
         type: "Delay",
         enabled: false,
       });
-      // Duplicate stored ids would collide as React keys and audio-graph keys.
       expect(parsed.effectChain[0]!.id).not.toBe(parsed.effectChain[1]!.id);
     });
 
@@ -99,7 +97,6 @@ describe("parseSettings", () => {
         effectChain: [{ type: "Reverb", params: { mix: 0.9 } }],
       });
 
-      // Consumers read every field with no fallback of their own.
       expect(parsed.effectChain[0]!.params).toEqual({
         ...EFFECT_PRESETS.Reverb,
         mix: 0.9,

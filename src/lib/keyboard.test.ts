@@ -16,7 +16,6 @@ describe("keyboard utilities", () => {
           return null;
         }
       }
-      // Set global Element for instanceof check
       const origElement = globalThis.Element;
       const origInput = globalThis.HTMLInputElement;
       try {

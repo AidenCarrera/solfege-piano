@@ -56,11 +56,8 @@ export function Piano() {
     endOctave,
   } = settings;
 
-  // Too short to show the controls and a playable keyboard at once: give the
-  // keyboard the screen to itself and let the page scroll down to it.
   const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
 
-  // A stored zoom is an explicit choice and wins; otherwise fit the screen.
   const viewportRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -68,8 +65,6 @@ export function Piano() {
   const autoScale = settings.pianoScale === null;
   const pianoScale = settings.pianoScale ?? fit?.scale ?? PIANO_SCALE.DEFAULT;
 
-  // Memoized callbacks prevent re-rendering ControlPanel on note presses.
-  // `null` hands the zoom back to the fit measurement.
   const setPianoScale = useCallback(
     (value: number | null) => updateSetting("pianoScale", value),
     [updateSetting],
@@ -105,7 +100,6 @@ export function Piano() {
 
   const handleSoundTypeChange = useCallback(
     (newSoundType: SoundType) => {
-      // Solfege is only sampled for one octave, so pin the range.
       if (newSoundType === "Solfege") {
         const [start, end] = SOLFEGE_OCTAVE_RANGE;
         patchSettings({
@@ -174,7 +168,6 @@ export function Piano() {
     }, [stopAllNotes, clearAllNotes]),
   );
 
-  /** Derive key position offsets once per note range. */
   const keys = useMemo(() => {
     const naturalIndex = new Map<string, number>();
     notes
@@ -203,32 +196,19 @@ export function Piano() {
       <OrientationGate />
 
       <main
-        // Unpadded, so the probe below spans the true viewport width; the
-        // keyboard's own side margin comes from `sideInset`.
         className="relative flex grow flex-col items-center select-none transition-colors duration-500"
         style={{
-          // `--foreground` is published on :root by useThemeTokens.
           color: textColor,
-          // Centres the column when it fits on one screen; `safe` yields to
-          // scrolling rather than hiding the top of anything taller, which is
-          // the normal case on a phone.
+          // Avoid hiding the top when content exceeds the viewport.
           justifyContent: "safe center",
         }}
       >
-        {/*
-         * A stand-in for the viewport, measured instead of any container the
-         * keyboard sits in — nothing the keyboard does can resize a probe, so
-         * the fit cannot chase its own result. Absolute, so it takes no space,
-         * and in `svh` so it ignores a mobile browser's disappearing chrome
-         * rather than resizing the keyboard mid-scroll.
-         */}
+        {/* Stable viewport probe for keyboard fit calculations. */}
         <div
           ref={viewportRef}
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-svh"
         />
-        {/* Measured as one block: everything above the keyboard that the
-            keyboard has to share the screen with. */}
         <div
           ref={headerRef}
           className="flex w-full shrink-0 flex-col items-center px-3"
@@ -264,8 +244,6 @@ export function Piano() {
           />
         </div>
 
-        {/* Sized from the same insets the fit measurement reserves, so the
-            keyboard lands in exactly the space it was measured for. */}
         <section
           className="relative flex w-full shrink-0 flex-col"
           style={{
@@ -281,20 +259,11 @@ export function Piano() {
           />
 
           <div
-            className="flex justify-center overflow-x-auto"
-            // `safe` keeps a keyboard zoomed past the fit reachable, by giving
-            // up centring rather than pushing its left edge somewhere no
-            // scroll can follow. The class above is the fallback where the
-            // keyword is unsupported and this declaration is dropped.
+            className="piano-scroll-region flex justify-center overflow-x-auto"
+            // Keep an oversized keyboard's left edge reachable.
             style={{ justifyContent: "safe center" }}
           >
-            {/*
-             * Carries the keyboard's *scaled* size as a real layout box.
-             * A transform leaves the layout box at the unscaled size, which
-             * would leave this flex row centring and scrolling something the
-             * wrong shape; sizing the box here lets the keyboard scale from
-             * its top-left corner and stay exactly where the box says it is.
-             */}
+            {/* Give the transformed keyboard an equally scaled layout box. */}
             <div
               className={`shrink-0 ${fit === null ? "" : "piano-scale-transition"}`}
               style={
@@ -313,10 +282,7 @@ export function Piano() {
                 }`}
                 style={{
                   transform: `scale(${pianoScale})`,
-                  // Before the first measurement the wrapper still has the
-                  // content's unscaled width, so expand equally around its
-                  // centred box. Once measured, the wrapper carries the real
-                  // scaled width and the transform must match its top-left.
+                  // Center before measurement, then align with the scaled wrapper.
                   transformOrigin: fit === null ? "top center" : "top left",
                 }}
               >
@@ -364,10 +330,6 @@ export function Piano() {
                       {sustainActive ? "Sustain" : "Dry"}
                     </span>
                   </button>
-                  {/* Trailing margins would be dead space at the bottom of the
-                      scaled block, and every row here costs the keyboard some
-                      of the zoom it could have had — so the second line goes
-                      entirely on screens too short to afford it. */}
                   <p className="mt-3 text-center text-sm font-medium opacity-80">
                     Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click
                     or press Spacebar

@@ -9,12 +9,10 @@ import {
   PIANO_SCALE,
 } from "./config";
 
-/** Layout width of a keyboard spanning `whiteKeys` natural keys, in px. */
 function keyboardWidth(whiteKeys: number): number {
   return whiteKeys * PIANO_CONFIG.WHITE_KEY_WIDTH_REM * 16;
 }
 
-/** Roughly the keys plus the sustain controls beneath them, in px. */
 const KEYBOARD_HEIGHT_PX = 380;
 
 describe("clampScale", () => {
@@ -35,8 +33,6 @@ describe("sideInset", () => {
 
 describe("fitScale", () => {
   it("shrinks a one-octave keyboard onto a phone in landscape", () => {
-    // The regression this replaces: a fixed 1.15x floor below 640px ran a
-    // 512px-wide octave off a 390px-wide screen.
     const scale = fitScale(844, 300, keyboardWidth(8), KEYBOARD_HEIGHT_PX);
 
     expect(scale).toBeLessThan(1);
@@ -44,9 +40,6 @@ describe("fitScale", () => {
   });
 
   it("fills a phone screen when the keyboard has it to itself", () => {
-    // A short screen scrolls the header away rather than sharing, so the
-    // whole viewport height is the keyboard's to use. Barely using it was
-    // the complaint that a header-sharing budget produced.
     const content = 332;
     const scale = fitScale(844, 390, keyboardWidth(8), content);
 
@@ -61,7 +54,6 @@ describe("fitScale", () => {
   });
 
   it("leaves a wide keyboard clear of the edges of a large display", () => {
-    // Four octaves on a desktop: wide enough that width, not height, decides.
     const scale = fitScale(1904, 780, keyboardWidth(29), KEYBOARD_HEIGHT_PX);
     const margin = (1904 - keyboardWidth(29) * scale) / 2;
 
@@ -70,8 +62,6 @@ describe("fitScale", () => {
   });
 
   it("stops at the preferred zoom instead of filling spare height", () => {
-    // A single octave on a roomy desktop: the height alone would allow far
-    // more, and letting it read as oversized was the complaint.
     expect(fitScale(1904, 780, keyboardWidth(8), KEYBOARD_HEIGHT_PX)).toBe(
       PIANO_SCALE.FIT_MAX,
     );

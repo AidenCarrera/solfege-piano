@@ -11,11 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main
-      // `grow` so the now-in-flow footer is pushed to the bottom of the
-      // screen rather than trailing straight after a short page.
-      className="mx-auto w-full max-w-2xl grow px-6 py-12"
-    >
+    <main className="mx-auto w-full max-w-2xl grow px-6 py-12">
       <Link
         href="/"
         className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity"

@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-// Vercel Analytics uses a cross-origin debug script only during development.
 const analyticsOrigin = isDevelopment ? " https://va.vercel-scripts.com" : "";
 
 const contentSecurityPolicy = [
@@ -24,7 +23,6 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.0.32"],
   poweredByHeader: false,
-  // Type-checks `next/link` hrefs against the routes that actually exist.
   typedRoutes: true,
   async headers() {
     return [

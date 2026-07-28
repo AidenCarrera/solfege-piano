@@ -26,7 +26,6 @@ export interface ControlPanelProps {
   solfegeEnabled: boolean;
   setSolfegeEnabled: (b: boolean) => void;
   pianoScale: number;
-  /** True while the zoom is following the fit measurement rather than a choice. */
   autoScale: boolean;
   setPianoScale: (v: number | null) => void;
   bgColor: string;
@@ -40,7 +39,6 @@ export interface ControlPanelProps {
   textColor: string;
 }
 
-/** Collapsible panel holding the settings and effects tabs. */
 function ControlPanelComponent({
   volume,
   setVolume,
@@ -66,10 +64,7 @@ function ControlPanelComponent({
   const [activeTab, setActiveTab] = useState<"settings" | "effects">(
     "settings",
   );
-  // On a phone the keyboard has the screen below to itself, so the panel
-  // starts collapsed and the first screen is not all controls. `null` means
-  // "follow the viewport"; a toggle is an explicit choice and wins from then
-  // on, the same convention the stored zoom uses.
+  // Follow the viewport until the user explicitly toggles the panel.
   const [collapseOverride, setCollapseOverride] = useState<boolean | null>(
     null,
   );
@@ -155,8 +150,6 @@ function ControlPanelComponent({
               aria-label="Reset settings"
             >
               <RotateCcw size={12} />
-              {/* The icon carries this on narrow screens, where the tab row
-                  has no room to spare. */}
               <span className="hidden sm:inline">Reset settings</span>
             </motion.button>
           )}
@@ -252,5 +245,4 @@ function ControlPanelComponent({
   );
 }
 
-/** Memoized to prevent re-rendering panel on every note press. */
 export const ControlPanel = React.memo(ControlPanelComponent);

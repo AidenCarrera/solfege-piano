@@ -10,19 +10,10 @@ import {
 import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import { EffectCard } from "./EffectCard";
 
-/**
- * Pointer travel before a press on an "Add Effect" button becomes a drag.
- * Below this, the gesture stays a click and appends to the end of the chain.
- */
 const DRAG_ACTIVATION_DISTANCE_PX = 6;
 
-/**
- * Vertical slack around the rack that still counts as "over" it, so a drop
- * does not require pixel-accurate aim at a short row.
- */
 const RACK_DROP_TOLERANCE_PX = 30;
 
-/** Offset of the ghost from the cursor, placing it under the grab point. */
 const GHOST_OFFSET_Y_PX = 20;
 
 export interface EffectsTabProps {
@@ -31,7 +22,6 @@ export interface EffectsTabProps {
   borderColor: string;
 }
 
-/** The card that follows the cursor while dragging a new effect into the rack. */
 function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   const meta = EFFECT_META[type];
   return (
@@ -40,8 +30,6 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
       style={{
         left: x,
         top: y - GHOST_OFFSET_Y_PX,
-        // Centred on the pointer by its own width, so the ghost stays a true
-        // preview of the card without JS having to know how wide that is.
         transform: "translateX(-50%) rotate(3deg) scale(1.05)",
         background: "rgba(20,20,35,0.95)",
         border: "1px solid rgba(99,102,241,0.7)",
@@ -86,7 +74,6 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   );
 }
 
-/** Vertical bar marking where a dragged effect would be inserted. */
 function DropIndicator() {
   return (
     <motion.div
@@ -102,17 +89,7 @@ function DropIndicator() {
   );
 }
 
-/**
- * The effects rack: a palette of effects to add, and the ordered signal chain.
- *
- * Reordering existing cards uses framer-motion's `Reorder`, but *adding* one
- * is hand-rolled on pointer events. Neither alternative works here: HTML5
- * drag-and-drop cannot render a live React preview and is unreliable on touch,
- * while framer's `drag` only moves an element within its own layout and cannot
- * hand an item off to a different list. So a press on a palette button starts
- * a global pointer capture, a fixed-position ghost tracks the cursor, and the
- * drop index is hit-tested against the cards' midpoints.
- */
+// Existing cards use Reorder; palette-to-rack drags use global pointer events.
 export function EffectsTab({
   effectChain,
   setEffectChain,
@@ -148,8 +125,7 @@ export function EffectsTab({
       setEffectChain((prev) =>
         prev.map((e) =>
           e.id === id
-            ? // The update is typed against the card's own effect, but the
-              // merge happens against the erased union, so restate the node.
+            ? // TypeScript loses the effect-to-params correlation in the union.
               ({ ...e, params: { ...e.params, ...params } } as EffectNode)
             : e,
         ),
@@ -158,7 +134,6 @@ export function EffectsTab({
     [setEffectChain],
   );
 
-  // Insert before the first card whose midpoint is right of the pointer.
   const computeDropIndex = useCallback(
     (clientX: number): number => {
       if (!rackRef.current) return effectChain.length;
@@ -176,7 +151,6 @@ export function EffectsTab({
     [effectChain.length],
   );
 
-  // Global listeners keep the drag active after the pointer leaves its source.
   useEffect(() => {
     if (!draggingNewType) return;
 
@@ -234,7 +208,6 @@ export function EffectsTab({
   }, [draggingNewType, computeDropIndex, setEffectChain]);
 
   const startAddDrag = (type: EffectType, e: React.PointerEvent) => {
-    // Ignore secondary-button gestures.
     if (e.button !== 0) return;
     e.preventDefault();
     dropIndexRef.current = null;
@@ -250,8 +223,6 @@ export function EffectsTab({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
-        // Opens to its full height; the page scrolls on a short screen rather
-        // than the panel scrolling inside itself.
         className="p-3 sm:p-5"
       >
         <div className="mb-2.5 sm:mb-3">
@@ -263,7 +234,6 @@ export function EffectsTab({
                   key={type}
                   type="button"
                   onClick={() => {
-                    // A completed drag must not also add an effect on click.
                     if (!isDraggingNew.current) {
                       setEffectChain((prev) => [
                         ...prev,
@@ -273,7 +243,6 @@ export function EffectsTab({
                   }}
                   onPointerDown={(e) => {
                     isDraggingNew.current = false;
-                    // Wait for movement before treating the gesture as a drag.
                     const startX = e.clientX;
                     const startY = e.clientY;
                     const onMove = (me: PointerEvent) => {
@@ -299,10 +268,7 @@ export function EffectsTab({
                     document.addEventListener("pointerup", onUp);
                     document.addEventListener("pointercancel", onUp);
                   }}
-                  // `touch-none` is load-bearing, not cosmetic: without it a
-                  // finger that starts moving scrolls the panel instead, and
-                  // the browser cancels the pointer stream before the drag
-                  // threshold is ever crossed.
+                  // Preserve the pointer stream during touch drags.
                   className={`flex touch-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab select-none shadow-md active:cursor-grabbing sm:py-1.5`}
                   whileHover={{
                     scale: 1.05,

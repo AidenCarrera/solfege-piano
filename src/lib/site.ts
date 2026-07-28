@@ -1,9 +1,7 @@
 export const SITE_NAME = "Solfege Piano";
 
-/** Full title for the home page, its Open Graph card, and its Twitter card. */
 export const SITE_TITLE = "Solfege Piano | Free Online Piano";
 
-/** Alt text for the shared social preview image. */
 export const SITE_OG_IMAGE_ALT =
   "Solfege Piano: an interactive online piano for ear training";
 
@@ -21,7 +19,6 @@ function normalizeSiteUrl(value: string): string {
   return url.replace(/\/$/, "");
 }
 
-// Vercel's production URL stays canonical across production and preview builds.
 const configuredUrl = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
 const vercelProductionUrl =
   process.env.VERCEL_PROJECT_PRODUCTION_URL ??

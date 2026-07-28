@@ -1,4 +1,3 @@
-/** Input types that consume printable characters. */
 const TEXT_ENTRY_INPUT_TYPES = new Set([
   "text",
   "search",
@@ -14,12 +13,6 @@ const TEXT_ENTRY_INPUT_TYPES = new Set([
   "week",
 ]);
 
-/**
- * Checks if an element captures text entry and should suppress keybindings.
- * Non-text controls (buttons, sliders) are excluded so focused UI doesn't block shortcuts.
- *
- * @param target - Event target to check.
- */
 export function isTextEntryTarget(target: EventTarget | null) {
   if (typeof Element === "undefined" || !(target instanceof Element)) {
     return false;
@@ -30,7 +23,6 @@ export function isTextEntryTarget(target: EventTarget | null) {
   );
   if (!field) return false;
 
-  // Only text-like inputs conflict; range/checkbox/radio/color ignore letters.
   if (
     typeof HTMLInputElement !== "undefined" &&
     field instanceof HTMLInputElement
@@ -41,10 +33,6 @@ export function isTextEntryTarget(target: EventTarget | null) {
   return true;
 }
 
-/**
- * Refocuses the spacebar for sustain pedal use by blurring any active non-text UI control.
- * Called whenever a piano note is played (regardless of input method).
- */
 export function refocusSustainPedal() {
   if (typeof document === "undefined") return;
   const active = document.activeElement;

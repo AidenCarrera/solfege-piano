@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-/** Defers work until the first interaction, with a timeout fallback. */
 export function useDeferredPreload(preloadFn: () => void, delay = 500) {
   const hasPreloaded = useRef(false);
 
