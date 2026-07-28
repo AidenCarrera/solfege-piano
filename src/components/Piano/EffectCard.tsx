@@ -1,4 +1,3 @@
-import React from "react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import { GripVertical, Power, Trash2 } from "lucide-react";
 import type {

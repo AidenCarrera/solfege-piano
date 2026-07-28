@@ -23,6 +23,8 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Type-checks `next/link` hrefs against the routes that actually exist.
+  typedRoutes: true,
   async headers() {
     return [
       {

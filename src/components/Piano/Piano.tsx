@@ -269,6 +269,7 @@ export function Piano() {
                 : "bg-gray-600 hover:bg-gray-500"
             }`}
             aria-label="Toggle sustain mode"
+            aria-pressed={sustainActive}
           >
             <span className="text-xs font-bold text-white uppercase tracking-wider">
               {sustainActive ? "Sustain" : "Dry"}

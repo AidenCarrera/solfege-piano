@@ -18,7 +18,11 @@ export function SiteFooter() {
         <span aria-hidden="true">•</span>
         <Link
           href="/privacy"
-          className="transition-colors hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-current rounded px-1"
+          // The focus ring is a box-shadow, which forced-colors mode strips.
+          // The outline utility below is the variant that leaves a transparent
+          // 2px outline in that mode, keeping the focus state visible; the
+          // one that simply removes the outline would leave no indicator.
+          className="transition-colors hover:underline focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-current rounded px-1"
         >
           Privacy Policy
         </Link>
