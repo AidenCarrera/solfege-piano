@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, type SetStateAction } from "react";
 
 import { Note } from "@/lib/note";
+import type { EffectNode } from "@/lib/effects";
 import { generateNotes } from "@/lib/noteGenerator";
 import {
   PIANO_CONFIG,
   SOLFEGE_OCTAVE_RANGE,
-  scaleForOctaveSpan,
   SoundType,
 } from "@/lib/config";
 
@@ -51,23 +51,50 @@ export function Piano() {
   // A stored zoom is an explicit choice and wins; otherwise follow the viewport.
   const viewportScale = useViewportScale();
   const pianoScale = settings.pianoScale ?? viewportScale;
+
+  // Memoized callbacks prevent re-rendering ControlPanel on note presses.
   const setPianoScale = useCallback(
     (value: number) => updateSetting("pianoScale", value),
     [updateSetting],
+  );
+  const setVolume = useCallback(
+    (value: number) => updateSetting("volume", value),
+    [updateSetting],
+  );
+  const setEffectChain = useCallback(
+    (value: SetStateAction<EffectNode[]>) =>
+      updateSetting("effectChain", value),
+    [updateSetting],
+  );
+  const setLabelsEnabled = useCallback(
+    (value: boolean) => updateSetting("labelsEnabled", value),
+    [updateSetting],
+  );
+  const setSolfegeEnabled = useCallback(
+    (value: boolean) => updateSetting("solfegeEnabled", value),
+    [updateSetting],
+  );
+  const setBgColor = useCallback(
+    (value: string) => updateSetting("bgColor", value),
+    [updateSetting],
+  );
+  const handleOctaveChange = useCallback(
+    (start: number, end: number) =>
+      patchSettings({ startOctave: start, endOctave: end }),
+    [patchSettings],
   );
 
   useThemeTokens(bgColor);
 
   const handleSoundTypeChange = useCallback(
     (newSoundType: SoundType) => {
-      // Solfege is only sampled for one octave, so pin the range and zoom.
+      // Solfege is only sampled for one octave, so pin the range.
       if (newSoundType === "Solfege") {
         const [start, end] = SOLFEGE_OCTAVE_RANGE;
         patchSettings({
           soundType: newSoundType,
           startOctave: start,
           endOctave: end,
-          pianoScale: scaleForOctaveSpan(end - start + 1),
         });
         return;
       }
@@ -130,11 +157,7 @@ export function Piano() {
     }, [stopAllNotes, clearAllNotes]),
   );
 
-  /**
-   * Sharp keys are absolutely positioned over the boundary between their
-   * preceding natural key and the next one. Offsets are derived once per note
-   * range rather than per render, so every key can be memoized.
-   */
+  /** Derive key position offsets once per note range. */
   const keys = useMemo(() => {
     const naturalIndex = new Map<string, number>();
     notes
@@ -173,24 +196,22 @@ export function Piano() {
 
       <ControlPanel
         volume={volume}
-        setVolume={(value) => updateSetting("volume", value)}
+        setVolume={setVolume}
         effectChain={effectChain}
-        setEffectChain={(value) => updateSetting("effectChain", value)}
+        setEffectChain={setEffectChain}
         labelsEnabled={labelsEnabled}
-        setLabelsEnabled={(value) => updateSetting("labelsEnabled", value)}
+        setLabelsEnabled={setLabelsEnabled}
         solfegeEnabled={solfegeEnabled}
-        setSolfegeEnabled={(value) => updateSetting("solfegeEnabled", value)}
+        setSolfegeEnabled={setSolfegeEnabled}
         pianoScale={pianoScale}
         setPianoScale={setPianoScale}
         bgColor={bgColor}
-        setBgColor={(value) => updateSetting("bgColor", value)}
+        setBgColor={setBgColor}
         soundType={soundType}
         setSoundType={handleSoundTypeChange}
         startOctave={startOctave}
         endOctave={endOctave}
-        onOctaveChange={(start, end) =>
-          patchSettings({ startOctave: start, endOctave: end })
-        }
+        onOctaveChange={handleOctaveChange}
         onResetSettings={resetSettings}
         textColor={textColor}
       />

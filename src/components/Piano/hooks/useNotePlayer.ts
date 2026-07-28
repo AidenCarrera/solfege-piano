@@ -66,10 +66,13 @@ export function useNotePlayer({
   const isPreloading =
     enablePreload && preloadError === null && samples.buffers === null;
 
+  // Destructured to prevent callback recreation on every render.
+  const { Tone, retry: retryEngine } = engine;
+  const { retry: retrySamples } = samples;
   const retryPreload = useCallback(() => {
-    if (engine.Tone) samples.retry();
-    else engine.retry();
-  }, [engine, samples]);
+    if (Tone) retrySamples();
+    else retryEngine();
+  }, [Tone, retrySamples, retryEngine]);
 
   return {
     playNote: sampler.playNote,

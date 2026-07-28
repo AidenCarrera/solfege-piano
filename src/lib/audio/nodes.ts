@@ -35,7 +35,8 @@ function createImpulseResponse(
   decay: number,
 ) {
   const sampleRate = context.sampleRate;
-  const length = Math.max(1, sampleRate * duration);
+  // Floored to match createBuffer frame count and avoid index overflow.
+  const length = Math.max(1, Math.floor(sampleRate * duration));
   const impulse = context.createBuffer(2, length, sampleRate);
   const left = impulse.getChannelData(0);
   const right = impulse.getChannelData(1);

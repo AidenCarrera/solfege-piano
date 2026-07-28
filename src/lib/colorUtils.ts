@@ -31,17 +31,9 @@ export function getContrastColor(hexColor: string): string {
   return blackContrast >= whiteContrast ? "#000000" : "#ffffff";
 }
 
-/**
- * A subtle drop-shadow that provides legibility without harsh white glows or heavy dark halos.
- */
-export function getShadowColor(
-  hexColor: string,
-  opacity?: number,
-): string {
+/** Legibility drop-shadow color based on background luminance. */
+export function getShadowColor(hexColor: string): string {
   const isDarkBg = getContrastColor(hexColor) === "#ffffff";
-  if (opacity !== undefined) {
-    return `rgba(0, 0, 0, ${opacity})`;
-  }
   return isDarkBg ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.12)";
 }
 

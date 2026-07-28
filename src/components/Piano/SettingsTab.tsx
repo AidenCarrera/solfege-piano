@@ -16,7 +16,6 @@ export interface SettingsTabProps {
   startOctave: number;
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
-  onResetSettings?: () => void;
   pianoScale: number;
   setPianoScale: (v: number) => void;
   bgColor: string;
@@ -27,13 +26,7 @@ export interface SettingsTabProps {
   setSolfegeEnabled: (b: boolean) => void;
 }
 
-/**
- * Sound bank, octave range, zoom, volume, background, and label toggles.
- *
- * The octave slider selects an index into `OCTAVE_RANGES` rather than an
- * octave number, so the presets stay in one table and the slider needs no
- * validation of its own.
- */
+/** Sound bank, octave range, zoom, volume, background, and label toggles. */
 export function SettingsTab({
   volume,
   setVolume,

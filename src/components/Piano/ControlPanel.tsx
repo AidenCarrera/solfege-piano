@@ -31,15 +31,8 @@ export interface ControlPanelProps {
   textColor: string;
 }
 
-/**
- * Collapsible panel holding the settings and effects tabs.
- *
- * Because the page background is user-chosen, the panel cannot rely on fixed
- * colours. It derives a tint and border from `bgColor`, then publishes them as
- * `--panel-*` custom properties so its children style themselves without each
- * needing the background passed down.
- */
-export function ControlPanel({
+/** Collapsible panel holding the settings and effects tabs. */
+function ControlPanelComponent({
   volume,
   setVolume,
   effectChain,
@@ -194,7 +187,6 @@ export function ControlPanel({
                   startOctave={startOctave}
                   endOctave={endOctave}
                   onOctaveChange={onOctaveChange}
-                  onResetSettings={onResetSettings}
                   pianoScale={pianoScale}
                   setPianoScale={setPianoScale}
                   bgColor={bgColor}
@@ -212,3 +204,6 @@ export function ControlPanel({
     </div>
   );
 }
+
+/** Memoized to prevent re-rendering panel on every note press. */
+export const ControlPanel = React.memo(ControlPanelComponent);

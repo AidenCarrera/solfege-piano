@@ -137,6 +137,8 @@ export function useToneEngine(enabled: boolean): ToneEngine {
 
     const handleStateChange = () => setContextState(rawContext.state);
     rawContext.addEventListener("statechange", handleStateChange);
+    // Seed initial state in case context is already running.
+    handleStateChange();
     return () => {
       rawContext.removeEventListener("statechange", handleStateChange);
     };
