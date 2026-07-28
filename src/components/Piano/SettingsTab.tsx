@@ -2,10 +2,12 @@ import { motion } from "framer-motion";
 import {
   OCTAVE_RANGES,
   PIANO_SCALE,
-  scaleForOctaveSpan,
+  SHORT_SCREEN_OCTAVE_RANGES,
+  SHORT_SCREEN_QUERY,
   SoundType,
   SOUND_OPTIONS,
 } from "@/lib/config";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export interface SettingsTabProps {
   volume: number;
@@ -16,7 +18,8 @@ export interface SettingsTabProps {
   endOctave: number;
   onOctaveChange: (start: number, end: number) => void;
   pianoScale: number;
-  setPianoScale: (v: number) => void;
+  autoScale: boolean;
+  setPianoScale: (v: number | null) => void;
   bgColor: string;
   setBgColor: (v: string) => void;
   labelsEnabled: boolean;
@@ -35,6 +38,7 @@ export function SettingsTab({
   endOctave,
   onOctaveChange,
   pianoScale,
+  autoScale,
   setPianoScale,
   bgColor,
   setBgColor,
@@ -43,9 +47,17 @@ export function SettingsTab({
   solfegeEnabled,
   setSolfegeEnabled,
 }: SettingsTabProps) {
+  // The widest ranges are unplayable on a phone, so the slider stops short of
+  // them. The ranges are ordered narrowest first, so this is a prefix.
+  const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
+  const lastRange =
+    (isShortScreen ? SHORT_SCREEN_OCTAVE_RANGES : OCTAVE_RANGES.length) - 1;
+
   const selectedRange = OCTAVE_RANGES.findIndex(
     ([start, end]) => start === startOctave && end === endOctave,
   );
+  // A range stored on a roomier screen can sit past the end of this slider.
+  const sliderRange = Math.min(Math.max(selectedRange, 0), lastRange);
 
   const handleOctaveSlider = (index: number) => {
     const range = OCTAVE_RANGES[index];
@@ -53,7 +65,10 @@ export function SettingsTab({
 
     const [start, end] = range;
     onOctaveChange(start, end);
-    setPianoScale(scaleForOctaveSpan(end - start + 1));
+    // Hand the zoom back to the fit measurement rather than pinning a level
+    // per octave span: the new key count and the viewport together decide
+    // what actually fits, and only one of those is known here.
+    setPianoScale(null);
   };
 
   return (
@@ -63,7 +78,10 @@ export function SettingsTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18 }}
-      className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
+      // Opens to its full height rather than scrolling inside itself: on a
+      // short screen the page scrolls instead, and a panel with its own
+      // scrollbar nested in a scrolling page is worse than a taller one.
+      className="grid grid-cols-2 gap-4 p-3 sm:grid-cols-3 sm:gap-6 sm:p-5 lg:grid-cols-4"
     >
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center h-5">
@@ -80,7 +98,8 @@ export function SettingsTab({
             id="sound-type"
             value={soundType}
             onChange={(e) => setSoundType(e.target.value as SoundType)}
-            className="text-sm font-medium text-left pl-2.5 pr-6 rounded-md w-full h-8"
+            // 16px on touch, below which iOS zooms the page on focus.
+            className="h-8 w-full rounded-md pl-2.5 pr-6 text-left text-base font-medium sm:text-sm"
           >
             {SOUND_OPTIONS.map((s) => (
               <option key={s} className="text-left">
@@ -112,9 +131,9 @@ export function SettingsTab({
             id="octave-range"
             type="range"
             min={0}
-            max={OCTAVE_RANGES.length - 1}
+            max={lastRange}
             step={1}
-            value={Math.max(0, selectedRange)}
+            value={sliderRange}
             onChange={(e) => handleOctaveSlider(Number(e.target.value))}
             className="w-full"
             disabled={soundType === "Solfege"}
@@ -144,12 +163,30 @@ export function SettingsTab({
           >
             Zoom
           </label>
-          <span
-            className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "var(--panel-surface)" }}
-          >
-            {pianoScale.toFixed(2)}×
-          </span>
+          <div className="flex items-center gap-1.5">
+            {/* Only offered once a manual zoom has overridden the fit, since
+                that is the only state it can return from. */}
+            {!autoScale && (
+              <button
+                type="button"
+                onClick={() => setPianoScale(null)}
+                className="cursor-pointer rounded px-1.5 py-px text-[11px] font-medium transition-colors"
+                style={{
+                  background: "var(--panel-surface)",
+                  color: "var(--panel-fg)",
+                }}
+                title="Zoom the keyboard to fit the screen"
+              >
+                Fit
+              </button>
+            )}
+            <span
+              className="text-[11px] font-mono px-1.5 py-px rounded"
+              style={{ background: "var(--panel-surface)" }}
+            >
+              {autoScale ? "Auto" : `${pianoScale.toFixed(2)}×`}
+            </span>
+          </div>
         </div>
         <div className="h-8 flex items-center">
           <input

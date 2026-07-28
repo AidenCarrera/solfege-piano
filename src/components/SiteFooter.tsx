@@ -4,14 +4,18 @@ import { SITE_NAME } from "@/lib/site";
 /**
  * Site-wide footer.
  *
- * Minimal, non-intrusive footer anchored at the bottom of the viewport.
+ * In normal flow at the end of the document, not pinned to the viewport: on a
+ * phone the page scrolls to reach a full-screen keyboard, and a fixed footer
+ * would ride along on top of the keys the whole way down. The body is a
+ * min-height column with `main` growing, so on a screen tall enough to hold
+ * everything this still lands at the bottom of the first screen.
  */
 export function SiteFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="pointer-events-none fixed inset-x-0 bottom-2.5 z-30 flex justify-center px-4 text-xs tracking-wide">
-      <div className="pointer-events-auto flex items-center gap-2 text-current opacity-60 transition-opacity duration-200 hover:opacity-100">
+    <footer className="flex shrink-0 justify-center px-4 py-3 text-xs tracking-wide">
+      <div className="flex items-center gap-2 text-current opacity-60 transition-opacity duration-200 hover:opacity-100">
         <span>
           © {currentYear} {SITE_NAME}
         </span>

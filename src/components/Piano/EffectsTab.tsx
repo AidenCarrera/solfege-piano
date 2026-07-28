@@ -1,17 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { GripVertical, Waves, Trash2, ChevronRight } from "lucide-react";
+import { GripVertical, Waves, ChevronRight } from "lucide-react";
 import {
   EffectNode,
   EffectType,
   createEffectNode,
   EffectParamsUpdate,
 } from "@/lib/effects";
-import {
-  EFFECT_META,
-  EFFECT_ICON_SIZE,
-  EFFECT_CARD_WIDTH_PX,
-} from "./effectMeta";
+import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import { EffectCard } from "./EffectCard";
 
 /**
@@ -40,12 +36,13 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   const meta = EFFECT_META[type];
   return (
     <div
-      className="fixed pointer-events-none z-9999 rounded-xl overflow-hidden shadow-2xl"
+      className="effect-card fixed pointer-events-none z-9999 rounded-xl overflow-hidden shadow-2xl"
       style={{
-        width: EFFECT_CARD_WIDTH_PX,
-        left: x - EFFECT_CARD_WIDTH_PX / 2,
+        left: x,
         top: y - GHOST_OFFSET_Y_PX,
-        transform: "rotate(3deg) scale(1.05)",
+        // Centred on the pointer by its own width, so the ghost stays a true
+        // preview of the card without JS having to know how wide that is.
+        transform: "translateX(-50%) rotate(3deg) scale(1.05)",
         background: "rgba(20,20,35,0.95)",
         border: "1px solid rgba(99,102,241,0.7)",
         boxShadow: `0 20px 60px ${meta.glow}`,
@@ -253,15 +250,11 @@ export function EffectsTab({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
-        className="p-5"
+        // Opens to its full height; the page scrolls on a short screen rather
+        // than the panel scrolling inside itself.
+        className="p-3 sm:p-5"
       >
-        <div className="mb-4">
-          <p
-            className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Add Effect: click or drag into chain
-          </p>
+        <div className="mb-2.5 sm:mb-3">
           <div className="flex flex-wrap gap-2 items-center">
             {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
               const meta = EFFECT_META[type];
@@ -306,7 +299,11 @@ export function EffectsTab({
                     document.addEventListener("pointerup", onUp);
                     document.addEventListener("pointercancel", onUp);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab active:cursor-grabbing shadow-md select-none`}
+                  // `touch-none` is load-bearing, not cosmetic: without it a
+                  // finger that starts moving scrolls the panel instead, and
+                  // the browser cancels the pointer stream before the drag
+                  // threshold is ever crossed.
+                  className={`flex touch-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab select-none shadow-md active:cursor-grabbing sm:py-1.5`}
                   whileHover={{
                     scale: 1.05,
                     boxShadow: `0 6px 20px ${meta.glow}`,
@@ -323,29 +320,6 @@ export function EffectsTab({
                 </motion.button>
               );
             })}
-
-            <AnimatePresence>
-              {effectChain.length > 0 && (
-                <motion.button
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => setEffectChain([])}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-red-400 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 hover:text-red-300 transition-colors shadow-md cursor-pointer ml-auto"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 25,
-                  }}
-                >
-                  <Trash2 size={12} />
-                  <span>Clear All</span>
-                </motion.button>
-              )}
-            </AnimatePresence>
           </div>
         </div>
 
@@ -356,18 +330,20 @@ export function EffectsTab({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-10 gap-3 rounded-xl border-2 border-dashed"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 sm:py-6"
               style={{ borderColor, color: "var(--panel-fg)" }}
             >
               <Waves size={26} />
-              <p className="text-sm">Drag effects here or click to add.</p>
+              <p className="text-center text-sm">
+                Tap an effect above to add it, or drag one in here.
+              </p>
             </motion.div>
           ) : (
             <div
               ref={rackRef}
               role="region"
               aria-label="Active effects chain"
-              className="flex items-start overflow-x-auto pb-3 min-h-20"
+              className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-3"
               style={{
                 scrollbarWidth: "thin",
                 outline: draggingNewType

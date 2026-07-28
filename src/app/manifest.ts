@@ -11,7 +11,9 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "any",
+    // A portrait phone is barely two octaves wide once the keys are legible,
+    // so an installed copy opens the way the keyboard is meant to be played.
+    orientation: "landscape",
     lang: "en-US",
     categories: ["education", "music"],
     background_color: DEFAULT_THEME_COLOR,

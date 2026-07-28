@@ -11,7 +11,11 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-6 py-12 pb-24">
+    <main
+      // `grow` so the now-in-flow footer is pushed to the bottom of the
+      // screen rather than trailing straight after a short page.
+      className="mx-auto w-full max-w-2xl grow px-6 py-12"
+    >
       <Link
         href="/"
         className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity"
@@ -33,9 +37,9 @@ export default function PrivacyPage() {
           >
             Vercel Web Analytics
           </a>{" "}
-          to understand how the site is used. It provides anonymous,
-          aggregated page-view metrics without using cookies or tracking
-          visitors across different websites.
+          to understand how the site is used. It provides anonymous, aggregated
+          page-view metrics without using cookies or tracking visitors across
+          different websites.
         </p>
 
         <p>

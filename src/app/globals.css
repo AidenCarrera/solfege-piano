@@ -16,6 +16,15 @@
   --input-bg: rgba(15, 23, 42, 0.6);
   --input-text: #f1f5f9;
   --input-border: rgba(255, 255, 255, 0.1);
+
+  --effect-card-width: 200px;
+}
+
+/* A phone in landscape fits two of these beside each other; 200px fits one. */
+@media (max-width: 40rem) {
+  :root {
+    --effect-card-width: 10.5rem;
+  }
 }
 
 /*
@@ -37,6 +46,12 @@
  * silently drop utilities like `rounded-md` or `pr-6` from the controls below.
  */
 @layer base {
+  html {
+    /* Safari inflates text in landscape otherwise, which is exactly the
+       orientation the keyboard asks to be held in. */
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background: var(--background);
     color: var(--foreground);
@@ -45,6 +60,10 @@
       background-color 0.5s ease,
       color 0.3s ease;
     overflow-x: hidden;
+    /* On a phone the page scrolls down to a full-screen keyboard, so a drag
+       that overshoots the top must not become a pull-to-refresh in the
+       middle of a glissando. */
+    overscroll-behavior-y: contain;
   }
 
   /* Range inputs require separate WebKit and Gecko pseudo-elements. */
@@ -157,6 +176,38 @@
     background-color: #1e293b;
     color: #f1f5f9;
   }
+
+  /* A fingertip covers roughly 9mm; the pointer-precise sizes above are a
+     third of that, which makes every slider in the panel a fiddle on touch. */
+  @media (pointer: coarse) {
+    input[type="range"] {
+      height: 0.75rem;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 0.75rem;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 1.625rem;
+      height: 1.625rem;
+      margin-top: -0.4375rem;
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 0.75rem;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 1.625rem;
+      height: 1.625rem;
+    }
+
+    input[type="checkbox"] {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
 }
 
 @layer components {
@@ -168,8 +219,30 @@
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
 
+  /*
+   * Worn by the zoomed keyboard and by the box sized around it, which have to
+   * move together — animating only the transform would let the keyboard drift
+   * out of the layout box that centres and scrolls it.
+   */
   .piano-scale-transition {
-    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+      transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+      width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+      height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     will-change: transform;
+  }
+
+  /*
+   * Worn by both the cards in the effects rack and the ghost that follows the
+   * cursor while one is being dragged in, so the preview matches what lands.
+   */
+  .effect-card {
+    width: var(--effect-card-width);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piano-scale-transition {
+    transition: none;
   }
 }

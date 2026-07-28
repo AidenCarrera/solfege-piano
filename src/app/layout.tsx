@@ -151,7 +151,12 @@ export default function RootLayout({
     // before React hydrates, so its `style` attribute legitimately differs from
     // the server's. Suppression applies to this element only, not its children.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
+      {/* A min-height column so the footer sits at the bottom of the first
+          screen when everything fits, and after the content when it does
+          not — without ever being pinned over the keyboard. */}
+      <body
+        className={`${inter.variable} ${robotoMono.variable} flex min-h-svh flex-col antialiased`}
+      >
         {/* Must run before the body paints, so it stays ahead of the content. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script

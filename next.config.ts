@@ -22,6 +22,7 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.0.32"],
   poweredByHeader: false,
   // Type-checks `next/link` hrefs against the routes that actually exist.
   typedRoutes: true,

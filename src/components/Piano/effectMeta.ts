@@ -61,8 +61,6 @@ export const EFFECT_META: Record<EffectType, EffectMeta> = {
 /** Size used for the icon wherever an effect is represented in the rack. */
 export const EFFECT_ICON_SIZE = 14;
 
-/**
- * Width of an effect card, in pixels. Shared by the real card and the drag
- * ghost so the ghost is a true preview of what will be dropped.
- */
-export const EFFECT_CARD_WIDTH_PX = 200;
+// Card width lives in CSS, as `.effect-card` in globals.css: it narrows on
+// small screens, which a module constant could not do, and both the real card
+// and the drag ghost wear the class so the ghost stays a true preview.

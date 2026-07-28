@@ -7,11 +7,7 @@ import type {
   EffectParamsUpdate,
   EffectType,
 } from "@/lib/effects";
-import {
-  EFFECT_META,
-  EFFECT_ICON_SIZE,
-  EFFECT_CARD_WIDTH_PX,
-} from "./effectMeta";
+import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import {
   EFFECT_MODES,
   EFFECT_PARAM_SLIDERS,
@@ -127,8 +123,7 @@ export function EffectCard<T extends EffectType>({
       dragListener={false}
       dragControls={dragControls}
       as="div"
-      className="shrink-0"
-      style={{ width: EFFECT_CARD_WIDTH_PX }}
+      className="effect-card shrink-0"
       initial={{ opacity: 0, scale: 0.85, x: -20 }}
       animate={{ opacity: effect.enabled ? 1 : 0.45, scale: 1, x: 0 }}
       exit={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -234,7 +229,7 @@ export function EffectCard<T extends EffectType>({
                     mode: e.target.value as EffectMode<T>,
                   } as EffectParamsUpdate<T>)
                 }
-                className="w-full text-xs rounded px-2 py-1 mt-1 mb-2"
+                className="mt-1 mb-2 w-full rounded px-2 py-1.5 text-sm sm:py-1 sm:text-xs"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 {modes.map((mode) => (

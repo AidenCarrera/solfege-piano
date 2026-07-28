@@ -10,8 +10,10 @@ type PreloadProgressProps = {
 };
 
 /**
- * Sample-loading status. Positioned as an absolute overlay above the piano keys
- * so it never shifts the layout when appearing or disappearing.
+ * Sample-loading status. Positioned as an absolute overlay hanging up over the
+ * control panel, so it never shifts the layout when appearing or disappearing
+ * and costs the keyboard no height — and, being outside the zoomed keyboard,
+ * it reads at the same size however far the keyboard is scaled.
  */
 export function PreloadProgress({
   progress,
@@ -32,7 +34,7 @@ export function PreloadProgress({
             transition: { duration: 0.45, ease: "easeOut" },
           }}
           transition={{ duration: 0.08, ease: "easeOut" }}
-          className="absolute -top-14 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-72 max-w-[90vw]"
+          className="absolute -top-12 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-72 max-w-[90vw]"
           aria-live="polite"
         >
           {error ? (
