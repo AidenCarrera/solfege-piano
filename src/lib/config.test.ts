@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   clampScale,
   fitScale,
+  getReleaseCurve,
+  getReleaseMs,
   shortScreenFitScale,
   sideInset,
   PIANO_CONFIG,
@@ -14,6 +16,16 @@ function keyboardWidth(whiteKeys: number): number {
 }
 
 const KEYBOARD_HEIGHT_PX = 380;
+
+describe("sample release", () => {
+  it("gives Solfege a slower initial fade without changing the piano", () => {
+    expect(getReleaseMs("Piano")).toBe(PIANO_CONFIG.FADE_OUT_MS);
+    expect(getReleaseMs("Solfege")).toBe(PIANO_CONFIG.SOLFEGE_FADE_OUT_MS);
+    expect(getReleaseMs("Solfege")).toBeGreaterThan(getReleaseMs("Piano"));
+    expect(getReleaseCurve("Piano")).toBe("exponential");
+    expect(getReleaseCurve("Solfege")).toBe("linear");
+  });
+});
 
 describe("clampScale", () => {
   it("holds the slider's own bounds", () => {

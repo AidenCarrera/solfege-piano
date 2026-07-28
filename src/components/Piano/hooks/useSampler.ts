@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type * as ToneType from "tone";
 import type { Note } from "@/lib/note";
-import { PIANO_CONFIG } from "@/lib/config";
+import { PIANO_CONFIG, type ReleaseCurve } from "@/lib/config";
 import { refocusSustainPedal } from "@/lib/keyboard";
 
 // Leave headroom for chords and boosting effects.
@@ -14,6 +14,8 @@ function createSampler(
   buffers: ToneType.ToneAudioBuffers,
   notes: Note[],
   volume: number,
+  releaseMs: number,
+  releaseCurve: ReleaseCurve,
   limiter: ToneType.Limiter | null,
 ): ToneType.Sampler {
   const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
@@ -29,7 +31,8 @@ function createSampler(
 
   const sampler = new Tone.Sampler({
     urls: bufferMap,
-    release: PIANO_CONFIG.FADE_OUT_MS / 1000,
+    release: releaseMs / 1000,
+    curve: releaseCurve,
     attack: PIANO_CONFIG.ATTACK_MS / 1000,
   });
 
@@ -52,6 +55,8 @@ export function useSampler(
   notes: Note[],
   volume: number,
   sustainMode: boolean,
+  releaseMs: number,
+  releaseCurve: ReleaseCurve,
   limiterRef: React.RefObject<ToneType.Limiter | null>,
 ): SamplerControls {
   const samplerRef = useRef<ToneType.Sampler | null>(null);
@@ -77,6 +82,8 @@ export function useSampler(
       buffers,
       notes,
       volumeRef.current,
+      releaseMs,
+      releaseCurve,
       limiterRef.current,
     );
 
@@ -84,7 +91,7 @@ export function useSampler(
       samplerRef.current?.dispose();
       samplerRef.current = null;
     };
-  }, [Tone, buffers, notes, limiterRef]);
+  }, [Tone, buffers, notes, releaseMs, releaseCurve, limiterRef]);
 
   useEffect(() => {
     volumeRef.current = volume;

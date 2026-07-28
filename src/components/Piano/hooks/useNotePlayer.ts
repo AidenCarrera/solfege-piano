@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import type { Note } from "@/lib/note";
-import type { SoundType } from "@/lib/config";
+import { getReleaseCurve, getReleaseMs, type SoundType } from "@/lib/config";
 import type { EffectNode } from "@/lib/effects";
 import { useToneEngine } from "./useToneEngine";
 import { useSampleBuffers } from "./useSampleBuffers";
@@ -39,6 +39,8 @@ export function useNotePlayer({
     notes,
     volume,
     sustainMode,
+    getReleaseMs(soundType),
+    getReleaseCurve(soundType),
     engine.limiterRef,
   );
 

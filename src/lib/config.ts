@@ -102,7 +102,19 @@ export const PIANO_CONFIG = {
 
   ATTACK_MS: 10,
   FADE_OUT_MS: 800,
+  SOLFEGE_FADE_OUT_MS: 550,
 };
 
 export const SOUND_OPTIONS = ["Piano", "Solfege"] as const;
 export type SoundType = (typeof SOUND_OPTIONS)[number];
+export type ReleaseCurve = "linear" | "exponential";
+
+export function getReleaseMs(soundType: SoundType): number {
+  return soundType === "Solfege"
+    ? PIANO_CONFIG.SOLFEGE_FADE_OUT_MS
+    : PIANO_CONFIG.FADE_OUT_MS;
+}
+
+export function getReleaseCurve(soundType: SoundType): ReleaseCurve {
+  return soundType === "Solfege" ? "linear" : "exponential";
+}
