@@ -1,6 +1,56 @@
-import { Note, BASE_NOTES, KEYBOARD_MAP_C3_C4 } from "./note";
+import {
+  Note,
+  BASE_NOTES,
+  HIGHER_KEYBOARD_MAP,
+  LOWER_KEYBOARD_MAP,
+} from "./note";
 
-const SHORTCUT_OCTAVE = 3;
+const LOWER_SHORTCUT_START_OCTAVE = 3;
+const HIGHER_SHORTCUT_START_OCTAVE = 4;
+
+function shortcutAt(
+  keyboardMap: readonly string[],
+  startOctave: number,
+  octave: number,
+  noteIndex: number,
+): string {
+  const shortcutIndex = (octave - startOctave) * BASE_NOTES.length + noteIndex;
+  return keyboardMap[shortcutIndex] ?? "";
+}
+
+function keyboardShortcuts(octave: number, noteIndex: number): string[] {
+  return [
+    shortcutAt(
+      LOWER_KEYBOARD_MAP,
+      LOWER_SHORTCUT_START_OCTAVE,
+      octave,
+      noteIndex,
+    ),
+    shortcutAt(
+      HIGHER_KEYBOARD_MAP,
+      HIGHER_SHORTCUT_START_OCTAVE,
+      octave,
+      noteIndex,
+    ),
+  ].filter(Boolean);
+}
+
+function displayedShortcut(octave: number, noteIndex: number): string {
+  if (octave === LOWER_SHORTCUT_START_OCTAVE) {
+    return LOWER_KEYBOARD_MAP[noteIndex] ?? "";
+  }
+
+  if (octave === HIGHER_SHORTCUT_START_OCTAVE) {
+    return HIGHER_KEYBOARD_MAP[noteIndex] ?? "";
+  }
+
+  // The two-octave keyboard closes on C5.
+  if (octave === HIGHER_SHORTCUT_START_OCTAVE + 1 && noteIndex === 0) {
+    return "i";
+  }
+
+  return "";
+}
 
 export function generateNotes(startOctave: number, endOctave: number): Note[] {
   const notes: Note[] = [];
@@ -9,12 +59,11 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
     BASE_NOTES.forEach((baseNote, index) => {
       if (octave === endOctave && baseNote.base !== "C") return;
 
-      let shortcut = "";
-      if (octave === SHORTCUT_OCTAVE) {
-        shortcut = KEYBOARD_MAP_C3_C4[index] ?? "";
-      } else if (octave === SHORTCUT_OCTAVE + 1 && baseNote.base === "C") {
-        shortcut = KEYBOARD_MAP_C3_C4[KEYBOARD_MAP_C3_C4.length - 1] ?? "";
-      }
+      const shortcut = displayedShortcut(octave, index);
+      const mappedShortcuts = keyboardShortcuts(octave, index);
+      const shortcuts = shortcut
+        ? [shortcut, ...mappedShortcuts.filter((mapped) => mapped !== shortcut)]
+        : mappedShortcuts;
 
       const natural = baseNote.base.replace("s", "");
 
@@ -26,6 +75,7 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
         isSharp: baseNote.isSharp,
         toneName: `${baseNote.isSharp ? `${natural}#` : natural}${octave}`,
         shortcut,
+        shortcuts,
         solfege: baseNote.solfege,
         spokenName: `${natural}${baseNote.isSharp ? " sharp" : ""} ${octave}`,
       });

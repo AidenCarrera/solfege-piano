@@ -6,7 +6,10 @@ export type Note = {
   octave: number;
   isSharp: boolean;
   toneName: string;
+  /** Shortcut shown on the piano key. */
   shortcut: string;
+  /** Every computer-keyboard shortcut that can play this note. */
+  shortcuts: string[];
   solfege: string;
   spokenName: string;
 };
@@ -27,18 +30,46 @@ export const BASE_NOTES = [
   { base: "B", isSharp: false, solfege: "Ti" },
 ] as const;
 
-export const KEYBOARD_MAP_C3_C4 = [
-  "a",
-  "w",
+export const LOWER_KEYBOARD_MAP = [
+  "z",
   "s",
-  "e",
+  "x",
   "d",
-  "f",
-  "t",
+  "c",
+  "v",
   "g",
-  "y",
+  "b",
   "h",
-  "u",
+  "n",
   "j",
-  "k",
+  "m",
+  ",",
+  "l",
+  ".",
+  ";",
+  "/",
+  "'",
+] as const;
+
+export const HIGHER_KEYBOARD_MAP = [
+  "q",
+  "2",
+  "w",
+  "3",
+  "e",
+  "r",
+  "5",
+  "t",
+  "6",
+  "y",
+  "7",
+  "u",
+  "i",
+  "9",
+  "o",
+  "0",
+  "p",
+  "[",
+  "=",
+  "]",
 ] as const;

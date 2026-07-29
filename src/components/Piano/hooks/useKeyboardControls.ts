@@ -12,12 +12,12 @@ export function useKeyboardControls(
   activateNote: (noteName: string) => void,
   deactivateNote: (noteName: string) => void,
 ) {
-  const pressedKeys = useRef<Set<string>>(new Set());
+  const pressedKeys = useRef<Map<string, Note>>(new Map());
 
   const notesByShortcut = useMemo(() => {
     const map = new Map<string, Note>();
     notes.forEach((note) => {
-      if (note.shortcut) map.set(note.shortcut, note);
+      note.shortcuts.forEach((shortcut) => map.set(shortcut, note));
     });
     return map;
   }, [notes]);
@@ -42,27 +42,45 @@ export function useKeyboardControls(
     };
   });
 
-  const triggerNote = useCallback((noteObj: Note) => {
-    if (pressedKeys.current.has(noteObj.shortcut)) return;
+  const triggerNote = useCallback((shortcut: string, noteObj: Note) => {
+    if (pressedKeys.current.has(shortcut)) return;
 
     refocusSustainPedal();
-    pressedKeys.current.add(noteObj.shortcut);
+    const noteIsAlreadyPressed = Array.from(pressedKeys.current.values()).some(
+      (pressedNote) => pressedNote.name === noteObj.name,
+    );
+    pressedKeys.current.set(shortcut, noteObj);
+
+    if (noteIsAlreadyPressed) return;
+
     latest.current.playNote(noteObj.name);
     latest.current.activateNote(noteObj.name);
   }, []);
 
-  const stopNoteIfPressed = useCallback((noteObj: Note) => {
-    if (!pressedKeys.current.has(noteObj.shortcut)) return;
+  const stopShortcutIfPressed = useCallback((shortcut: string) => {
+    const noteObj = pressedKeys.current.get(shortcut);
+    if (!noteObj) return;
 
-    pressedKeys.current.delete(noteObj.shortcut);
+    pressedKeys.current.delete(shortcut);
+    const noteIsStillPressed = Array.from(pressedKeys.current.values()).some(
+      (pressedNote) => pressedNote.name === noteObj.name,
+    );
+    if (noteIsStillPressed) return;
+
     latest.current.stopNote(noteObj.name);
     latest.current.deactivateNote(noteObj.name);
   }, []);
 
   const releasePressedKeys = useCallback(() => {
-    latest.current.notes.forEach((note) => stopNoteIfPressed(note));
+    const pressedNotes = new Map(
+      Array.from(pressedKeys.current.values()).map((note) => [note.name, note]),
+    );
     pressedKeys.current.clear();
-  }, [stopNoteIfPressed]);
+    pressedNotes.forEach((note) => {
+      latest.current.stopNote(note.name);
+      latest.current.deactivateNote(note.name);
+    });
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,23 +93,21 @@ export function useKeyboardControls(
       )
         return;
 
-      const noteObj = latest.current.notesByShortcut.get(e.key.toLowerCase());
+      const shortcut = e.key.toLowerCase();
+      const noteObj = latest.current.notesByShortcut.get(shortcut);
       if (!noteObj) return;
 
       e.preventDefault();
 
       if (e.repeat) return;
 
-      triggerNote(noteObj);
+      triggerNote(shortcut, noteObj);
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") return;
 
-      const noteObj = latest.current.notesByShortcut.get(e.key.toLowerCase());
-      if (!noteObj) return;
-
-      stopNoteIfPressed(noteObj);
+      stopShortcutIfPressed(e.key.toLowerCase());
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -102,17 +118,12 @@ export function useKeyboardControls(
       window.removeEventListener("keyup", handleKeyUp);
       releasePressedKeys();
     };
-  }, [triggerNote, stopNoteIfPressed, releasePressedKeys]);
+  }, [triggerNote, stopShortcutIfPressed, releasePressedKeys]);
 
   usePageInactive(releasePressedKeys);
 
   // Release keys before replacing their shortcut map.
   useEffect(() => {
-    const boundNotes = notes;
-    const heldKeys = pressedKeys.current;
-    return () => {
-      boundNotes.forEach((note) => stopNoteIfPressed(note));
-      heldKeys.clear();
-    };
-  }, [notes, stopNoteIfPressed]);
+    return releasePressedKeys;
+  }, [notes, releasePressedKeys]);
 }

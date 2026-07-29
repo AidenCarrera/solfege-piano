@@ -60,9 +60,15 @@ function PianoKeyComponent({
         WebkitBackfaceVisibility: "hidden",
       }}
       data-note-name={note.name}
-      // Letter shortcuts avoid a tab stop for every piano key.
+      // Keyboard shortcuts avoid a tab stop for every piano key.
       tabIndex={-1}
-      aria-label={`${note.spokenName} piano key${note.shortcut ? `, shortcut ${note.shortcut.toUpperCase()}` : ""}`}
+      aria-label={`${note.spokenName} piano key${
+        note.shortcuts.length > 0
+          ? `, shortcuts ${note.shortcuts
+              .map((shortcut) => shortcut.toUpperCase())
+              .join(" or ")}`
+          : ""
+      }`}
       aria-pressed={isActive}
     >
       {showSolfege && (
