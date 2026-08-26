@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { SITE_NAME } from "@/lib/site";
+import { canonicalUrl, SITE_NAME, SITE_OPEN_GRAPH } from "@/lib/site";
+
+const PRIVACY_DESCRIPTION = `How ${SITE_NAME} handles your data: no accounts, no cookies, no personal data.`;
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: `How ${SITE_NAME} handles your data: no accounts, no cookies, no personal data.`,
+  description: PRIVACY_DESCRIPTION,
   alternates: { canonical: "/privacy" },
+  openGraph: {
+    ...SITE_OPEN_GRAPH,
+    title: `Privacy | ${SITE_NAME}`,
+    description: PRIVACY_DESCRIPTION,
+    url: canonicalUrl("/privacy"),
+  },
 };
 
 export default function PrivacyPage() {

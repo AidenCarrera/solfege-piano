@@ -83,10 +83,9 @@ Set `SITE_URL` when developing locally or deploying outside Vercel:
 SITE_URL=
 ```
 
-If `SITE_URL` is not set, the app uses Vercel’s stable production URL and falls back to `https://solfegepiano.vercel.app`.
+If `SITE_URL` is not set, the app uses Vercel’s stable production URL and falls back to `https://solfege.aidencarrera.com`.
 
 If you add a custom domain, set `SITE_URL` to that domain so canonical URLs, the sitemap, and `robots.txt` use it.
-
 
 ## Playing The Piano
 

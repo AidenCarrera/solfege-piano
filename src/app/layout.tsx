@@ -4,9 +4,11 @@ import { Analytics } from "@vercel/analytics/next";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_SCRIPT } from "@/lib/theme";
 import {
+  canonicalUrl,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_OG_IMAGE_ALT,
+  SITE_OPEN_GRAPH,
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
@@ -54,20 +56,10 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    locale: "en_US",
-    type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: SITE_OG_IMAGE_ALT,
-      },
-    ],
+    url: canonicalUrl("/"),
   },
   twitter: {
     card: "summary_large_image",
