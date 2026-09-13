@@ -291,14 +291,27 @@ export function EffectsTab({
           })}
         </div>
 
-        <AnimatePresence mode="wait">
+        <div
+          ref={rackRef}
+          role="region"
+          aria-label="Active effects chain"
+          className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-3"
+          style={{
+            scrollbarWidth: "thin",
+            outline: draggingNewType
+              ? "2px dashed rgba(99,102,241,0.5)"
+              : "none",
+            outlineOffset: "4px",
+            borderRadius: "12px",
+            transition: "outline 0.15s ease",
+          }}
+        >
           {effectChain.length === 0 && !draggingNewType ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 sm:py-6"
+              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 sm:py-6"
               style={{ borderColor, color: "var(--panel-fg)" }}
             >
               <Waves size={26} />
@@ -307,71 +320,55 @@ export function EffectsTab({
               </p>
             </motion.div>
           ) : (
-            <div
-              ref={rackRef}
-              role="region"
-              aria-label="Active effects chain"
-              className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-3"
-              style={{
-                scrollbarWidth: "thin",
-                outline: draggingNewType
-                  ? "2px dashed rgba(99,102,241,0.5)"
-                  : "none",
-                outlineOffset: "4px",
-                borderRadius: "12px",
-                transition: "outline 0.15s ease",
-              }}
+            <Reorder.Group
+              axis="x"
+              values={effectChain}
+              onReorder={setEffectChain}
+              as="div"
+              className="flex items-start"
             >
-              <Reorder.Group
-                axis="x"
-                values={effectChain}
-                onReorder={setEffectChain}
-                as="div"
-                className="flex items-start"
-              >
-                <AnimatePresence initial={false}>
-                  {effectChain.map((effect, index) => (
-                    <React.Fragment key={effect.id}>
-                      <AnimatePresence>
-                        {dropIndex === index && (
-                          <DropIndicator key="drop-before" />
-                        )}
-                      </AnimatePresence>
-                      <div data-effect-card="true">
-                        <EffectCard
-                          effect={effect}
-                          borderColor={borderColor}
-                          onToggle={() => toggleEnabled(effect.id)}
-                          onRemove={() => removeEffect(effect.id)}
-                          onUpdate={(params) => updateEffect(effect.id, params)}
-                        />
-                      </div>
-                      {index < effectChain.length - 1 && (
-                        <motion.div
-                          className="flex items-center self-stretch shrink-0 px-1"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.5 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          <ChevronRight
-                            size={16}
-                            style={{ color: "var(--panel-fg)" }}
-                          />
-                        </motion.div>
+              <AnimatePresence initial={false}>
+                {effectChain.map((effect, index) => (
+                  <React.Fragment key={effect.id}>
+                    <AnimatePresence>
+                      {dropIndex === index && (
+                        <DropIndicator key="drop-before" />
                       )}
-                    </React.Fragment>
-                  ))}
-                  <AnimatePresence>
-                    {dropIndex === effectChain.length && (
-                      <DropIndicator key="drop-end" />
+                    </AnimatePresence>
+                    <div data-effect-card="true">
+                      <EffectCard
+                        effect={effect}
+                        borderColor={borderColor}
+                        onToggle={() => toggleEnabled(effect.id)}
+                        onRemove={() => removeEffect(effect.id)}
+                        onUpdate={(params) => updateEffect(effect.id, params)}
+                      />
+                    </div>
+                    {index < effectChain.length - 1 && (
+                      <motion.div
+                        className="flex items-center self-stretch shrink-0 px-1"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <ChevronRight
+                          size={16}
+                          style={{ color: "var(--panel-fg)" }}
+                        />
+                      </motion.div>
                     )}
-                  </AnimatePresence>
+                  </React.Fragment>
+                ))}
+                <AnimatePresence>
+                  {dropIndex === effectChain.length && (
+                    <DropIndicator key="drop-end" />
+                  )}
                 </AnimatePresence>
-              </Reorder.Group>
-            </div>
+              </AnimatePresence>
+            </Reorder.Group>
           )}
-        </AnimatePresence>
+        </div>
       </motion.div>
 
       {draggingNewType && (
