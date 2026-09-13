@@ -49,16 +49,8 @@ function PianoKeyComponent({
       onMouseEnter={() => onMouseEnter(note.name)}
       onMouseUp={onMouseUp}
       onBlur={onMouseUp}
-      className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
-      style={{
-        ...(note.isSharp ? { left: `${leftRem}rem` } : {}),
-        touchAction: "none",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
-      }}
+      className={`${base} ${activeClass} piano-key composited touch-none select-none transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
+      style={note.isSharp ? { left: `${leftRem}rem` } : undefined}
       data-note-name={note.name}
       // Keyboard shortcuts avoid a tab stop for every piano key.
       tabIndex={-1}

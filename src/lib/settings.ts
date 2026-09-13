@@ -35,6 +35,11 @@ export interface PianoSettings {
   effectChain: EffectNode[];
 }
 
+export type UpdateSetting = <K extends keyof PianoSettings>(
+  key: K,
+  value: PianoSettings[K] | ((previous: PianoSettings[K]) => PianoSettings[K]),
+) => void;
+
 // Reset preserves the effect chain.
 export const DEFAULT_PREFERENCES: Omit<PianoSettings, "effectChain"> = {
   volume: PIANO_CONFIG.DEFAULT_VOLUME,

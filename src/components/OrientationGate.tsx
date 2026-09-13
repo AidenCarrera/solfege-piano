@@ -16,8 +16,9 @@ export function OrientationGate() {
 
   return (
     <div
+      // Not aria-modal: the panel behind stays reachable, and the prompt is
+      // dismissible rather than blocking.
       role="alertdialog"
-      aria-modal="true"
       aria-labelledby="rotate-title"
       aria-describedby="rotate-description"
       className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-8 text-center"

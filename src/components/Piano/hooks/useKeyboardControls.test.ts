@@ -13,13 +13,7 @@ function setup(notes = generateNotes(3, 4)) {
 
   const view = renderHook(
     ({ currentNotes }: { currentNotes: typeof notes }) =>
-      useKeyboardControls(
-        currentNotes,
-        handlers.playNote,
-        handlers.stopNote,
-        handlers.activateNote,
-        handlers.deactivateNote,
-      ),
+      useKeyboardControls(currentNotes, handlers),
     { initialProps: { currentNotes: notes } },
   );
 

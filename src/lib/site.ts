@@ -21,13 +21,11 @@ function normalizeSiteUrl(value: string): string {
   return url.replace(/\/$/, "");
 }
 
-const configuredUrl = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
-const vercelProductionUrl =
-  process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-  process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
-
+// Server-only module, so the plain (non-NEXT_PUBLIC) variables are enough.
 export const SITE_URL = normalizeSiteUrl(
-  configuredUrl ?? vercelProductionUrl ?? FALLBACK_SITE_URL,
+  process.env.SITE_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    FALLBACK_SITE_URL,
 );
 
 export function canonicalUrl(path: string): string {

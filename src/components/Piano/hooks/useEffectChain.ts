@@ -48,7 +48,8 @@ function reconcileNode<T extends EffectType>(
 export function useEffectChain(
   Tone: typeof ToneType | null,
   source: React.RefObject<ToneType.ToneAudioNode | null>,
-  sourceRevision: unknown,
+  /** Any value that changes when `source` is rebuilt, so routing is redone. */
+  sourceRevision: object | null,
   effectChain: EffectNode[],
   limiterRef: React.RefObject<ToneType.Limiter | null>,
   contextState: AudioContextState,

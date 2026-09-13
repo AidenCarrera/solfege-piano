@@ -65,29 +65,9 @@ export function Piano() {
   const autoScale = settings.pianoScale === null;
   const pianoScale = settings.pianoScale ?? fit?.scale ?? PIANO_SCALE.DEFAULT;
 
-  const setPianoScale = useCallback(
-    (value: number | null) => updateSetting("pianoScale", value),
-    [updateSetting],
-  );
-  const setVolume = useCallback(
-    (value: number) => updateSetting("volume", value),
-    [updateSetting],
-  );
   const setEffectChain = useCallback(
     (value: SetStateAction<EffectNode[]>) =>
       updateSetting("effectChain", value),
-    [updateSetting],
-  );
-  const setLabelsEnabled = useCallback(
-    (value: boolean) => updateSetting("labelsEnabled", value),
-    [updateSetting],
-  );
-  const setSolfegeEnabled = useCallback(
-    (value: boolean) => updateSetting("solfegeEnabled", value),
-    [updateSetting],
-  );
-  const setBgColor = useCallback(
-    (value: string) => updateSetting("bgColor", value),
     [updateSetting],
   );
   const handleOctaveChange = useCallback(
@@ -144,22 +124,19 @@ export function Piano() {
 
   const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
 
-  useKeyboardControls(notes, playNote, stopNote, activateNote, deactivateNote);
+  const noteHandlers = useMemo(
+    () => ({ playNote, stopNote, activateNote, deactivateNote }),
+    [playNote, stopNote, activateNote, deactivateNote],
+  );
+
+  useKeyboardControls(notes, noteHandlers);
 
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
-    playNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
+    noteHandlers,
     clearAllNotes,
   );
 
-  const keyboardRef = useTouchControls(
-    playNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
-  );
+  const keyboardRef = useTouchControls(noteHandlers);
 
   usePageInactive(
     useCallback(() => {
@@ -221,23 +198,12 @@ export function Piano() {
           </h1>
 
           <ControlPanel
-            volume={volume}
-            setVolume={setVolume}
-            effectChain={effectChain}
+            settings={settings}
+            updateSetting={updateSetting}
             setEffectChain={setEffectChain}
-            labelsEnabled={labelsEnabled}
-            setLabelsEnabled={setLabelsEnabled}
-            solfegeEnabled={solfegeEnabled}
-            setSolfegeEnabled={setSolfegeEnabled}
             pianoScale={pianoScale}
             autoScale={autoScale}
-            setPianoScale={setPianoScale}
-            bgColor={bgColor}
-            setBgColor={setBgColor}
-            soundType={soundType}
-            setSoundType={handleSoundTypeChange}
-            startOctave={startOctave}
-            endOctave={endOctave}
+            onSoundTypeChange={handleSoundTypeChange}
             onOctaveChange={handleOctaveChange}
             onResetSettings={resetSettings}
             textColor={textColor}
@@ -288,11 +254,7 @@ export function Piano() {
               >
                 <div
                   ref={keyboardRef}
-                  className="relative flex transform-gpu"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
+                  className="relative flex transform-gpu composited"
                 >
                   {keys.map(({ note, leftRem }) => (
                     <PianoKey
@@ -309,13 +271,7 @@ export function Piano() {
                   ))}
                 </div>
 
-                <div
-                  className="mt-5 flex flex-col items-center transform-gpu sm:mt-8"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
-                >
+                <div className="mt-5 flex flex-col items-center transform-gpu composited sm:mt-8">
                   <button
                     onClick={toggleSustain}
                     className={`h-6 w-24 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center shadow-lg ${

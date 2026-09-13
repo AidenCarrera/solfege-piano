@@ -1,95 +1,78 @@
-import { describe, expect, it } from "vitest";
-import { isTextEntryTarget, refocusSustainPedal } from "./keyboard";
+import { afterEach, describe, expect, it } from "vitest";
+import { blurFocusedControl, isTextEntryTarget } from "./keyboard";
 
-describe("keyboard utilities", () => {
-  describe("isTextEntryTarget", () => {
-    it("returns false for non-element targets", () => {
-      expect(isTextEntryTarget(null)).toBe(false);
-      expect(isTextEntryTarget({} as unknown as EventTarget)).toBe(false);
-    });
+function mount<T extends HTMLElement>(element: T): T {
+  document.body.append(element);
+  return element;
+}
 
-    it("returns true for text input fields", () => {
-      class MockInputElement {
-        type = "text";
-        closest(selector: string) {
-          if (selector.includes("input")) return this;
-          return null;
-        }
-      }
-      const origElement = globalThis.Element;
-      const origInput = globalThis.HTMLInputElement;
-      try {
-        globalThis.Element = MockInputElement as unknown as typeof Element;
-        globalThis.HTMLInputElement =
-          MockInputElement as unknown as typeof HTMLInputElement;
+function input(type: string): HTMLInputElement {
+  const element = document.createElement("input");
+  element.type = type;
+  return mount(element);
+}
 
-        const input = new MockInputElement();
-        expect(isTextEntryTarget(input as unknown as EventTarget)).toBe(true);
-      } finally {
-        globalThis.Element = origElement;
-        globalThis.HTMLInputElement = origInput;
-      }
-    });
+afterEach(() => {
+  document.body.replaceChildren();
+});
 
-    it("returns false for range input fields", () => {
-      class MockRangeElement {
-        type = "range";
-        closest(selector: string) {
-          if (selector.includes("input")) return this;
-          return null;
-        }
-      }
-      const origElement = globalThis.Element;
-      const origInput = globalThis.HTMLInputElement;
-      try {
-        globalThis.Element = MockRangeElement as unknown as typeof Element;
-        globalThis.HTMLInputElement =
-          MockRangeElement as unknown as typeof HTMLInputElement;
-
-        const range = new MockRangeElement();
-        expect(isTextEntryTarget(range as unknown as EventTarget)).toBe(false);
-      } finally {
-        globalThis.Element = origElement;
-        globalThis.HTMLInputElement = origInput;
-      }
-    });
+describe("isTextEntryTarget", () => {
+  it("ignores anything that is not an element", () => {
+    expect(isTextEntryTarget(null)).toBe(false);
+    expect(isTextEntryTarget(new AbortController().signal)).toBe(false);
   });
 
-  describe("refocusSustainPedal", () => {
-    it("safely handles undefined document in node", () => {
-      expect(() => refocusSustainPedal()).not.toThrow();
-    });
+  it("claims fields that swallow typed characters", () => {
+    expect(isTextEntryTarget(input("text"))).toBe(true);
+    expect(isTextEntryTarget(input("search"))).toBe(true);
+    expect(isTextEntryTarget(mount(document.createElement("textarea")))).toBe(
+      true,
+    );
+    expect(isTextEntryTarget(mount(document.createElement("select")))).toBe(
+      true,
+    );
+  });
 
-    it("blurs active element if it is not a text entry target", () => {
-      let blurred = false;
-      class MockButton {
-        blur() {
-          blurred = true;
-        }
-        closest() {
-          return null;
-        }
-      }
+  it("leaves the piano's own controls playable", () => {
+    expect(isTextEntryTarget(input("range"))).toBe(false);
+    expect(isTextEntryTarget(input("checkbox"))).toBe(false);
+    expect(isTextEntryTarget(input("color"))).toBe(false);
+    expect(isTextEntryTarget(mount(document.createElement("button")))).toBe(
+      false,
+    );
+  });
 
-      const origDoc = globalThis.document;
-      const origElem = globalThis.Element;
-      const origHTMLElement = globalThis.HTMLElement;
-      try {
-        const mockBtn = new MockButton();
-        globalThis.Element = MockButton as unknown as typeof Element;
-        globalThis.HTMLElement = MockButton as unknown as typeof HTMLElement;
-        globalThis.document = {
-          activeElement: mockBtn,
-          body: {},
-        } as unknown as Document;
+  it("claims a target nested inside a text field", () => {
+    const editable = mount(document.createElement("div"));
+    editable.setAttribute("contenteditable", "true");
+    const span = editable.appendChild(document.createElement("span"));
 
-        refocusSustainPedal();
-        expect(blurred).toBe(true);
-      } finally {
-        globalThis.document = origDoc;
-        globalThis.Element = origElem;
-        globalThis.HTMLElement = origHTMLElement;
-      }
-    });
+    expect(isTextEntryTarget(span)).toBe(true);
+  });
+});
+
+describe("blurFocusedControl", () => {
+  it("releases a focused control so Spacebar reaches sustain", () => {
+    const slider = input("range");
+    slider.focus();
+    expect(document.activeElement).toBe(slider);
+
+    blurFocusedControl();
+
+    expect(document.activeElement).not.toBe(slider);
+  });
+
+  it("leaves a text field focused so typing is not interrupted", () => {
+    const field = input("text");
+    field.focus();
+
+    blurFocusedControl();
+
+    expect(document.activeElement).toBe(field);
+  });
+
+  it("does nothing when focus already rests on the body", () => {
+    expect(() => blurFocusedControl()).not.toThrow();
+    expect(document.activeElement).toBe(document.body);
   });
 });

@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useCallback } from "react";
-import { Note } from "@/lib/note";
-import { isTextEntryTarget, refocusSustainPedal } from "@/lib/keyboard";
+import type { Note, NoteHandlers } from "@/lib/note";
+import { isTextEntryTarget, blurFocusedControl } from "@/lib/keyboard";
 import { usePageInactive } from "./usePageInactive";
 
-export function useKeyboardControls(
-  notes: Note[],
-  playNote: (noteName: string) => void,
-  stopNote: (noteName: string) => void,
-  activateNote: (noteName: string) => void,
-  deactivateNote: (noteName: string) => void,
-) {
+export function useKeyboardControls(notes: Note[], handlers: NoteHandlers) {
   const pressedKeys = useRef<Map<string, Note>>(new Map());
 
   const notesByShortcut = useMemo(() => {
@@ -23,29 +17,15 @@ export function useKeyboardControls(
   }, [notes]);
 
   // Keep listeners stable while callbacks change.
-  const latest = useRef({
-    notes,
-    notesByShortcut,
-    playNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
-  });
+  const latest = useRef({ notesByShortcut, ...handlers });
   useEffect(() => {
-    latest.current = {
-      notes,
-      notesByShortcut,
-      playNote,
-      stopNote,
-      activateNote,
-      deactivateNote,
-    };
+    latest.current = { notesByShortcut, ...handlers };
   });
 
   const triggerNote = useCallback((shortcut: string, noteObj: Note) => {
     if (pressedKeys.current.has(shortcut)) return;
 
-    refocusSustainPedal();
+    blurFocusedControl();
     const noteIsAlreadyPressed = Array.from(pressedKeys.current.values()).some(
       (pressedNote) => pressedNote.name === noteObj.name,
     );

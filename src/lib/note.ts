@@ -14,6 +14,17 @@ export type Note = {
   spokenName: string;
 };
 
+/**
+ * The four playback callbacks every input hook drives. Grouping them keeps
+ * four same-typed arguments from being silently transposed at a call site.
+ */
+export type NoteHandlers = {
+  playNote: (noteName: string) => void;
+  stopNote: (noteName: string) => void;
+  activateNote: (noteName: string) => void;
+  deactivateNote: (noteName: string) => void;
+};
+
 // Sample filenames encode sharps with "s".
 export const BASE_NOTES = [
   { base: "C", isSharp: false, solfege: "Do" },

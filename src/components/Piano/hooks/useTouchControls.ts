@@ -1,23 +1,19 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { refocusSustainPedal } from "@/lib/keyboard";
+import type { NoteHandlers } from "@/lib/note";
+import { blurFocusedControl } from "@/lib/keyboard";
 
 const noteNameOf = (element: Element | null | undefined) =>
   element?.closest<HTMLElement>("[data-note-name]")?.dataset.noteName;
 
-export function useTouchControls(
-  playNote: (noteName: string) => void,
-  stopNote: (noteName: string) => void,
-  activateNote: (noteName: string) => void,
-  deactivateNote: (noteName: string) => void,
-) {
+export function useTouchControls(handlers: NoteHandlers) {
   const activeTouches = useRef<Map<number, string>>(new Map());
   const keyboardRef = useRef<HTMLDivElement>(null);
 
   // Keep listeners stable while callbacks change.
-  const latest = useRef({ playNote, stopNote, activateNote, deactivateNote });
+  const latest = useRef(handlers);
   useEffect(() => {
-    latest.current = { playNote, stopNote, activateNote, deactivateNote };
+    latest.current = handlers;
   });
 
   const releaseTouch = useCallback((touchId: number) => {
@@ -63,7 +59,7 @@ export function useTouchControls(
 
       // Prevent the browser from replaying the touch as a mouse press.
       e.preventDefault();
-      refocusSustainPedal();
+      blurFocusedControl();
     },
     [triggerNote],
   );

@@ -12,55 +12,36 @@ import {
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getGlassPanelColor } from "@/lib/colorUtils";
 import type { EffectNode } from "@/lib/effects";
+import type { PianoSettings, UpdateSetting } from "@/lib/settings";
 import { SHORT_SCREEN_QUERY, type SoundType } from "@/lib/config";
 import { SettingsTab } from "./SettingsTab";
 import { EffectsTab } from "./EffectsTab";
 
 export interface ControlPanelProps {
-  volume: number;
-  setVolume: (v: number) => void;
-  effectChain: EffectNode[];
+  settings: PianoSettings;
+  updateSetting: UpdateSetting;
   setEffectChain: React.Dispatch<React.SetStateAction<EffectNode[]>>;
-  labelsEnabled: boolean;
-  setLabelsEnabled: (b: boolean) => void;
-  solfegeEnabled: boolean;
-  setSolfegeEnabled: (b: boolean) => void;
+  /** Effective scale, which follows the responsive fit while `autoScale`. */
   pianoScale: number;
   autoScale: boolean;
-  setPianoScale: (v: number | null) => void;
-  bgColor: string;
-  setBgColor: (v: string) => void;
-  soundType: SoundType;
-  setSoundType: (s: SoundType) => void;
-  startOctave: number;
-  endOctave: number;
+  onSoundTypeChange: (soundType: SoundType) => void;
   onOctaveChange: (start: number, end: number) => void;
   onResetSettings: () => void;
   textColor: string;
 }
 
 function ControlPanelComponent({
-  volume,
-  setVolume,
-  effectChain,
+  settings,
+  updateSetting,
   setEffectChain,
-  labelsEnabled,
-  setLabelsEnabled,
-  solfegeEnabled,
-  setSolfegeEnabled,
   pianoScale,
   autoScale,
-  setPianoScale,
-  bgColor,
-  setBgColor,
-  soundType,
-  setSoundType,
-  startOctave,
-  endOctave,
+  onSoundTypeChange,
   onOctaveChange,
   onResetSettings,
   textColor,
 }: ControlPanelProps) {
+  const { bgColor, effectChain } = settings;
   const [activeTab, setActiveTab] = useState<"settings" | "effects">(
     "settings",
   );
@@ -72,9 +53,10 @@ function ControlPanelComponent({
   const isCollapsed = collapseOverride ?? isShortScreen;
 
   const panelBg = useMemo(() => getGlassPanelColor(bgColor), [bgColor]);
-  const borderColor =
-    textColor === "#ffffff" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
   const usesLightText = textColor === "#ffffff";
+  const borderColor = usesLightText
+    ? "rgba(255,255,255,0.08)"
+    : "rgba(0,0,0,0.1)";
   const panelTheme = {
     "--panel-fg": textColor,
     "--panel-surface": usesLightText
@@ -219,22 +201,12 @@ function ControlPanelComponent({
 
               {activeTab === "settings" && (
                 <SettingsTab
-                  volume={volume}
-                  setVolume={setVolume}
-                  soundType={soundType}
-                  setSoundType={setSoundType}
-                  startOctave={startOctave}
-                  endOctave={endOctave}
-                  onOctaveChange={onOctaveChange}
+                  settings={settings}
+                  updateSetting={updateSetting}
                   pianoScale={pianoScale}
                   autoScale={autoScale}
-                  setPianoScale={setPianoScale}
-                  bgColor={bgColor}
-                  setBgColor={setBgColor}
-                  labelsEnabled={labelsEnabled}
-                  setLabelsEnabled={setLabelsEnabled}
-                  solfegeEnabled={solfegeEnabled}
-                  setSolfegeEnabled={setSolfegeEnabled}
+                  onSoundTypeChange={onSoundTypeChange}
+                  onOctaveChange={onOctaveChange}
                 />
               )}
             </AnimatePresence>

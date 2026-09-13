@@ -74,6 +74,33 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   );
 }
 
+/**
+ * Runs `onDrag` once the pointer has travelled far enough to mean a drag rather
+ * than a tap, so a plain click on a palette button still appends the effect.
+ */
+function watchForDrag(startX: number, startY: number, onDrag: () => void) {
+  const onMove = (e: PointerEvent) => {
+    if (
+      Math.abs(e.clientX - startX) <= DRAG_ACTIVATION_DISTANCE_PX &&
+      Math.abs(e.clientY - startY) <= DRAG_ACTIVATION_DISTANCE_PX
+    ) {
+      return;
+    }
+    stop();
+    onDrag();
+  };
+
+  const stop = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", stop);
+    document.removeEventListener("pointercancel", stop);
+  };
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", stop);
+  document.addEventListener("pointercancel", stop);
+}
+
 function DropIndicator() {
   return (
     <motion.div
@@ -207,12 +234,10 @@ export function EffectsTab({
     };
   }, [draggingNewType, computeDropIndex, setEffectChain]);
 
-  const startAddDrag = (type: EffectType, e: React.PointerEvent) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
+  const startAddDrag = (type: EffectType, x: number, y: number) => {
     dropIndexRef.current = null;
     setDraggingNewType(type);
-    setGhostPos({ x: e.clientX, y: e.clientY });
+    setGhostPos({ x, y });
   };
 
   return (
@@ -225,68 +250,45 @@ export function EffectsTab({
         transition={{ duration: 0.18 }}
         className="p-3 sm:p-5"
       >
-        <div className="mb-2.5 sm:mb-3">
-          <div className="flex flex-wrap gap-2 items-center">
-            {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
-              const meta = EFFECT_META[type];
-              return (
-                <motion.button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    if (!isDraggingNew.current) {
-                      setEffectChain((prev) => [
-                        ...prev,
-                        createEffectNode(type),
-                      ]);
-                    }
-                  }}
-                  onPointerDown={(e) => {
-                    isDraggingNew.current = false;
-                    const startX = e.clientX;
-                    const startY = e.clientY;
-                    const onMove = (me: PointerEvent) => {
-                      if (
-                        Math.abs(me.clientX - startX) >
-                          DRAG_ACTIVATION_DISTANCE_PX ||
-                        Math.abs(me.clientY - startY) >
-                          DRAG_ACTIVATION_DISTANCE_PX
-                      ) {
-                        isDraggingNew.current = true;
-                        startAddDrag(type, e as unknown as React.PointerEvent);
-                        document.removeEventListener("pointermove", onMove);
-                        document.removeEventListener("pointerup", onUp);
-                        document.removeEventListener("pointercancel", onUp);
-                      }
-                    };
-                    const onUp = () => {
-                      document.removeEventListener("pointermove", onMove);
-                      document.removeEventListener("pointerup", onUp);
-                      document.removeEventListener("pointercancel", onUp);
-                    };
-                    document.addEventListener("pointermove", onMove);
-                    document.addEventListener("pointerup", onUp);
-                    document.addEventListener("pointercancel", onUp);
-                  }}
-                  // Preserve the pointer stream during touch drags.
-                  className={`flex touch-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab select-none shadow-md active:cursor-grabbing sm:py-1.5`}
-                  whileHover={{
-                    scale: 1.05,
-                    boxShadow: `0 6px 20px ${meta.glow}`,
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 25,
-                  }}
-                >
-                  <meta.Icon size={EFFECT_ICON_SIZE} />
-                  <span>{type}</span>
-                </motion.button>
-              );
-            })}
-          </div>
+        <div className="mb-2.5 flex flex-wrap items-center gap-2 sm:mb-3">
+          {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
+            const meta = EFFECT_META[type];
+            return (
+              <motion.button
+                key={type}
+                type="button"
+                onClick={() => {
+                  if (!isDraggingNew.current) {
+                    setEffectChain((prev) => [...prev, createEffectNode(type)]);
+                  }
+                }}
+                onPointerDown={(e) => {
+                  if (e.button !== 0) return;
+                  isDraggingNew.current = false;
+                  const { clientX, clientY } = e;
+                  watchForDrag(clientX, clientY, () => {
+                    isDraggingNew.current = true;
+                    startAddDrag(type, clientX, clientY);
+                  });
+                }}
+                // Preserve the pointer stream during touch drags.
+                className={`flex touch-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab select-none shadow-md active:cursor-grabbing sm:py-1.5`}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: `0 6px 20px ${meta.glow}`,
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 25,
+                }}
+              >
+                <meta.Icon size={EFFECT_ICON_SIZE} />
+                <span>{type}</span>
+              </motion.button>
+            );
+          })}
         </div>
 
         <AnimatePresence mode="wait">
@@ -325,8 +327,7 @@ export function EffectsTab({
                 values={effectChain}
                 onReorder={setEffectChain}
                 as="div"
-                className="flex items-start gap-0"
-                style={{ listStyle: "none", padding: 0, margin: 0 }}
+                className="flex items-start"
               >
                 <AnimatePresence initial={false}>
                   {effectChain.map((effect, index) => (
@@ -373,11 +374,9 @@ export function EffectsTab({
         </AnimatePresence>
       </motion.div>
 
-      <AnimatePresence>
-        {draggingNewType && (
-          <GhostCard type={draggingNewType} x={ghostPos.x} y={ghostPos.y} />
-        )}
-      </AnimatePresence>
+      {draggingNewType && (
+        <GhostCard type={draggingNewType} x={ghostPos.x} y={ghostPos.y} />
+      )}
     </>
   );
 }
