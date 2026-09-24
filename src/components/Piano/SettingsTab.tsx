@@ -206,7 +206,7 @@ export function SettingsTab({
       </Field>
 
       <Field label="Show">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           <ToggleChip
             pressed={settings.solfegeEnabled}
             onChange={(value) => updateSetting("solfegeEnabled", value)}
