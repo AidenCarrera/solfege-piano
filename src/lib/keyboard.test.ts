@@ -28,9 +28,6 @@ describe("isTextEntryTarget", () => {
     expect(isTextEntryTarget(mount(document.createElement("textarea")))).toBe(
       true,
     );
-    expect(isTextEntryTarget(mount(document.createElement("select")))).toBe(
-      true,
-    );
   });
 
   it("leaves the piano's own controls playable", () => {
@@ -38,6 +35,9 @@ describe("isTextEntryTarget", () => {
     expect(isTextEntryTarget(input("checkbox"))).toBe(false);
     expect(isTextEntryTarget(input("color"))).toBe(false);
     expect(isTextEntryTarget(mount(document.createElement("button")))).toBe(
+      false,
+    );
+    expect(isTextEntryTarget(mount(document.createElement("select")))).toBe(
       false,
     );
   });
