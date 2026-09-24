@@ -343,25 +343,25 @@ export function PianoDisplay({
 
   return (
     <div className="piano-display">
-      <div
-        className="min-w-0 flex-1"
-        aria-live={practicing || loading.error ? "polite" : "off"}
-      >
-        {content}
-      </div>
-
       {practicing && practice.stats.streak > 1 ? (
-        <span className="hidden shrink-0 rounded-md bg-amber-400/15 px-2 py-1 text-[11px] font-semibold text-amber-300 @xs:block">
+        <span className="col-start-1 hidden justify-self-start rounded-md bg-amber-400/15 px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-amber-300 @xs:block">
           Streak {practice.stats.streak}
         </span>
       ) : (
-        <span className="hidden shrink-0 rounded-md bg-white/6 px-2 py-1 text-[11px] font-medium text-white/60 @sm:block">
+        <span className="col-start-1 hidden justify-self-start rounded-md bg-white/6 px-2 py-1 text-[11px] font-medium whitespace-nowrap text-white/60 @sm:block">
           <span className="mr-1.5 text-[10px] font-semibold tracking-wider text-white/35 uppercase">
             Key
           </span>
           {keyLabel}
         </span>
       )}
+
+      <div
+        className="col-start-2 min-w-0"
+        aria-live={practicing || loading.error ? "polite" : "off"}
+      >
+        {content}
+      </div>
 
       {loading.isPreloading && !loading.error && (
         <div

@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isTextEntryTarget } from "@/lib/keyboard";
 
-const SPACE_ACTIVATED_SELECTOR =
-  'button, select, summary, input, [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [role="option"], [role="slider"]';
-
 /** `onRelease` runs when sustain turns off so held-over notes can stop. */
 export function useSustainToggle(onRelease: () => void) {
   const [sustainActive, setSustainActive] = useState(false);
@@ -28,22 +25,24 @@ export function useSustainToggle(onRelease: () => void) {
   );
 
   useEffect(() => {
-    const handleSpace = (e: KeyboardEvent) => {
-      if (e.code !== "Space" || e.repeat) return;
-      if (isTextEntryTarget(e.target)) return;
-      if (
-        e.target instanceof Element &&
-        e.target.closest(SPACE_ACTIVATED_SELECTOR)
-      ) {
-        return;
-      }
-
+    // Space always works the pedal, so it never clicks the focused control or
+    // scrolls the page. Browsers click buttons on key up, so block both.
+    const claimSpace = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || isTextEntryTarget(e.target)) return false;
       e.preventDefault();
-      toggleSustain();
+      return true;
     };
 
-    window.addEventListener("keydown", handleSpace);
-    return () => window.removeEventListener("keydown", handleSpace);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (claimSpace(e) && !e.repeat) toggleSustain();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", claimSpace);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", claimSpace);
+    };
   }, [toggleSustain]);
 
   return { sustainActive, setSustain, toggleSustain };

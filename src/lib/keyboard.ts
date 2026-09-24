@@ -18,8 +18,9 @@ export function isTextEntryTarget(target: EventTarget | null) {
     return false;
   }
 
+  // Dropdowns aren't typed into, so the piano keeps its keys while one has focus.
   const field = target.closest(
-    'input, select, textarea, [contenteditable="true"], [role="textbox"], [role="searchbox"], [role="combobox"]',
+    'input, textarea, [contenteditable="true"], [role="textbox"], [role="searchbox"], [role="combobox"]',
   );
   if (!field) return false;
 

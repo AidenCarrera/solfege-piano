@@ -327,9 +327,11 @@
     z-index: 30;
   }
 
+  /* Equal side columns center the readout until it needs the extra room. */
   .piano-display {
     position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     height: 3.25rem;
     min-width: 0;
     flex: 1;

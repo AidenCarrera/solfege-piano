@@ -2,17 +2,21 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useSustainToggle } from "./useSustainToggle";
 
-function pressSpace(target: EventTarget = window) {
-  act(() => {
-    target.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        code: "Space",
-        key: " ",
-        bubbles: true,
-        cancelable: true,
-      }),
-    );
+function space(type: "keydown" | "keyup", target: EventTarget = window) {
+  const event = new KeyboardEvent(type, {
+    code: "Space",
+    key: " ",
+    bubbles: true,
+    cancelable: true,
   });
+  act(() => {
+    target.dispatchEvent(event);
+  });
+  return event;
+}
+
+function pressSpace(target: EventTarget = window) {
+  return space("keydown", target);
 }
 
 describe("useSustainToggle", () => {
@@ -46,14 +50,50 @@ describe("useSustainToggle", () => {
     expect(onRelease).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves the spacebar to focused buttons", () => {
-    const { result } = renderHook(() => useSustainToggle(vi.fn()));
-    const button = document.createElement("button");
-    document.body.append(button);
+  it.each(["button", "select"])(
+    "toggles instead of activating a focused %s",
+    (tag) => {
+      const { result } = renderHook(() => useSustainToggle(vi.fn()));
+      const control = document.createElement(tag);
+      document.body.append(control);
 
-    pressSpace(button);
+      const down = pressSpace(control);
+      const up = space("keyup", control);
+
+      expect(result.current.sustainActive).toBe(true);
+      expect(down.defaultPrevented).toBe(true);
+      expect(up.defaultPrevented).toBe(true);
+      control.remove();
+    },
+  );
+
+  it("ignores held-down repeats without letting them scroll", () => {
+    const { result } = renderHook(() => useSustainToggle(vi.fn()));
+
+    pressSpace();
+    const repeat = new KeyboardEvent("keydown", {
+      code: "Space",
+      key: " ",
+      repeat: true,
+      cancelable: true,
+    });
+    act(() => {
+      window.dispatchEvent(repeat);
+    });
+
+    expect(result.current.sustainActive).toBe(true);
+    expect(repeat.defaultPrevented).toBe(true);
+  });
+
+  it("leaves the spacebar to text fields", () => {
+    const { result } = renderHook(() => useSustainToggle(vi.fn()));
+    const input = document.createElement("input");
+    document.body.append(input);
+
+    const down = pressSpace(input);
 
     expect(result.current.sustainActive).toBe(false);
-    button.remove();
+    expect(down.defaultPrevented).toBe(false);
+    input.remove();
   });
 });

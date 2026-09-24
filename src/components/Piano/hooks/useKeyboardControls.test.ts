@@ -106,6 +106,42 @@ describe("useKeyboardControls", () => {
     expect(handlers.playNote).not.toHaveBeenCalled();
   });
 
+  it("plays notes while a dropdown or button has focus", () => {
+    const { handlers } = setup();
+    const select = document.createElement("select");
+    const button = document.createElement("button");
+    document.body.append(select, button);
+
+    act(() => {
+      select.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "z", bubbles: true }),
+      );
+      button.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "x", bubbles: true }),
+      );
+    });
+
+    expect(handlers.playNote).toHaveBeenCalledWith("C3");
+    expect(handlers.playNote).toHaveBeenCalledWith("D3");
+    select.remove();
+    button.remove();
+  });
+
+  it("leaves keys to text fields", () => {
+    const { handlers } = setup();
+    const input = document.createElement("input");
+    document.body.append(input);
+
+    act(() => {
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "z", bubbles: true }),
+      );
+    });
+
+    expect(handlers.playNote).not.toHaveBeenCalled();
+    input.remove();
+  });
+
   it("ignores keys with no mapped note", () => {
     const { handlers } = setup();
 
