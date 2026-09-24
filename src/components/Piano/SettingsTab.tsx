@@ -122,7 +122,7 @@ export function SettingsTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18 }}
-      className="grid gap-x-7 gap-y-5 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3"
+      className="grid gap-x-7 gap-y-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3"
     >
       <Field
         label="Volume"
@@ -145,13 +145,15 @@ export function SettingsTab({
         </div>
       </Field>
 
-      {/* Reserve the hint in both voices so switching doesn't refit the keyboard. */}
+      {/* The label row has a fixed height, so the note never refits the keyboard. */}
       <Field
         label="Octave range"
-        hint={
-          <span className={solfegeVoice ? undefined : "invisible"}>
-            The Solfege voice covers one octave
-          </span>
+        action={
+          solfegeVoice && (
+            <span className="text-[11px] text-ui-subtle">
+              Solfege voice: 1 octave
+            </span>
+          )
         }
       >
         <Segmented
