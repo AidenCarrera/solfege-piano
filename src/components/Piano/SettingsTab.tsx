@@ -205,7 +205,7 @@ export function SettingsTab({
         </div>
       </Field>
 
-      <Field label="Key labels">
+      <Field label="Show">
         <div className="flex flex-wrap gap-1.5">
           <ToggleChip
             pressed={settings.solfegeEnabled}
@@ -224,6 +224,13 @@ export function SettingsTab({
             onChange={(value) => updateSetting("labelsEnabled", value)}
           >
             Shortcuts
+          </ToggleChip>
+          <ToggleChip
+            pressed={settings.displayEnabled}
+            onChange={(value) => updateSetting("displayEnabled", value)}
+            title="The note readout and Sustain button above the keys. Space and a MIDI pedal still toggle sustain."
+          >
+            Note display
           </ToggleChip>
         </div>
       </Field>

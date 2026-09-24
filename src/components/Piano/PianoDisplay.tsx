@@ -56,7 +56,9 @@ function Syllable({
   return (
     <span
       className={`display-glow font-semibold ${className}`}
-      style={{ color: degreeColor(theory.degree) }}
+      style={{
+        color: theory.colored ? degreeColor(theory.degree) : undefined,
+      }}
     >
       {theory.syllable}
     </span>

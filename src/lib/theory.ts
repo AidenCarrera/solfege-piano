@@ -11,6 +11,12 @@ interface ScaleDefinition {
 
 // Declaration order controls the scale picker.
 export const SCALES = {
+  // Plays like chromatic, but without degree colors or scale dots.
+  none: {
+    label: "None",
+    family: "major",
+    steps: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  },
   chromatic: {
     label: "Chromatic",
     family: "major",
@@ -151,7 +157,7 @@ export function syllableFor(
   soundType: SoundType,
 ): string {
   const step = mod12(degree);
-  if (soundType === "Solfege" || scale === "chromatic") {
+  if (soundType === "Solfege" || scale === "chromatic" || scale === "none") {
     return RAISED_SYLLABLES[step]!;
   }
 
@@ -306,7 +312,9 @@ export function spellNote(
 }
 
 export function keyName(tonic: number, scale: ScaleId): string {
-  return `${tonicName(tonic, scale)} ${SCALES[scale].label.toLowerCase()}`;
+  // Without a scale every note is available, as in chromatic.
+  const label = SCALES[scale === "none" ? "chromatic" : scale].label;
+  return `${tonicName(tonic, scale)} ${label.toLowerCase()}`;
 }
 
 const INTERVAL_NAMES = [
@@ -448,6 +456,8 @@ export interface NoteTheory {
   syllable: string;
   degreeLabel: string;
   hue: number;
+  /** False without a scale, so nothing is tinted by degree. */
+  colored: boolean;
   inScale: boolean;
   isTonic: boolean;
   /** Key-aware name, such as B♭3 in F major. */
@@ -474,6 +484,7 @@ export function analyzeNote(
     syllable,
     degreeLabel: degreeLabel(syllable),
     hue: degreeHue(degree),
+    colored: scale !== "none",
     inScale: isInScale(degree, scale),
     isTonic: degree === 0,
     displayName: spelled.name,

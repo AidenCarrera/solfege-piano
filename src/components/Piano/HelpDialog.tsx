@@ -68,7 +68,9 @@ function Cap({
       </span>
       <span
         className="mt-1 text-[10px] leading-none font-semibold"
-        style={{ color: degreeColor(theory.degree) }}
+        style={{
+          color: theory.colored ? degreeColor(theory.degree) : undefined,
+        }}
       >
         {theory.syllable}
       </span>
@@ -228,7 +230,8 @@ export function HelpDialog({ context }: { context: TheoryContext }) {
                 syllable keeps its color in every key. Minor scales use do-based
                 minor: Do Re Me Fa Sol Le Te. Notes outside the scale use their
                 usual chromatic names, such as Fi and Te. Dots mark the notes of
-                the scale, and the ringed dot is Do.
+                the scale, and the ringed dot is Do. Choose None as the scale to
+                turn the colors and dots off.
               </p>
               <p className="mt-2 text-ui-muted">
                 The Solfege voice was recorded in C, so the key stays on C while

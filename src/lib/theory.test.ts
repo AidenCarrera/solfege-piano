@@ -58,6 +58,10 @@ describe("syllableFor", () => {
     ]);
   });
 
+  it("names notes like chromatic when no scale is chosen", () => {
+    expect(syllables("none")).toEqual(syllables("chromatic"));
+  });
+
   it("uses do-based minor, lowering the 3rd, 6th, and 7th", () => {
     const minor = syllables("naturalMinor");
     expect([0, 2, 3, 5, 7, 8, 10].map((step) => minor[step])).toEqual([
@@ -93,6 +97,18 @@ describe("keys and spelling", () => {
     expect(tonicName(6, "major")).toBe("F♯");
     expect(tonicName(3, "naturalMinor")).toBe("E♭");
     expect(keyName(7, "harmonicMinor")).toBe("G harmonic minor");
+    expect(keyName(0, "none")).toBe("C chromatic");
+  });
+
+  it("drops degree colors without a scale but keeps every note", () => {
+    const context = { tonic: 0, soundType: "Piano" as const };
+    expect(analyzeNote(C4, { ...context, scale: "major" }).colored).toBe(true);
+    for (let midi = C4; midi < C4 + 12; midi++) {
+      expect(analyzeNote(midi, { ...context, scale: "none" })).toMatchObject({
+        colored: false,
+        inScale: true,
+      });
+    }
   });
 
   it("prefers flats for keys whose signatures use them", () => {

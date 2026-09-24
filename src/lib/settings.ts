@@ -34,6 +34,8 @@ export interface PianoSettings {
   labelsEnabled: boolean;
   solfegeEnabled: boolean;
   noteNamesEnabled: boolean;
+  /** The note readout and Sustain button above the keys. */
+  displayEnabled: boolean;
   /** Pitch class of Do, from 0 (C) to 11 (B). */
   tonic: number;
   scale: ScaleId;
@@ -51,6 +53,7 @@ export const DEFAULT_PREFERENCES: Omit<PianoSettings, "effectChain"> = {
   labelsEnabled: PIANO_CONFIG.DEFAULT_LABELS_ENABLED,
   solfegeEnabled: PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED,
   noteNamesEnabled: PIANO_CONFIG.DEFAULT_NOTE_NAMES_ENABLED,
+  displayEnabled: PIANO_CONFIG.DEFAULT_DISPLAY_ENABLED,
   tonic: PIANO_CONFIG.DEFAULT_TONIC,
   scale: PIANO_CONFIG.DEFAULT_SCALE,
 };
@@ -168,6 +171,7 @@ export function parseSettings(value: unknown): PianoSettings {
       value.noteNamesEnabled,
       defaults.noteNamesEnabled,
     ),
+    displayEnabled: readBoolean(value.displayEnabled, defaults.displayEnabled),
     tonic:
       Number.isInteger(value.tonic) &&
       (value.tonic as number) >= 0 &&

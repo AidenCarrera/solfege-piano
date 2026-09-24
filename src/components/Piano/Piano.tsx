@@ -56,6 +56,7 @@ export function Piano() {
     labelsEnabled,
     solfegeEnabled,
     noteNamesEnabled,
+    displayEnabled,
     bgColor,
     soundType,
     startOctave,
@@ -282,6 +283,9 @@ export function Piano() {
     [startOctave, endOctave, resetPractice, patchSettings],
   );
 
+  // A load failure still needs the display's Retry button.
+  const showRail = displayEnabled || preloadError !== null;
+
   const handleResetSettings = useCallback(() => {
     resetPractice();
     resetSettings();
@@ -419,40 +423,45 @@ export function Piano() {
             // Keep an oversized keyboard's left edge reachable.
             style={{ justifyContent: "safe center" }}
           >
-            <div ref={frameRef} className="piano-cabinet shrink-0">
-              <div className="cabinet-rail">
-                <PianoDisplay
-                  activeNotes={activeNotes}
-                  notesByName={notesByName}
-                  theoryByName={theoryByName}
-                  keyLabel={keyLabel}
-                  flats={flats}
-                  loading={{
-                    isPreloading,
-                    progress: preloadProgress,
-                    error: preloadError,
-                    onRetry: retryPreload,
-                  }}
-                  practice={practice}
-                  playReference={playReference}
-                />
-                <button
-                  type="button"
-                  onClick={toggleSustain}
-                  aria-pressed={sustainActive}
-                  className="sustain-button"
-                  title="Sustain (Space)"
-                >
-                  <span className="sustain-led" aria-hidden="true" />
-                  <span className="flex flex-col items-start leading-tight">
-                    <span className="text-[13px] font-semibold">Sustain</span>
-                    <span className="text-[10px] font-medium text-white/45">
-                      {sustainActive ? "On" : "Off"}
-                      <span className="max-sm:hidden"> · Space</span>
+            <div
+              ref={frameRef}
+              className={`piano-cabinet shrink-0 ${showRail ? "" : "pt-3"}`}
+            >
+              {showRail && (
+                <div className="cabinet-rail">
+                  <PianoDisplay
+                    activeNotes={activeNotes}
+                    notesByName={notesByName}
+                    theoryByName={theoryByName}
+                    keyLabel={keyLabel}
+                    flats={flats}
+                    loading={{
+                      isPreloading,
+                      progress: preloadProgress,
+                      error: preloadError,
+                      onRetry: retryPreload,
+                    }}
+                    practice={practice}
+                    playReference={playReference}
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleSustain}
+                    aria-pressed={sustainActive}
+                    className="sustain-button"
+                    title="Sustain (Space)"
+                  >
+                    <span className="sustain-led" aria-hidden="true" />
+                    <span className="flex flex-col items-start leading-tight">
+                      <span className="text-[13px] font-semibold">Sustain</span>
+                      <span className="text-[10px] font-medium text-white/45">
+                        {sustainActive ? "On" : "Off"}
+                        <span className="max-sm:hidden"> · Space</span>
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </div>
+                  </button>
+                </div>
+              )}
 
               <div className="cabinet-felt" />
 

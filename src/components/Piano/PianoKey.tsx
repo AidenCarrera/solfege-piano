@@ -42,7 +42,8 @@ function PianoKeyComponent({
   feedbackToken,
 }: PianoKeyProps) {
   const black = note.isSharp;
-  const showDot = theory.isTonic || (showScale && theory.inScale);
+  const showDot =
+    theory.colored && (theory.isTonic || (showScale && theory.inScale));
   // Only Cs carry the octave, like the labels on a real keyboard.
   const noteName = theory.letter === "C" ? theory.displayName : theory.letter;
   const dim = showScale && !theory.inScale;
@@ -61,6 +62,7 @@ function PianoKeyComponent({
       style={
         {
           "--deg-h": theory.hue,
+          "--deg-tint": theory.colored ? 1 : 0,
           ...(black ? { left: `${leftRem}rem` } : {}),
         } as React.CSSProperties
       }

@@ -26,6 +26,7 @@ describe("parseSettings", () => {
       labelsEnabled: false,
       solfegeEnabled: true,
       noteNamesEnabled: true,
+      displayEnabled: false,
       tonic: 7,
       scale: "dorian",
     });
@@ -40,6 +41,7 @@ describe("parseSettings", () => {
       labelsEnabled: false,
       solfegeEnabled: true,
       noteNamesEnabled: true,
+      displayEnabled: false,
       tonic: 7,
       scale: "dorian",
     });
@@ -50,6 +52,7 @@ describe("parseSettings", () => {
       tonic: defaults.tonic,
       scale: defaults.scale,
       noteNamesEnabled: defaults.noteNamesEnabled,
+      displayEnabled: defaults.displayEnabled,
     });
   });
 
