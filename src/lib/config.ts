@@ -1,5 +1,17 @@
+import type { ScaleId } from "./theory";
+
 // Keep in sync with the pre-hydration value in globals.css.
 export const DEFAULT_THEME_COLOR = "#0f172a";
+
+export const BACKGROUND_SWATCHES = [
+  { name: "Midnight", color: DEFAULT_THEME_COLOR },
+  { name: "Graphite", color: "#18181b" },
+  { name: "Plum", color: "#2a1733" },
+  { name: "Forest", color: "#10261f" },
+  { name: "Ocean", color: "#0b2638" },
+  { name: "Sand", color: "#efe7da" },
+  { name: "Paper", color: "#f4f5f7" },
+] as const;
 
 export type OctaveRange = readonly [start: number, end: number];
 
@@ -41,6 +53,7 @@ export const PIANO_INSET = {
   TOP_PX: 16,
   // Also reserves room for the in-flow footer.
   BOTTOM_PX: 56,
+  FOOTER_PX: 40,
   SIDE_RATIO: 0.03,
   SIDE_MIN_PX: 12,
   SIDE_MAX_PX: 72,
@@ -57,17 +70,30 @@ export function sideInset(availableWidth: number): number {
   );
 }
 
+/** Unscaled space around the keys, such as the cabinet and its display. */
+export interface PianoChrome {
+  width: number;
+  height: number;
+}
+
+const NO_CHROME: PianoChrome = { width: 0, height: 0 };
+
 export function fitScale(
   availableWidth: number,
   availableHeight: number,
   contentWidth: number,
   contentHeight: number,
+  chrome: PianoChrome = NO_CHROME,
 ): number {
   // Unscaled inputs avoid feedback from the CSS transform.
   if (contentWidth <= 0 || contentHeight <= 0) return PIANO_SCALE.DEFAULT;
 
-  const width = availableWidth - sideInset(availableWidth) * 2;
-  const height = availableHeight - PIANO_INSET.TOP_PX - PIANO_INSET.BOTTOM_PX;
+  const width = availableWidth - sideInset(availableWidth) * 2 - chrome.width;
+  const height =
+    availableHeight -
+    PIANO_INSET.TOP_PX -
+    PIANO_INSET.BOTTOM_PX -
+    chrome.height;
 
   return Math.min(
     clampScale(Math.min(width / contentWidth, height / contentHeight)),
@@ -79,10 +105,11 @@ export function fitScale(
 export function shortScreenFitScale(
   availableWidth: number,
   contentWidth: number,
+  chrome: PianoChrome = NO_CHROME,
 ): number {
   if (contentWidth <= 0) return PIANO_SCALE.DEFAULT;
 
-  const width = availableWidth - sideInset(availableWidth) * 2;
+  const width = availableWidth - sideInset(availableWidth) * 2 - chrome.width;
   return Math.min(
     clampScale((width / contentWidth) * PIANO_SCALE.SHORT_SCREEN_WIDTH_BOOST),
     PIANO_SCALE.SHORT_SCREEN_FIT_MAX,
@@ -94,7 +121,10 @@ export const PIANO_CONFIG = {
 
   DEFAULT_OCTAVE_RANGE,
   DEFAULT_LABELS_ENABLED: true,
-  DEFAULT_SOLFEGE_ENABLED: false,
+  DEFAULT_SOLFEGE_ENABLED: true,
+  DEFAULT_NOTE_NAMES_ENABLED: false,
+  DEFAULT_TONIC: 0,
+  DEFAULT_SCALE: "major" as ScaleId,
   DEFAULT_BG_COLOR: DEFAULT_THEME_COLOR as string,
   DEFAULT_VOLUME: 0.75,
 

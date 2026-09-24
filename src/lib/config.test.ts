@@ -97,6 +97,16 @@ describe("fitScale", () => {
     expect(fitScale(800, 600, 0, 0)).toBe(PIANO_SCALE.DEFAULT);
     expect(fitScale(800, 600, 500, 0)).toBe(PIANO_SCALE.DEFAULT);
   });
+
+  it("leaves room for the unscaled cabinet around the keys", () => {
+    const chrome = { width: 24, height: 90 };
+    const bare = fitScale(1440, 600, keyboardWidth(15), 256);
+    const framed = fitScale(1440, 600, keyboardWidth(15), 256, chrome);
+    const height = 600 - PIANO_INSET.TOP_PX - PIANO_INSET.BOTTOM_PX;
+
+    expect(framed).toBeLessThan(bare);
+    expect(256 * framed + chrome.height).toBeLessThanOrEqual(height);
+  });
 });
 
 describe("shortScreenFitScale", () => {
@@ -118,5 +128,12 @@ describe("shortScreenFitScale", () => {
 
   it("falls back before the keyboard has been measured", () => {
     expect(shortScreenFitScale(844, 0)).toBe(PIANO_SCALE.DEFAULT);
+  });
+
+  it("narrows the fit by the cabinet's width", () => {
+    const contentWidth = keyboardWidth(15);
+    expect(
+      shortScreenFitScale(844, contentWidth, { width: 40, height: 0 }),
+    ).toBeLessThan(shortScreenFitScale(844, contentWidth));
   });
 });

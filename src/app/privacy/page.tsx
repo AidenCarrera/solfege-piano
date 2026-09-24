@@ -45,6 +45,12 @@ export default function PrivacyPage() {
           sent to {SITE_NAME}, and are not used to identify you. Clearing the
           site&rsquo;s stored data in your browser removes them.
         </p>
+
+        <p>
+          If you connect a MIDI keyboard, the notes you play are handled
+          entirely in your browser. Nothing about your device or your playing
+          leaves it.
+        </p>
       </div>
     </main>
   );

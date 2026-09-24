@@ -129,7 +129,10 @@ export default function RootLayout({
     featureList: [
       "Interactive online piano keyboard",
       "Piano and sung solfege samples",
-      "Keyboard, mouse, and touch controls",
+      "Movable-do solfege labels in any key and scale",
+      "Ear-training practice with scoring",
+      "Live note, interval, and chord names",
+      "Keyboard, mouse, touch, and MIDI controls",
       "Sustain and configurable audio effects",
       "Adjustable note labels and octave range",
     ],

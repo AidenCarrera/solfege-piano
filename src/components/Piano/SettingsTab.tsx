@@ -1,69 +1,119 @@
 import { motion } from "framer-motion";
+import { Cable, Pipette, Volume1, Volume2, VolumeX } from "lucide-react";
 import {
+  BACKGROUND_SWATCHES,
   OCTAVE_RANGES,
   PIANO_SCALE,
   SHORT_SCREEN_OCTAVE_RANGES,
   SHORT_SCREEN_QUERY,
-  SoundType,
-  SOUND_OPTIONS,
 } from "@/lib/config";
+import type { PianoSettings } from "@/lib/settings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { Field, Segmented, Slider, ToggleChip } from "@/components/ui/controls";
+import type { MidiStatus } from "./hooks/useMidiInput";
+
+type UpdateSetting = <K extends keyof PianoSettings>(
+  key: K,
+  value: PianoSettings[K],
+) => void;
 
 export interface SettingsTabProps {
-  volume: number;
-  setVolume: (v: number) => void;
-  soundType: SoundType;
-  setSoundType: (s: SoundType) => void;
-  startOctave: number;
-  endOctave: number;
-  onOctaveChange: (start: number, end: number) => void;
+  settings: PianoSettings;
+  updateSetting: UpdateSetting;
   pianoScale: number;
   autoScale: boolean;
-  setPianoScale: (v: number | null) => void;
-  bgColor: string;
-  setBgColor: (v: string) => void;
-  labelsEnabled: boolean;
-  setLabelsEnabled: (b: boolean) => void;
-  solfegeEnabled: boolean;
-  setSolfegeEnabled: (b: boolean) => void;
+  onOctaveChange: (start: number, end: number) => void;
+  midiSupported: boolean;
+  midiStatus: MidiStatus;
+  midiDevices: readonly string[];
+  onMidiConnect: () => void;
+}
+
+function VolumeIcon({ volume }: { volume: number }) {
+  const Icon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  return (
+    <Icon size={16} className="shrink-0 text-ui-muted" aria-hidden="true" />
+  );
+}
+
+function MidiControl({
+  supported,
+  status,
+  devices,
+  onConnect,
+}: {
+  supported: boolean;
+  status: MidiStatus;
+  devices: readonly string[];
+  onConnect: () => void;
+}) {
+  if (!supported) {
+    return (
+      <p className="flex h-8 items-center text-[13px] text-ui-subtle">
+        Not available in this browser
+      </p>
+    );
+  }
+
+  if (status === "connected") {
+    return (
+      <p className="flex h-8 min-w-0 items-center gap-2 text-[13px]">
+        <span
+          className={`size-2 shrink-0 rounded-full ${
+            devices.length > 0 ? "bg-green-500" : "bg-amber-400"
+          }`}
+        />
+        <span className="truncate">
+          {devices.length > 0 ? devices.join(", ") : "Waiting for a device…"}
+        </span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex h-8 items-center gap-2">
+      <button
+        type="button"
+        onClick={onConnect}
+        disabled={status === "connecting"}
+        className="flex h-8 items-center gap-1.5 rounded-lg border border-ui-border bg-ui-surface px-3 text-[13px] font-medium transition-colors hover:bg-ui-surface-hover disabled:opacity-60"
+      >
+        <Cable size={14} aria-hidden="true" />
+        {status === "connecting"
+          ? "Connecting…"
+          : status === "denied"
+            ? "Try again"
+            : "Connect"}
+      </button>
+      {status === "denied" && (
+        <span className="text-[11px] leading-snug text-danger">
+          Access was blocked
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function SettingsTab({
-  volume,
-  setVolume,
-  soundType,
-  setSoundType,
-  startOctave,
-  endOctave,
-  onOctaveChange,
+  settings,
+  updateSetting,
   pianoScale,
   autoScale,
-  setPianoScale,
-  bgColor,
-  setBgColor,
-  labelsEnabled,
-  setLabelsEnabled,
-  solfegeEnabled,
-  setSolfegeEnabled,
+  onOctaveChange,
+  midiSupported,
+  midiStatus,
+  midiDevices,
+  onMidiConnect,
 }: SettingsTabProps) {
   const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
-  const lastRange =
-    (isShortScreen ? SHORT_SCREEN_OCTAVE_RANGES : OCTAVE_RANGES.length) - 1;
-
-  const selectedRange = OCTAVE_RANGES.findIndex(
-    ([start, end]) => start === startOctave && end === endOctave,
+  const ranges = isShortScreen
+    ? OCTAVE_RANGES.slice(0, SHORT_SCREEN_OCTAVE_RANGES)
+    : OCTAVE_RANGES;
+  const solfegeVoice = settings.soundType === "Solfege";
+  const { volume, bgColor } = settings;
+  const customColor = !BACKGROUND_SWATCHES.some(
+    (swatch) => swatch.color.toLowerCase() === bgColor.toLowerCase(),
   );
-  const sliderRange = Math.min(Math.max(selectedRange, 0), lastRange);
-
-  const handleOctaveSlider = (index: number) => {
-    const range = OCTAVE_RANGES[index];
-    if (!range) return;
-
-    const [start, end] = range;
-    onOctaveChange(start, end);
-    // Refit after changing the number of keys.
-    setPianoScale(null);
-  };
 
   return (
     <motion.div
@@ -72,212 +122,178 @@ export function SettingsTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18 }}
-      className="grid grid-cols-2 gap-4 p-3 sm:grid-cols-3 sm:gap-6 sm:p-5 lg:grid-cols-4"
+      className="grid gap-x-7 gap-y-5 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3"
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <label
-            htmlFor="sound-type"
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Sound Type
-          </label>
-        </div>
-        <div className="h-8 flex items-center">
-          <select
-            id="sound-type"
-            value={soundType}
-            onChange={(e) => setSoundType(e.target.value as SoundType)}
-            // Prevent iOS from zooming on focus.
-            className="h-8 w-full rounded-md pl-2.5 pr-6 text-left text-base font-medium sm:text-sm"
-          >
-            {SOUND_OPTIONS.map((s) => (
-              <option key={s} className="text-left">
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <label
-            htmlFor="octave-range"
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Octave Range
-          </label>
-          <span
-            className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "var(--panel-surface)" }}
-          >
-            C{startOctave}–C{endOctave}
-          </span>
-        </div>
-        <div className="h-8 flex items-center">
-          <input
-            id="octave-range"
-            type="range"
-            min={0}
-            max={lastRange}
-            step={1}
-            value={sliderRange}
-            onChange={(e) => handleOctaveSlider(Number(e.target.value))}
-            className="w-full"
-            disabled={soundType === "Solfege"}
-            aria-valuetext={`C${startOctave} to C${endOctave}`}
-            aria-describedby={
-              soundType === "Solfege" ? "octave-range-help" : undefined
-            }
-          />
-        </div>
-        {soundType === "Solfege" && (
-          <span
-            id="octave-range-help"
-            className="text-[10px]"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Locked to 1 octave in Solfege mode
-          </span>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <label
-            htmlFor="piano-zoom"
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Zoom
-          </label>
-          <div className="flex items-center gap-1.5">
-            {!autoScale && (
-              <button
-                type="button"
-                onClick={() => setPianoScale(null)}
-                className="cursor-pointer rounded px-1.5 py-px text-[11px] font-medium transition-colors"
-                style={{
-                  background: "var(--panel-surface)",
-                  color: "var(--panel-fg)",
-                }}
-                title="Zoom the keyboard to fit the screen"
-              >
-                Fit
-              </button>
-            )}
-            <span
-              className="text-[11px] font-mono px-1.5 py-px rounded"
-              style={{ background: "var(--panel-surface)" }}
-            >
-              {autoScale ? "Auto" : `${pianoScale.toFixed(2)}×`}
-            </span>
-          </div>
-        </div>
-        <div className="h-8 flex items-center">
-          <input
-            id="piano-zoom"
-            type="range"
-            min={PIANO_SCALE.MIN}
-            max={PIANO_SCALE.MAX}
-            step={PIANO_SCALE.STEP}
-            value={pianoScale}
-            onChange={(e) => setPianoScale(parseFloat(e.target.value))}
-            className="w-full"
-            aria-valuetext={`${pianoScale.toFixed(2)} times`}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <label
-            htmlFor="piano-volume"
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Volume
-          </label>
-          <span
-            className="text-[11px] font-mono px-1.5 py-px rounded"
-            style={{ background: "var(--panel-surface)" }}
-          >
-            {Math.round(volume * 100)}%
-          </span>
-        </div>
-        <div className="h-8 flex items-center">
-          <input
+      <Field
+        label="Volume"
+        htmlFor="piano-volume"
+        value={`${Math.round(volume * 100)}%`}
+      >
+        <div className="flex h-8 items-center gap-2.5">
+          <VolumeIcon volume={volume} />
+          <Slider
             id="piano-volume"
-            type="range"
             min={0}
             max={1}
             step={0.01}
             value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-full"
+            onChange={(e) =>
+              updateSetting("volume", parseFloat(e.target.value))
+            }
             aria-valuetext={`${Math.round(volume * 100)} percent`}
           />
         </div>
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <label
-            htmlFor="background-color"
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            Background
-          </label>
-        </div>
-        <div className="h-8 flex items-center gap-3">
-          <input
-            id="background-color"
-            type="color"
-            value={bgColor}
-            onChange={(e) => setBgColor(e.target.value)}
-            className="w-9.5 h-9.5 -my-1 rounded-lg border-0 cursor-pointer bg-transparent p-0"
+      {/* Reserve the hint in both voices so switching doesn't refit the keyboard. */}
+      <Field
+        label="Octave range"
+        hint={
+          <span className={solfegeVoice ? undefined : "invisible"}>
+            The Solfege voice covers one octave
+          </span>
+        }
+      >
+        <Segmented
+          label="Octave range"
+          size="sm"
+          disabled={solfegeVoice}
+          value={`${settings.startOctave}-${settings.endOctave}`}
+          onChange={(value) => {
+            const [start, end] = value.split("-").map(Number);
+            if (start !== undefined && end !== undefined) {
+              onOctaveChange(start, end);
+            }
+          }}
+          options={ranges.map(([start, end]) => ({
+            value: `${start}-${end}`,
+            label: `C${start}–C${end}`,
+            title: `${end - start} octave${end - start > 1 ? "s" : ""}`,
+          }))}
+        />
+      </Field>
+
+      <Field
+        label="Zoom"
+        htmlFor="piano-zoom"
+        value={autoScale ? "Auto" : `${pianoScale.toFixed(2)}×`}
+        action={
+          !autoScale && (
+            <button
+              type="button"
+              onClick={() => updateSetting("pianoScale", null)}
+              className="rounded-md px-1.5 py-px text-[11px] font-semibold text-accent transition-colors hover:bg-ui-surface-hover"
+              title="Zoom the keyboard to fit the screen"
+            >
+              Fit
+            </button>
+          )
+        }
+      >
+        <div className="flex h-8 items-center">
+          <Slider
+            id="piano-zoom"
+            min={PIANO_SCALE.MIN}
+            max={PIANO_SCALE.MAX}
+            step={PIANO_SCALE.STEP}
+            value={pianoScale}
+            onChange={(e) =>
+              updateSetting("pianoScale", parseFloat(e.target.value))
+            }
+            aria-valuetext={`${pianoScale.toFixed(2)} times`}
           />
-          <span
-            className="text-[11px] font-mono"
-            style={{ color: "var(--panel-fg)" }}
-          >
-            {bgColor}
-          </span>
         </div>
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center h-5">
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--panel-fg)" }}
+      <Field label="Key labels">
+        <div className="flex flex-wrap gap-1.5">
+          <ToggleChip
+            pressed={settings.solfegeEnabled}
+            onChange={(value) => updateSetting("solfegeEnabled", value)}
           >
-            Labels
-          </span>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={labelsEnabled}
-              onChange={(e) => setLabelsEnabled(e.target.checked)}
-            />
-            Keyboard
-          </label>
-          <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={solfegeEnabled}
-              onChange={(e) => setSolfegeEnabled(e.target.checked)}
-            />
             Solfege
+          </ToggleChip>
+          <ToggleChip
+            pressed={settings.noteNamesEnabled}
+            onChange={(value) => updateSetting("noteNamesEnabled", value)}
+          >
+            Note names
+          </ToggleChip>
+          <ToggleChip
+            pressed={settings.labelsEnabled}
+            onChange={(value) => updateSetting("labelsEnabled", value)}
+          >
+            Shortcuts
+          </ToggleChip>
+        </div>
+      </Field>
+
+      <Field label="Background">
+        <div className="flex flex-wrap items-center gap-2">
+          {BACKGROUND_SWATCHES.map((swatch) => {
+            const selected =
+              swatch.color.toLowerCase() === bgColor.toLowerCase();
+            return (
+              <button
+                key={swatch.color}
+                type="button"
+                aria-label={swatch.name}
+                aria-pressed={selected}
+                title={swatch.name}
+                onClick={() => updateSetting("bgColor", swatch.color)}
+                className={`size-7 rounded-full border border-ui-border transition-transform hover:scale-110 ${
+                  selected
+                    ? "ring-2 ring-accent ring-offset-2 ring-offset-(--background)"
+                    : ""
+                }`}
+                style={{ background: swatch.color }}
+              />
+            );
+          })}
+          <label
+            title="Custom color"
+            className={`relative flex size-7 cursor-pointer items-center justify-center rounded-full border border-ui-border transition-transform hover:scale-110 ${
+              customColor
+                ? "ring-2 ring-accent ring-offset-2 ring-offset-(--background)"
+                : ""
+            }`}
+            style={{
+              background: customColor
+                ? bgColor
+                : "conic-gradient(from 0deg, oklch(0.75 0.15 25), oklch(0.8 0.15 95), oklch(0.75 0.15 145), oklch(0.72 0.14 200), oklch(0.65 0.17 265), oklch(0.7 0.16 320), oklch(0.75 0.15 25))",
+            }}
+          >
+            <Pipette
+              size={13}
+              className="text-white drop-shadow-[0_1px_1px_rgb(0_0_0/0.6)]"
+              aria-hidden="true"
+            />
+            <input
+              type="color"
+              aria-label="Custom background color"
+              value={bgColor}
+              onChange={(e) => updateSetting("bgColor", e.target.value)}
+              className="absolute inset-0 size-full cursor-pointer opacity-0"
+            />
           </label>
         </div>
-      </div>
+      </Field>
+
+      <Field
+        label="MIDI keyboard"
+        hint={
+          midiSupported && midiStatus !== "connected"
+            ? "Velocity and the sustain pedal are supported"
+            : undefined
+        }
+      >
+        <MidiControl
+          supported={midiSupported}
+          status={midiStatus}
+          devices={midiDevices}
+          onConnect={onMidiConnect}
+        />
+      </Field>
     </motion.div>
   );
 }

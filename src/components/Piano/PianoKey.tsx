@@ -1,43 +1,51 @@
 "use client";
 import React from "react";
 import type { Note } from "@/lib/note";
+import type { NoteTheory } from "@/lib/theory";
+import type { KeyFeedback } from "./hooks/useEarTraining";
 
 type PianoKeyProps = {
   note: Note;
+  theory: NoteTheory;
   isActive: boolean;
   leftRem: number;
   onMouseDown: (noteName: string) => void;
   onMouseEnter: (noteName: string) => void;
   onMouseUp: () => void;
-  showLabel: boolean;
+  showShortcut: boolean;
   showSolfege: boolean;
+  showNoteName: boolean;
+  /** Mark every scale tone, not just Do. */
+  showScale: boolean;
+  feedback?: KeyFeedback;
+  /** Changes per answer so the same feedback can replay. */
+  feedbackToken?: number;
 };
 
-const BASE_WHITE =
-  "relative w-16 h-64 rounded-b-lg border-x border-b border-t-0 border-gray-300/20 bg-linear-to-b from-white to-gray-100 shadow-[0_2px_5px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 transform-gpu";
+const BASE_WHITE = "piano-key piano-key-white relative h-64 w-16";
 const BASE_BLACK =
-  "absolute w-10 h-40 -mx-5 z-20 -top-px rounded-b-lg bg-linear-to-b from-gray-900 to-black shadow-[0_4px_8px_rgba(0,0,0,0.5)] active:shadow-sm active:translate-y-0.5 transform-gpu";
-const ACTIVE_BLACK =
-  "from-gray-800 to-black ring-2 ring-blue-500/50 !shadow-none !translate-y-0.5";
-const ACTIVE_WHITE =
-  "!bg-blue-50 !from-blue-100 !to-white !shadow-none !translate-y-0.5 ring-2 ring-blue-400/30";
+  "piano-key piano-key-black absolute -top-px z-20 -mx-5 h-40 w-10";
 
 function PianoKeyComponent({
   note,
+  theory,
   isActive,
   leftRem,
   onMouseDown,
   onMouseEnter,
   onMouseUp,
-  showLabel,
+  showShortcut,
   showSolfege,
+  showNoteName,
+  showScale,
+  feedback,
+  feedbackToken,
 }: PianoKeyProps) {
-  const base = note.isSharp ? BASE_BLACK : BASE_WHITE;
-  const activeClass = isActive
-    ? note.isSharp
-      ? ACTIVE_BLACK
-      : ACTIVE_WHITE
-    : "";
+  const black = note.isSharp;
+  const showDot = theory.isTonic || (showScale && theory.inScale);
+  // Only Cs carry the octave, like the labels on a real keyboard.
+  const noteName = theory.letter === "C" ? theory.displayName : theory.letter;
+  const dim = showScale && !theory.inScale;
 
   return (
     <button
@@ -49,20 +57,17 @@ function PianoKeyComponent({
       onMouseEnter={() => onMouseEnter(note.name)}
       onMouseUp={onMouseUp}
       onBlur={onMouseUp}
-      className={`${base} ${activeClass} transition-[transform,box-shadow,background-color,border-color,color] duration-100 ease-out`}
-      style={{
-        ...(note.isSharp ? { left: `${leftRem}rem` } : {}),
-        touchAction: "none",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
-      }}
+      className={`${black ? BASE_BLACK : BASE_WHITE} ${isActive ? "is-active" : ""} transform-gpu`}
+      style={
+        {
+          "--deg-h": theory.hue,
+          ...(black ? { left: `${leftRem}rem` } : {}),
+        } as React.CSSProperties
+      }
       data-note-name={note.name}
       // Keyboard shortcuts avoid a tab stop for every piano key.
       tabIndex={-1}
-      aria-label={`${note.spokenName} piano key${
+      aria-label={`${note.spokenName}, ${theory.syllable}${
         note.shortcuts.length > 0
           ? `, shortcuts ${note.shortcuts
               .map((shortcut) => shortcut.toUpperCase())
@@ -71,24 +76,56 @@ function PianoKeyComponent({
       }`}
       aria-pressed={isActive}
     >
-      {showSolfege && (
-        <span
-          className={`absolute bottom-7 left-1/2 -translate-x-1/2 text-base font-semibold pointer-events-none ${
-            note.isSharp ? "text-white" : "text-gray-800"
-          }`}
-        >
-          {note.solfege}
-        </span>
-      )}
+      <span
+        className={`pointer-events-none absolute inset-x-0 flex flex-col items-center ${
+          black ? "bottom-3 gap-1" : "bottom-4 gap-1.5"
+        }`}
+      >
+        {showDot && (
+          <span
+            className={`scale-dot ${theory.isTonic ? "is-tonic" : ""} ${black ? "mb-0.5" : "mb-1"}`}
+          />
+        )}
 
-      {showLabel && (
+        {showSolfege && (
+          <span
+            className={`leading-none font-semibold transition-opacity ${
+              black ? "text-[11px] text-white/90" : "text-[15px] text-zinc-800"
+            } ${dim ? "opacity-45" : ""}`}
+          >
+            {theory.syllable}
+          </span>
+        )}
+
+        {showNoteName && (
+          <span
+            className={`leading-none font-medium ${
+              black ? "text-[9px] text-white/55" : "text-[11px] text-zinc-500"
+            } ${dim ? "opacity-60" : ""}`}
+          >
+            {noteName}
+          </span>
+        )}
+
+        {showShortcut && note.shortcut && (
+          <span
+            className={`shortcut-cap mt-0.5 border ${
+              black
+                ? "border-white/15 text-white/60"
+                : "border-zinc-300 bg-black/[0.03] text-zinc-500"
+            }`}
+          >
+            {note.shortcut.toUpperCase()}
+          </span>
+        )}
+      </span>
+
+      {feedback && (
         <span
-          className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-mono pointer-events-none ${
-            note.isSharp ? "text-white/80" : "text-gray-500"
-          }`}
-        >
-          {note.shortcut.toUpperCase()}
-        </span>
+          key={`${feedback}-${feedbackToken ?? 0}`}
+          aria-hidden="true"
+          className={`key-flash key-flash-${feedback}`}
+        />
       )}
     </button>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { GripVertical, Waves, ChevronRight } from "lucide-react";
+import { GripVertical, Waves, ChevronRight, Plus } from "lucide-react";
 import {
   EffectNode,
   EffectType,
@@ -38,10 +38,10 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
       }}
     >
       <div className={`h-1 w-full bg-linear-to-r ${meta.color}`} />
-      <div className="flex items-center gap-2 px-3 pt-2.5 pb-2">
-        <GripVertical size={14} style={{ color: "rgba(255,255,255,0.4)" }} />
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+        <GripVertical size={12} style={{ color: "rgba(255,255,255,0.4)" }} />
         <div
-          className={`flex items-center justify-center w-6 h-6 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color}`}
+          className={`flex items-center justify-center size-5 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color}`}
         >
           <meta.Icon size={EFFECT_ICON_SIZE} />
         </div>
@@ -52,12 +52,12 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
           {type}
         </span>
       </div>
-      <div className="px-3 pb-3">
+      <div className="px-2.5 pb-2.5">
         <div
-          className="h-0.5 rounded-full mb-3"
+          className="h-0.5 rounded-full mb-2"
           style={{ background: "rgba(255,255,255,0.07)" }}
         />
-        <div className="flex flex-col gap-2 opacity-40">
+        <div className="flex flex-col gap-1.5 opacity-40">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -223,10 +223,10 @@ export function EffectsTab({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
-        className="p-3 sm:p-5"
+        className="p-3 sm:p-4"
       >
-        <div className="mb-2.5 sm:mb-3">
-          <div className="flex flex-wrap gap-2 items-center">
+        <div className="mb-2">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
               const meta = EFFECT_META[type];
               return (
@@ -269,11 +269,9 @@ export function EffectsTab({
                     document.addEventListener("pointercancel", onUp);
                   }}
                   // Preserve the pointer stream during touch drags.
-                  className={`flex touch-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold text-white bg-linear-to-r ${meta.color} cursor-grab select-none shadow-md active:cursor-grabbing sm:py-1.5`}
-                  whileHover={{
-                    scale: 1.05,
-                    boxShadow: `0 6px 20px ${meta.glow}`,
-                  }}
+                  className="flex touch-none items-center gap-1.5 rounded-lg border border-ui-border bg-ui-surface py-1 pr-2.5 pl-1 text-[12px] font-semibold text-ui-fg cursor-grab select-none transition-colors hover:bg-ui-surface-hover active:cursor-grabbing"
+                  title={`${meta.description}. Click to add, or drag into the chain.`}
+                  whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{
                     type: "spring",
@@ -281,8 +279,17 @@ export function EffectsTab({
                     damping: 25,
                   }}
                 >
-                  <meta.Icon size={EFFECT_ICON_SIZE} />
+                  <span
+                    className={`flex size-5 items-center justify-center rounded-md bg-linear-to-br text-white ${meta.color}`}
+                  >
+                    <meta.Icon size={EFFECT_ICON_SIZE} />
+                  </span>
                   <span>{type}</span>
+                  <Plus
+                    size={12}
+                    className="text-ui-subtle"
+                    aria-hidden="true"
+                  />
                 </motion.button>
               );
             })}
@@ -296,10 +303,10 @@ export function EffectsTab({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 sm:py-6"
-              style={{ borderColor, color: "var(--panel-fg)" }}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed py-3 text-ui-muted sm:py-4"
+              style={{ borderColor }}
             >
-              <Waves size={26} />
+              <Waves size={20} />
               <p className="text-center text-sm">
                 Tap an effect above to add it, or drag one in here.
               </p>
@@ -309,7 +316,7 @@ export function EffectsTab({
               ref={rackRef}
               role="region"
               aria-label="Active effects chain"
-              className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-3"
+              className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-2"
               style={{
                 scrollbarWidth: "thin",
                 outline: draggingNewType

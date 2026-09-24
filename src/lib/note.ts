@@ -4,6 +4,8 @@ export type Note = {
   base: string;
   naturalName: string;
   octave: number;
+  /** MIDI note number, where C4 is 60. */
+  midi: number;
   isSharp: boolean;
   toneName: string;
   /** Shortcut shown on the piano key. */

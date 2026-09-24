@@ -1,69 +1,51 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Settings2,
-  Waves,
   ChevronsUpDown,
+  Ear,
   RotateCcw,
+  Settings2,
   Trash2,
+  Waves,
 } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { getGlassPanelColor } from "@/lib/colorUtils";
 import type { EffectNode } from "@/lib/effects";
-import { SHORT_SCREEN_QUERY, type SoundType } from "@/lib/config";
-import { SettingsTab } from "./SettingsTab";
+import { SHORT_SCREEN_QUERY } from "@/lib/config";
+import { SettingsTab, type SettingsTabProps } from "./SettingsTab";
 import { EffectsTab } from "./EffectsTab";
+import { EarTrainingTab, type EarTrainingTabProps } from "./EarTrainingTab";
+
+type Tab = "settings" | "effects" | "practice";
+
+const TABS: readonly {
+  id: Tab;
+  label: string;
+  short: string;
+  Icon: typeof Ear;
+}[] = [
+  { id: "settings", label: "Settings", short: "Settings", Icon: Settings2 },
+  { id: "effects", label: "Effects Chain", short: "Effects", Icon: Waves },
+  { id: "practice", label: "Ear Training", short: "Training", Icon: Ear },
+];
 
 export interface ControlPanelProps {
-  volume: number;
-  setVolume: (v: number) => void;
+  settingsTab: SettingsTabProps;
+  earTrainingTab: EarTrainingTabProps;
   effectChain: EffectNode[];
   setEffectChain: React.Dispatch<React.SetStateAction<EffectNode[]>>;
-  labelsEnabled: boolean;
-  setLabelsEnabled: (b: boolean) => void;
-  solfegeEnabled: boolean;
-  setSolfegeEnabled: (b: boolean) => void;
-  pianoScale: number;
-  autoScale: boolean;
-  setPianoScale: (v: number | null) => void;
-  bgColor: string;
-  setBgColor: (v: string) => void;
-  soundType: SoundType;
-  setSoundType: (s: SoundType) => void;
-  startOctave: number;
-  endOctave: number;
-  onOctaveChange: (start: number, end: number) => void;
   onResetSettings: () => void;
-  textColor: string;
 }
 
 function ControlPanelComponent({
-  volume,
-  setVolume,
+  settingsTab,
+  earTrainingTab,
   effectChain,
   setEffectChain,
-  labelsEnabled,
-  setLabelsEnabled,
-  solfegeEnabled,
-  setSolfegeEnabled,
-  pianoScale,
-  autoScale,
-  setPianoScale,
-  bgColor,
-  setBgColor,
-  soundType,
-  setSoundType,
-  startOctave,
-  endOctave,
-  onOctaveChange,
   onResetSettings,
-  textColor,
 }: ControlPanelProps) {
-  const [activeTab, setActiveTab] = useState<"settings" | "effects">(
-    "settings",
-  );
+  const [activeTab, setActiveTab] = useState<Tab>("settings");
   // Follow the viewport until the user explicitly toggles the panel.
   const [collapseOverride, setCollapseOverride] = useState<boolean | null>(
     null,
@@ -71,119 +53,83 @@ function ControlPanelComponent({
   const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
   const isCollapsed = collapseOverride ?? isShortScreen;
 
-  const panelBg = useMemo(() => getGlassPanelColor(bgColor), [bgColor]);
-  const borderColor =
-    textColor === "#ffffff" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
-  const usesLightText = textColor === "#ffffff";
-  const panelTheme = {
-    "--panel-fg": textColor,
-    "--panel-surface": usesLightText
-      ? "rgba(255,255,255,0.08)"
-      : "rgba(0,0,0,0.08)",
-    "--panel-surface-hover": usesLightText
-      ? "rgba(255,255,255,0.14)"
-      : "rgba(0,0,0,0.14)",
-  } as React.CSSProperties;
-
   return (
-    <div
-      className="glass-panel w-full max-w-4xl shrink-0 overflow-hidden rounded-2xl"
-      style={{
-        backgroundColor: panelBg,
-        borderColor,
-        color: textColor,
-        ...panelTheme,
-      }}
-    >
-      <div
-        className="flex border-b relative items-center"
-        style={{ borderColor }}
-      >
-        {(["settings", "effects"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              setCollapseOverride(false);
-            }}
-            className="relative flex cursor-pointer items-center gap-1.5 px-3 py-3 text-xs font-semibold whitespace-nowrap transition-colors duration-150 sm:gap-2 sm:px-6 sm:py-3.5 sm:text-sm"
-            style={{
-              color: activeTab === tab ? "rgb(129,140,248)" : "var(--panel-fg)",
-            }}
-          >
-            {tab === "effects" ? <Waves size={14} /> : <Settings2 size={14} />}
-            {tab === "effects" ? (
-              <span>
-                Effects<span className="hidden sm:inline"> Chain</span>
-              </span>
-            ) : (
-              "Settings"
-            )}
-            {activeTab === tab && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full"
-              />
-            )}
-          </button>
-        ))}
+    <div className="glass-panel w-full max-w-5xl shrink-0 overflow-hidden rounded-2xl text-ui-fg">
+      <div className="flex items-center gap-1 border-b border-ui-border px-1.5">
+        <div role="tablist" aria-label="Control panel" className="flex">
+          {TABS.map(({ id, label, short, Icon }) => {
+            const selected = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                id={`tab-${id}`}
+                aria-selected={selected && !isCollapsed}
+                aria-controls="control-panel-body"
+                onClick={() => {
+                  setActiveTab(id);
+                  setCollapseOverride(false);
+                }}
+                className={`relative flex items-center gap-1.5 px-2.5 py-3 text-xs font-semibold whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
+                  selected ? "text-accent" : "text-ui-muted hover:text-ui-fg"
+                }`}
+              >
+                <Icon size={15} aria-hidden="true" />
+                <span className="sm:hidden">{short}</span>
+                <span className="max-sm:hidden">{label}</span>
+                {id === "practice" &&
+                  earTrainingTab.practice.phase !== "idle" && (
+                    <span
+                      className="size-1.5 rounded-full bg-green-500"
+                      aria-label="(running)"
+                    />
+                  )}
+                {selected && !isCollapsed && (
+                  <motion.span
+                    layoutId="control-panel-tab"
+                    className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent"
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-        <div className="ml-auto mr-2 flex items-center gap-1.5 sm:mr-3 sm:gap-2">
+        <div className="ml-auto flex items-center gap-1.5 pr-1.5">
           {activeTab === "settings" && !isCollapsed && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+            <button
               type="button"
               onClick={onResetSettings}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors sm:px-2.5 sm:py-1 sm:text-xs"
-              style={{
-                color: "var(--panel-fg)",
-                background: "var(--panel-surface)",
-              }}
-              whileHover={{
-                background: "var(--panel-surface-hover)",
-              }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-ui-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-fg"
               title="Restore default settings. Your effects chain is kept."
               aria-label="Reset settings"
             >
-              <RotateCcw size={12} />
-              <span className="hidden sm:inline">Reset settings</span>
-            </motion.button>
+              <RotateCcw size={13} />
+              <span className="max-sm:hidden">Reset</span>
+            </button>
           )}
 
           {activeTab === "effects" &&
             !isCollapsed &&
             effectChain.length > 0 && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+              <button
                 type="button"
                 onClick={() => setEffectChain([])}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-red-500/25 bg-red-500/10 px-2 py-1.5 text-[11px] font-medium text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300 sm:px-2.5 sm:py-1 sm:text-xs"
-                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-red-500/10"
                 title="Remove all effects from the chain"
                 aria-label="Clear all effects"
               >
-                <Trash2 size={12} />
-                <span className="hidden sm:inline">Clear All</span>
-              </motion.button>
+                <Trash2 size={13} />
+                <span className="max-sm:hidden">Clear all</span>
+              </button>
             )}
 
           <motion.button
+            type="button"
             onClick={() => setCollapseOverride(!isCollapsed)}
-            className="p-1.5 rounded-lg cursor-pointer"
-            style={{
-              color: "var(--panel-fg)",
-              background: "var(--panel-surface)",
-            }}
-            whileHover={{
-              color: "var(--panel-fg)",
-              background: "var(--panel-surface-hover)",
-            }}
+            className="rounded-lg p-1.5 text-ui-muted transition-colors hover:bg-ui-surface-hover hover:text-ui-fg"
             whileTap={{ scale: 0.9 }}
             animate={{ rotate: isCollapsed ? 180 : 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -192,8 +138,9 @@ function ControlPanelComponent({
               isCollapsed ? "Expand control panel" : "Collapse control panel"
             }
             aria-expanded={!isCollapsed}
+            aria-controls="control-panel-body"
           >
-            <ChevronsUpDown size={15} />
+            <ChevronsUpDown size={16} />
           </motion.button>
         </div>
       </div>
@@ -202,6 +149,9 @@ function ControlPanelComponent({
         {!isCollapsed && (
           <motion.div
             key="panel-body"
+            id="control-panel-body"
+            role="tabpanel"
+            aria-labelledby={`tab-${activeTab}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -209,33 +159,18 @@ function ControlPanelComponent({
             style={{ overflow: "hidden" }}
           >
             <AnimatePresence mode="wait">
+              {activeTab === "settings" && <SettingsTab {...settingsTab} />}
+
               {activeTab === "effects" && (
                 <EffectsTab
                   effectChain={effectChain}
                   setEffectChain={setEffectChain}
-                  borderColor={borderColor}
+                  borderColor="var(--ui-border)"
                 />
               )}
 
-              {activeTab === "settings" && (
-                <SettingsTab
-                  volume={volume}
-                  setVolume={setVolume}
-                  soundType={soundType}
-                  setSoundType={setSoundType}
-                  startOctave={startOctave}
-                  endOctave={endOctave}
-                  onOctaveChange={onOctaveChange}
-                  pianoScale={pianoScale}
-                  autoScale={autoScale}
-                  setPianoScale={setPianoScale}
-                  bgColor={bgColor}
-                  setBgColor={setBgColor}
-                  labelsEnabled={labelsEnabled}
-                  setLabelsEnabled={setLabelsEnabled}
-                  solfegeEnabled={solfegeEnabled}
-                  setSolfegeEnabled={setSolfegeEnabled}
-                />
+              {activeTab === "practice" && (
+                <EarTrainingTab {...earTrainingTab} />
               )}
             </AnimatePresence>
           </motion.div>

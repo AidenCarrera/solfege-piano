@@ -44,8 +44,10 @@ function createSampler(
 
 export interface SamplerControls {
   samplerRef: React.RefObject<ToneType.Sampler | null>;
-  playNote: (noteName: string) => void;
+  playNote: (noteName: string, velocity?: number) => void;
   stopNote: (noteName: string) => void;
+  /** Releases notes even while sustain is on. */
+  releaseNotes: (noteNames: readonly string[]) => void;
   stopAllNotes: () => void;
 }
 
@@ -101,7 +103,7 @@ export function useSampler(
   }, [volume, Tone]);
 
   const playNote = useCallback(
-    (noteName: string) => {
+    (noteName: string, velocity = 1) => {
       refocusSustainPedal();
       if (!Tone || !buffers?.loaded || !samplerRef.current) return;
 
@@ -117,9 +119,23 @@ export function useSampler(
       // Retrigger from silence instead of layering the same note.
       const now = Tone.now();
       sampler.triggerRelease(toneNote, now);
-      sampler.triggerAttack(toneNote, now);
+      sampler.triggerAttack(toneNote, now, velocity);
     },
     [Tone, buffers, toneNames],
+  );
+
+  const releaseNotes = useCallback(
+    (noteNames: readonly string[]) => {
+      const sampler = samplerRef.current;
+      if (!Tone || !sampler) return;
+
+      const now = Tone.now();
+      noteNames.forEach((noteName) => {
+        const toneNote = toneNames.get(noteName);
+        if (toneNote) sampler.triggerRelease(toneNote, now);
+      });
+    },
+    [Tone, toneNames],
   );
 
   const stopNote = useCallback(
@@ -138,5 +154,5 @@ export function useSampler(
     }
   }, [Tone]);
 
-  return { samplerRef, playNote, stopNote, stopAllNotes };
+  return { samplerRef, playNote, stopNote, releaseNotes, stopAllNotes };
 }

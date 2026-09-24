@@ -4,11 +4,11 @@ import {
   useState,
   useMemo,
   useCallback,
+  useEffect,
   useRef,
   type SetStateAction,
 } from "react";
 
-import { Note } from "@/lib/note";
 import type { EffectNode } from "@/lib/effects";
 import { generateNotes } from "@/lib/noteGenerator";
 import {
@@ -17,8 +17,9 @@ import {
   PIANO_SCALE,
   SHORT_SCREEN_QUERY,
   SOLFEGE_OCTAVE_RANGE,
-  SoundType,
+  type SoundType,
 } from "@/lib/config";
+import { analyzeNote, keyName, prefersFlats, type ScaleId } from "@/lib/theory";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 import { useSettings } from "./hooks/useSettings";
@@ -32,12 +33,16 @@ import { useSustainToggle } from "./hooks/useSustainToggle";
 import { useActiveNotes } from "./hooks/useActiveNotes";
 import { useDeferredPreload } from "./hooks/useDeferredPreload";
 import { usePageInactive } from "./hooks/usePageInactive";
-import { getContrastColor, getShadowColor } from "@/lib/colorUtils";
+import { useMidiInput } from "./hooks/useMidiInput";
+import { useEarTraining } from "./hooks/useEarTraining";
 
 import { OrientationGate } from "@/components/OrientationGate";
 import { PianoKey } from "./PianoKey";
 import { ControlPanel } from "./ControlPanel";
-import { PreloadProgress } from "./PreloadProgress";
+import { PianoDisplay } from "./PianoDisplay";
+import { TopBar } from "./TopBar";
+import type { SettingsTabProps } from "./SettingsTab";
+import type { EarTrainingTabProps } from "./EarTrainingTab";
 
 export function Piano() {
   const { activeNotes, activateNote, deactivateNote, clearAllNotes } =
@@ -50,85 +55,88 @@ export function Piano() {
     effectChain,
     labelsEnabled,
     solfegeEnabled,
+    noteNamesEnabled,
     bgColor,
     soundType,
     startOctave,
     endOctave,
+    scale,
   } = settings;
+  // The Solfege voice is recorded in C, so its syllables are fixed.
+  const tonic = soundType === "Solfege" ? 0 : settings.tonic;
 
   const isShortScreen = useMediaQuery(SHORT_SCREEN_QUERY);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const fit = useFitScale(viewportRef, headerRef, contentRef, isShortScreen);
+  const fit = useFitScale(
+    {
+      viewport: viewportRef,
+      header: headerRef,
+      frame: frameRef,
+      box: boxRef,
+      content: contentRef,
+    },
+    isShortScreen,
+  );
   const autoScale = settings.pianoScale === null;
   const pianoScale = settings.pianoScale ?? fit?.scale ?? PIANO_SCALE.DEFAULT;
 
-  const setPianoScale = useCallback(
-    (value: number | null) => updateSetting("pianoScale", value),
-    [updateSetting],
-  );
-  const setVolume = useCallback(
-    (value: number) => updateSetting("volume", value),
-    [updateSetting],
-  );
   const setEffectChain = useCallback(
     (value: SetStateAction<EffectNode[]>) =>
       updateSetting("effectChain", value),
     [updateSetting],
   );
-  const setLabelsEnabled = useCallback(
-    (value: boolean) => updateSetting("labelsEnabled", value),
-    [updateSetting],
-  );
-  const setSolfegeEnabled = useCallback(
-    (value: boolean) => updateSetting("solfegeEnabled", value),
-    [updateSetting],
-  );
-  const setBgColor = useCallback(
-    (value: string) => updateSetting("bgColor", value),
-    [updateSetting],
-  );
-  const handleOctaveChange = useCallback(
-    (start: number, end: number) =>
-      patchSettings({ startOctave: start, endOctave: end }),
-    [patchSettings],
-  );
 
   useThemeTokens(bgColor);
 
-  const handleSoundTypeChange = useCallback(
-    (newSoundType: SoundType) => {
-      if (newSoundType === "Solfege") {
-        const [start, end] = SOLFEGE_OCTAVE_RANGE;
-        patchSettings({
-          soundType: newSoundType,
-          startOctave: start,
-          endOctave: end,
-        });
-        return;
-      }
-      updateSetting("soundType", newSoundType);
-    },
-    [patchSettings, updateSetting],
-  );
-
-  const notes: Note[] = useMemo(
+  const notes = useMemo(
     () => generateNotes(startOctave, endOctave),
     [startOctave, endOctave],
   );
+  const notesByName = useMemo(
+    () => new Map(notes.map((note) => [note.name, note])),
+    [notes],
+  );
+  const notesByMidi = useMemo(
+    () => new Map(notes.map((note) => [note.midi, note])),
+    [notes],
+  );
+  const theoryByName = useMemo(
+    () =>
+      new Map(
+        notes.map((note) => [
+          note.name,
+          analyzeNote(note.midi, { tonic, scale, soundType }),
+        ]),
+      ),
+    [notes, tonic, scale, soundType],
+  );
+  const flats = prefersFlats(tonic, scale);
+  const keyLabel = keyName(tonic, scale);
 
   const [enablePreload, setEnablePreload] = useState(false);
   const beginPreload = useCallback(() => setEnablePreload(true), []);
   useDeferredPreload(beginPreload, PIANO_CONFIG.PRELOAD_DELAY_MS);
 
-  const [sustainActive, setSustainActive] = useState(false);
+  // The player needs sustain state, and releasing sustain needs the player.
+  const releaseHeldOverRef = useRef<() => void>(() => {});
+  const handleSustainRelease = useCallback(
+    () => releaseHeldOverRef.current(),
+    [],
+  );
+  const { sustainActive, setSustain, toggleSustain } =
+    useSustainToggle(handleSustainRelease);
 
   const {
     playNote,
     stopNote,
+    releaseNotes,
     stopAllNotes,
+    isReady,
     preloadProgress,
     isPreloading,
     preloadError,
@@ -142,12 +150,58 @@ export function Piano() {
     enablePreload,
   });
 
-  const { toggleSustain } = useSustainToggle(stopAllNotes, setSustainActive);
+  // Lifting the pedal stops ringing notes but keeps the ones still held.
+  useEffect(() => {
+    releaseHeldOverRef.current = () =>
+      releaseNotes(
+        notes
+          .filter((note) => !activeNotes.has(note.name))
+          .map((note) => note.name),
+      );
+  });
 
-  useKeyboardControls(notes, playNote, stopNote, activateNote, deactivateNote);
+  const candidates = useMemo(
+    () => notes.filter((note) => theoryByName.get(note.name)?.inScale),
+    [notes, theoryByName],
+  );
+  const [playReference, setPlayReference] = useState(true);
+  const {
+    state: practice,
+    keyFeedback,
+    start: startPractice,
+    stop: stopPractice,
+    replay: replayPractice,
+    reveal: revealPractice,
+    next: nextPractice,
+    reset: resetPractice,
+    handleNote: reportNote,
+  } = useEarTraining({
+    candidates,
+    notes,
+    tonic,
+    playReference,
+    playNote,
+    releaseNotes,
+  });
+
+  const playUserNote = useCallback(
+    (noteName: string, velocity?: number) => {
+      playNote(noteName, velocity);
+      reportNote(noteName);
+    },
+    [playNote, reportNote],
+  );
+
+  useKeyboardControls(
+    notes,
+    playUserNote,
+    stopNote,
+    activateNote,
+    deactivateNote,
+  );
 
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
-    playNote,
+    playUserNote,
     stopNote,
     activateNote,
     deactivateNote,
@@ -155,11 +209,27 @@ export function Piano() {
   );
 
   const keyboardRef = useTouchControls(
-    playNote,
+    playUserNote,
     stopNote,
     activateNote,
     deactivateNote,
   );
+
+  const midi = useMidiInput({
+    onNoteOn: (midiNote, velocity) => {
+      const note = notesByMidi.get(midiNote);
+      if (!note) return;
+      playUserNote(note.name, velocity);
+      activateNote(note.name);
+    },
+    onNoteOff: (midiNote) => {
+      const note = notesByMidi.get(midiNote);
+      if (!note) return;
+      stopNote(note.name);
+      deactivateNote(note.name);
+    },
+    onSustain: setSustain,
+  });
 
   usePageInactive(
     useCallback(() => {
@@ -167,6 +237,55 @@ export function Piano() {
       clearAllNotes();
     }, [stopAllNotes, clearAllNotes]),
   );
+
+  const handleSoundTypeChange = useCallback(
+    (newSoundType: SoundType) => {
+      if (newSoundType === soundType) return;
+      resetPractice();
+      if (newSoundType === "Solfege") {
+        const [start, end] = SOLFEGE_OCTAVE_RANGE;
+        patchSettings({
+          soundType: newSoundType,
+          startOctave: start,
+          endOctave: end,
+        });
+        return;
+      }
+      updateSetting("soundType", newSoundType);
+    },
+    [soundType, resetPractice, patchSettings, updateSetting],
+  );
+
+  const handleTonicChange = useCallback(
+    (value: number) => {
+      resetPractice();
+      updateSetting("tonic", value);
+    },
+    [resetPractice, updateSetting],
+  );
+
+  const handleScaleChange = useCallback(
+    (value: ScaleId) => {
+      resetPractice();
+      updateSetting("scale", value);
+    },
+    [resetPractice, updateSetting],
+  );
+
+  const handleOctaveChange = useCallback(
+    (start: number, end: number) => {
+      if (start === startOctave && end === endOctave) return;
+      resetPractice();
+      // Refit after changing the number of keys.
+      patchSettings({ startOctave: start, endOctave: end, pianoScale: null });
+    },
+    [startOctave, endOctave, resetPractice, patchSettings],
+  );
+
+  const handleResetSettings = useCallback(() => {
+    resetPractice();
+    resetSettings();
+  }, [resetPractice, resetSettings]);
 
   const keys = useMemo(() => {
     const naturalIndex = new Map<string, number>();
@@ -188,17 +307,71 @@ export function Piano() {
     });
   }, [notes]);
 
-  const textColor = useMemo(() => getContrastColor(bgColor), [bgColor]);
-  const shadowColor = useMemo(() => getShadowColor(bgColor), [bgColor]);
+  const settingsTab = useMemo<SettingsTabProps>(
+    () => ({
+      settings,
+      updateSetting,
+      pianoScale,
+      autoScale,
+      onOctaveChange: handleOctaveChange,
+      midiSupported: midi.supported,
+      midiStatus: midi.status,
+      midiDevices: midi.devices,
+      onMidiConnect: midi.connect,
+    }),
+    [
+      settings,
+      updateSetting,
+      pianoScale,
+      autoScale,
+      handleOctaveChange,
+      midi.supported,
+      midi.status,
+      midi.devices,
+      midi.connect,
+    ],
+  );
+
+  const earTrainingTab = useMemo<EarTrainingTabProps>(
+    () => ({
+      practice,
+      ready: isReady,
+      keyLabel,
+      rangeLabel: `C${startOctave} and C${endOctave}`,
+      candidateCount: candidates.length,
+      soundType,
+      playReference,
+      setPlayReference,
+      onStart: startPractice,
+      onStop: stopPractice,
+      onReplay: replayPractice,
+      onReveal: revealPractice,
+      onNext: nextPractice,
+    }),
+    [
+      practice,
+      isReady,
+      keyLabel,
+      startOctave,
+      endOctave,
+      candidates.length,
+      soundType,
+      playReference,
+      startPractice,
+      stopPractice,
+      replayPractice,
+      revealPractice,
+      nextPractice,
+    ],
+  );
 
   return (
     <>
       <OrientationGate />
 
       <main
-        className="relative flex grow flex-col items-center select-none transition-colors duration-500"
+        className="relative flex grow flex-col items-center select-none"
         style={{
-          color: textColor,
           // Avoid hiding the top when content exceeds the viewport.
           justifyContent: "safe center",
         }}
@@ -211,132 +384,133 @@ export function Piano() {
         />
         <div
           ref={headerRef}
-          className="flex w-full shrink-0 flex-col items-center px-3"
+          className="flex w-full shrink-0 flex-col items-center gap-3 px-3 pt-3 sm:px-5 sm:pt-4"
         >
-          <h1
-            className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-3xl md:mb-6 md:text-4xl"
-            style={{ textShadow: `0 2px 8px ${shadowColor}` }}
-          >
-            Solfege Piano
-          </h1>
+          <TopBar
+            tonic={tonic}
+            scale={scale}
+            soundType={soundType}
+            onTonicChange={handleTonicChange}
+            onScaleChange={handleScaleChange}
+            onSoundTypeChange={handleSoundTypeChange}
+            midiDevices={midi.devices}
+          />
 
           <ControlPanel
-            volume={volume}
-            setVolume={setVolume}
+            settingsTab={settingsTab}
+            earTrainingTab={earTrainingTab}
             effectChain={effectChain}
             setEffectChain={setEffectChain}
-            labelsEnabled={labelsEnabled}
-            setLabelsEnabled={setLabelsEnabled}
-            solfegeEnabled={solfegeEnabled}
-            setSolfegeEnabled={setSolfegeEnabled}
-            pianoScale={pianoScale}
-            autoScale={autoScale}
-            setPianoScale={setPianoScale}
-            bgColor={bgColor}
-            setBgColor={setBgColor}
-            soundType={soundType}
-            setSoundType={handleSoundTypeChange}
-            startOctave={startOctave}
-            endOctave={endOctave}
-            onOctaveChange={handleOctaveChange}
-            onResetSettings={resetSettings}
-            textColor={textColor}
+            onResetSettings={handleResetSettings}
           />
         </div>
 
         <section
+          aria-label="Piano"
           className="relative flex w-full shrink-0 flex-col"
           style={{
             paddingTop: PIANO_INSET.TOP_PX,
-            paddingBottom: PIANO_INSET.BOTTOM_PX,
+            // The footer follows the section and fills the rest of the inset.
+            paddingBottom: PIANO_INSET.BOTTOM_PX - PIANO_INSET.FOOTER_PX,
           }}
         >
-          <PreloadProgress
-            progress={preloadProgress}
-            isPreloading={isPreloading}
-            error={preloadError}
-            onRetry={retryPreload}
-          />
-
           <div
-            className="piano-scroll-region flex justify-center overflow-x-auto"
+            className="piano-scroll-region flex overflow-x-auto"
             // Keep an oversized keyboard's left edge reachable.
             style={{ justifyContent: "safe center" }}
           >
-            {/* Give the transformed keyboard an equally scaled layout box. */}
-            <div
-              className={`shrink-0 ${fit === null ? "" : "piano-scale-transition"}`}
-              style={
-                fit === null
-                  ? undefined
-                  : {
-                      width: fit.width * pianoScale,
-                      height: fit.height * pianoScale,
-                    }
-              }
-            >
+            <div ref={frameRef} className="piano-cabinet shrink-0">
+              <div className="cabinet-rail">
+                <PianoDisplay
+                  activeNotes={activeNotes}
+                  notesByName={notesByName}
+                  theoryByName={theoryByName}
+                  keyLabel={keyLabel}
+                  flats={flats}
+                  loading={{
+                    isPreloading,
+                    progress: preloadProgress,
+                    error: preloadError,
+                    onRetry: retryPreload,
+                  }}
+                  practice={practice}
+                  playReference={playReference}
+                />
+                <button
+                  type="button"
+                  onClick={toggleSustain}
+                  aria-pressed={sustainActive}
+                  className="sustain-button"
+                  title="Sustain (Space)"
+                >
+                  <span className="sustain-led" aria-hidden="true" />
+                  <span className="flex flex-col items-start leading-tight">
+                    <span className="text-[13px] font-semibold">Sustain</span>
+                    <span className="text-[10px] font-medium text-white/45">
+                      {sustainActive ? "On" : "Off"}
+                      <span className="max-sm:hidden"> · Space</span>
+                    </span>
+                  </span>
+                </button>
+              </div>
+
+              <div className="cabinet-felt" />
+
+              {/* Give the transformed keyboard an equally scaled layout box. */}
               <div
-                ref={contentRef}
-                className={`flex w-max flex-col items-center ${
-                  fit === null ? "" : "piano-scale-transition"
-                }`}
-                style={{
-                  transform: `scale(${pianoScale})`,
-                  // Center before measurement, then align with the scaled wrapper.
-                  transformOrigin: fit === null ? "top center" : "top left",
-                }}
+                ref={boxRef}
+                className={`relative shrink-0 ${fit === null ? "" : "piano-scale-transition"}`}
+                style={
+                  fit === null
+                    ? undefined
+                    : {
+                        width: fit.width * pianoScale,
+                        height: fit.height * pianoScale,
+                      }
+                }
               >
                 <div
-                  ref={keyboardRef}
-                  className="relative flex transform-gpu"
+                  ref={contentRef}
+                  className={`w-max ${fit === null ? "" : "piano-scale-transition"}`}
                   style={{
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
+                    // Render at natural size until the first measurement.
+                    transform:
+                      fit === null ? undefined : `scale(${pianoScale})`,
+                    transformOrigin: "top left",
                   }}
                 >
-                  {keys.map(({ note, leftRem }) => (
-                    <PianoKey
-                      key={note.name}
-                      note={note}
-                      isActive={activeNotes.has(note.name)}
-                      leftRem={leftRem}
-                      onMouseDown={handleMouseDown}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseUp={handleMouseUp}
-                      showLabel={labelsEnabled}
-                      showSolfege={solfegeEnabled}
-                    />
-                  ))}
-                </div>
-
-                <div
-                  className="mt-5 flex flex-col items-center transform-gpu sm:mt-8"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
-                >
-                  <button
-                    onClick={toggleSustain}
-                    className={`h-6 w-24 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center shadow-lg ${
-                      sustainActive
-                        ? "bg-green-500 shadow-green-500/40"
-                        : "bg-gray-600 hover:bg-gray-500"
-                    }`}
-                    aria-label="Toggle sustain mode"
-                    aria-pressed={sustainActive}
+                  <div
+                    ref={keyboardRef}
+                    className="relative flex transform-gpu"
+                    style={{
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                    }}
                   >
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      {sustainActive ? "Sustain" : "Dry"}
-                    </span>
-                  </button>
-                  <p className="mt-3 text-center text-sm font-medium opacity-80">
-                    Sustain Mode {sustainActive ? "(Active)" : "(Off)"} — Click
-                    or press Spacebar
-                  </p>
-                  <p className="mt-1.5 hidden text-sm font-medium opacity-60 sm:block">
-                    Click, drag, touch, or use your keyboard to play notes
-                  </p>
+                    {keys.map(({ note, leftRem }) => {
+                      const feedback = keyFeedback.get(note.name);
+                      return (
+                        <PianoKey
+                          key={note.name}
+                          note={note}
+                          theory={theoryByName.get(note.name)!}
+                          isActive={activeNotes.has(note.name)}
+                          leftRem={leftRem}
+                          onMouseDown={handleMouseDown}
+                          onMouseEnter={handleMouseEnter}
+                          onMouseUp={handleMouseUp}
+                          showShortcut={labelsEnabled}
+                          showSolfege={solfegeEnabled}
+                          showNoteName={noteNamesEnabled}
+                          showScale={scale !== "chromatic"}
+                          feedback={feedback}
+                          feedbackToken={
+                            feedback ? practice.attempt : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>

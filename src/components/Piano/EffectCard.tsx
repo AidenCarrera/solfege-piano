@@ -7,6 +7,7 @@ import type {
   EffectParamsUpdate,
   EffectType,
 } from "@/lib/effects";
+import { Slider } from "@/components/ui/controls";
 import { EFFECT_META, EFFECT_ICON_SIZE } from "./effectMeta";
 import {
   EFFECT_MODES,
@@ -37,17 +38,17 @@ function ParamSlider({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col">
+      <div className="flex h-4 items-center justify-between gap-2">
         <label
           htmlFor={id}
-          className="text-[11px] font-medium"
+          className="truncate text-[11px] leading-none font-medium"
           style={{ color: "var(--panel-fg)" }}
         >
           {label}
         </label>
         <span
-          className="text-[11px] font-mono px-1.5 py-px rounded"
+          className="rounded px-1 py-px font-mono text-[10px] leading-none tabular-nums"
           style={{
             background: "var(--panel-surface)",
             color: "var(--panel-fg)",
@@ -56,15 +57,15 @@ function ParamSlider({
           {displayValue}
         </span>
       </div>
-      <input
+      <Slider
         id={id}
-        type="range"
+        // Touch keeps the taller global hit target.
+        className="pointer-fine:h-4"
         min={min}
         max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full"
         // Keep slider drags from starting a card reorder.
         onPointerDown={(e) => e.stopPropagation()}
         aria-valuetext={displayValue}
@@ -144,7 +145,7 @@ export function EffectCard<T extends EffectType>({
         />
 
         <div
-          className="flex items-center gap-2 px-3 pt-2.5 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-grab active:cursor-grabbing touch-none select-none"
           onPointerDown={(e) => {
             // Buttons inside the drag handle keep their own pointer behavior.
             if ((e.target as HTMLElement).closest("button")) return;
@@ -152,12 +153,12 @@ export function EffectCard<T extends EffectType>({
           }}
         >
           <GripVertical
-            size={14}
+            size={12}
             style={{ color: "var(--panel-fg)", flexShrink: 0 }}
           />
 
           <div
-            className={`flex items-center justify-center w-6 h-6 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color} ${!effect.enabled ? "grayscale opacity-50" : ""}`}
+            className={`flex items-center justify-center size-5 rounded-md bg-linear-to-br text-white shrink-0 ${meta.color} ${!effect.enabled ? "grayscale opacity-50" : ""}`}
           >
             <meta.Icon size={EFFECT_ICON_SIZE} />
           </div>
@@ -203,14 +204,14 @@ export function EffectCard<T extends EffectType>({
         </div>
 
         <div
-          className="px-3 pb-3 flex flex-col gap-2 flex-1 transition-opacity duration-200"
+          className="px-2.5 pb-2.5 flex flex-col flex-1 transition-opacity duration-200"
           style={{
             opacity: effect.enabled ? 1 : 0.3,
             pointerEvents: effect.enabled ? "auto" : "none",
           }}
         >
           <div
-            className="flex flex-col gap-2 pt-1 border-t"
+            className="flex flex-col gap-1.5 pt-2 border-t"
             style={{ borderColor }}
           >
             {modes.length > 0 && (
@@ -222,7 +223,7 @@ export function EffectCard<T extends EffectType>({
                     mode: e.target.value as EffectMode<T>,
                   } as EffectParamsUpdate<T>)
                 }
-                className="mt-1 mb-2 w-full rounded px-2 py-1.5 text-sm sm:py-1 sm:text-xs"
+                className="h-8 w-full py-0 text-sm pointer-fine:h-6 pointer-fine:text-xs"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 {modes.map((mode) => (
@@ -246,15 +247,13 @@ export function EffectCard<T extends EffectType>({
               onChange={(mix) => onUpdate({ mix } as EffectParamsUpdate<T>)}
             />
 
-            <div className="flex flex-col gap-2 mt-1">
-              {sliders
-                .filter(
-                  (spec) =>
-                    !spec.appliesTo ||
-                    spec.appliesTo.includes(effect.params.mode),
-                )
-                .map(renderSlider)}
-            </div>
+            {sliders
+              .filter(
+                (spec) =>
+                  !spec.appliesTo ||
+                  spec.appliesTo.includes(effect.params.mode),
+              )
+              .map(renderSlider)}
           </div>
         </div>
       </motion.div>

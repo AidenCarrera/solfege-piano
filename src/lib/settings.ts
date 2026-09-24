@@ -15,6 +15,7 @@ import {
   SOUND_OPTIONS,
   type SoundType,
 } from "./config";
+import { isScaleId, type ScaleId } from "./theory";
 
 // Bump only for incompatible storage changes.
 export const SETTINGS_STORAGE_KEY = "solfege-piano.settings.v1";
@@ -32,6 +33,10 @@ export interface PianoSettings {
   pianoScale: number | null;
   labelsEnabled: boolean;
   solfegeEnabled: boolean;
+  noteNamesEnabled: boolean;
+  /** Pitch class of Do, from 0 (C) to 11 (B). */
+  tonic: number;
+  scale: ScaleId;
   effectChain: EffectNode[];
 }
 
@@ -45,6 +50,9 @@ export const DEFAULT_PREFERENCES: Omit<PianoSettings, "effectChain"> = {
   pianoScale: null,
   labelsEnabled: PIANO_CONFIG.DEFAULT_LABELS_ENABLED,
   solfegeEnabled: PIANO_CONFIG.DEFAULT_SOLFEGE_ENABLED,
+  noteNamesEnabled: PIANO_CONFIG.DEFAULT_NOTE_NAMES_ENABLED,
+  tonic: PIANO_CONFIG.DEFAULT_TONIC,
+  scale: PIANO_CONFIG.DEFAULT_SCALE,
 };
 
 export function createDefaultSettings(): PianoSettings {
@@ -156,6 +164,17 @@ export function parseSettings(value: unknown): PianoSettings {
           ),
     labelsEnabled: readBoolean(value.labelsEnabled, defaults.labelsEnabled),
     solfegeEnabled: readBoolean(value.solfegeEnabled, defaults.solfegeEnabled),
+    noteNamesEnabled: readBoolean(
+      value.noteNamesEnabled,
+      defaults.noteNamesEnabled,
+    ),
+    tonic:
+      Number.isInteger(value.tonic) &&
+      (value.tonic as number) >= 0 &&
+      (value.tonic as number) < 12
+        ? (value.tonic as number)
+        : defaults.tonic,
+    scale: isScaleId(value.scale) ? value.scale : defaults.scale,
     // An empty chain is intentional; only a missing chain uses the default.
     effectChain: storedChain ?? defaults.effectChain,
   };

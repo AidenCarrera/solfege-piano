@@ -1,22 +1,31 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isTextEntryTarget } from "@/lib/keyboard";
 
 const SPACE_ACTIVATED_SELECTOR =
   'button, select, summary, input, [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [role="option"], [role="slider"]';
 
-export function useSustainToggle(
-  stopAllNotes: () => void,
-  setSustainActive: React.Dispatch<React.SetStateAction<boolean>>,
-) {
-  const toggleSustain = useCallback(() => {
-    setSustainActive((prev) => {
-      const newState = !prev;
-      if (!newState) {
-        stopAllNotes();
-      }
-      return newState;
-    });
-  }, [stopAllNotes, setSustainActive]);
+/** `onRelease` runs when sustain turns off so held-over notes can stop. */
+export function useSustainToggle(onRelease: () => void) {
+  const [sustainActive, setSustainActive] = useState(false);
+  // Pedal messages can arrive faster than React re-renders.
+  const sustainRef = useRef(false);
+
+  const onReleaseRef = useRef(onRelease);
+  useEffect(() => {
+    onReleaseRef.current = onRelease;
+  });
+
+  const setSustain = useCallback((next: boolean) => {
+    if (sustainRef.current === next) return;
+    sustainRef.current = next;
+    setSustainActive(next);
+    if (!next) onReleaseRef.current();
+  }, []);
+
+  const toggleSustain = useCallback(
+    () => setSustain(!sustainRef.current),
+    [setSustain],
+  );
 
   useEffect(() => {
     const handleSpace = (e: KeyboardEvent) => {
@@ -37,5 +46,5 @@ export function useSustainToggle(
     return () => window.removeEventListener("keydown", handleSpace);
   }, [toggleSustain]);
 
-  return { toggleSustain };
+  return { sustainActive, setSustain, toggleSustain };
 }

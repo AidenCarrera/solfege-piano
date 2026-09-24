@@ -68,7 +68,9 @@ export function useNotePlayer({
   return {
     playNote: sampler.playNote,
     stopNote: sampler.stopNote,
+    releaseNotes: sampler.releaseNotes,
     stopAllNotes: sampler.stopAllNotes,
+    isReady: samples.buffers !== null,
     preloadProgress: samples.progress,
     isPreloading,
     preloadError,

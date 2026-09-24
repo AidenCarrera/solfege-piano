@@ -15,6 +15,15 @@ describe("generateNotes", () => {
     expect(notes.at(-1)).toMatchObject({ name: "C4", shortcut: "q" });
   });
 
+  it("numbers notes the way MIDI does, with middle C at 60", () => {
+    const notes = generateNotes(2, 6);
+
+    expect(notes[0]).toMatchObject({ name: "C2", midi: 36 });
+    expect(notes.find((note) => note.name === "C4")?.midi).toBe(60);
+    expect(notes.find((note) => note.name === "As4")?.midi).toBe(70);
+    expect(notes.at(-1)).toMatchObject({ name: "C6", midi: 84 });
+  });
+
   it("maps the lower and higher keyboard rows across two octaves", () => {
     const notes = generateNotes(3, 5);
     const shortcuts = Object.fromEntries(

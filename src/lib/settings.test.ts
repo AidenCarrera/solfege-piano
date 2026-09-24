@@ -25,6 +25,9 @@ describe("parseSettings", () => {
       pianoScale: 1.2,
       labelsEnabled: false,
       solfegeEnabled: true,
+      noteNamesEnabled: true,
+      tonic: 7,
+      scale: "dorian",
     });
 
     expect(parsed).toMatchObject({
@@ -36,7 +39,30 @@ describe("parseSettings", () => {
       pianoScale: 1.2,
       labelsEnabled: false,
       solfegeEnabled: true,
+      noteNamesEnabled: true,
+      tonic: 7,
+      scale: "dorian",
     });
+  });
+
+  it("gives settings saved before keys existed a default key", () => {
+    expect(parseSettings({ volume: 0.5 })).toMatchObject({
+      tonic: defaults.tonic,
+      scale: defaults.scale,
+      noteNamesEnabled: defaults.noteNamesEnabled,
+    });
+  });
+
+  it("only accepts a whole-number tonic and a known scale", () => {
+    for (const tonic of [-1, 12, 2.5, "7", null]) {
+      expect(parseSettings({ tonic }).tonic).toBe(defaults.tonic);
+    }
+    expect(parseSettings({ tonic: 0 }).tonic).toBe(0);
+    expect(parseSettings({ tonic: 11 }).tonic).toBe(11);
+    expect(parseSettings({ scale: "lydianDominant" }).scale).toBe(
+      defaults.scale,
+    );
+    expect(parseSettings({ scale: "__proto__" }).scale).toBe(defaults.scale);
   });
 
   it("clamps numbers into range instead of dropping them", () => {

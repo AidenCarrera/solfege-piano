@@ -72,6 +72,7 @@ export function generateNotes(startOctave: number, endOctave: number): Note[] {
         base: baseNote.base,
         naturalName: `${natural}${octave}`,
         octave,
+        midi: (octave + 1) * BASE_NOTES.length + index,
         isSharp: baseNote.isSharp,
         toneName: `${baseNote.isSharp ? `${natural}#` : natural}${octave}`,
         shortcut,
