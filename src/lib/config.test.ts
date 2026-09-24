@@ -18,10 +18,10 @@ function keyboardWidth(whiteKeys: number): number {
 const KEYBOARD_HEIGHT_PX = 380;
 
 describe("sample release", () => {
-  it("gives Solfege a slower initial fade without changing the piano", () => {
+  it("releases Solfege sooner and linearly without changing the piano", () => {
     expect(getReleaseMs("Piano")).toBe(PIANO_CONFIG.FADE_OUT_MS);
     expect(getReleaseMs("Solfege")).toBe(PIANO_CONFIG.SOLFEGE_FADE_OUT_MS);
-    expect(getReleaseMs("Solfege")).toBeGreaterThan(getReleaseMs("Piano"));
+    expect(getReleaseMs("Solfege")).toBeLessThan(getReleaseMs("Piano"));
     expect(getReleaseCurve("Piano")).toBe("exponential");
     expect(getReleaseCurve("Solfege")).toBe("linear");
   });

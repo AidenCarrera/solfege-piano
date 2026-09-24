@@ -1,16 +1,15 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import { refocusSustainPedal } from "@/lib/keyboard";
+import type { NoteHandlers } from "@/lib/note";
+import { blurFocusedControl } from "@/lib/keyboard";
 import { usePageInactive } from "./usePageInactive";
 
 export function useMouseControls(
-  playNote: (noteName: string) => void,
-  stopNote: (noteName: string) => void,
-  activateNote: (noteName: string) => void,
-  deactivateNote: (noteName: string) => void,
+  handlers: NoteHandlers,
   clearAllNotes: () => void,
 ) {
+  const { playNote, stopNote, activateNote, deactivateNote } = handlers;
   const isMouseDown = useRef(false);
   const currentNote = useRef<string | null>(null);
 
@@ -35,7 +34,7 @@ export function useMouseControls(
 
   const handleMouseDown = useCallback(
     (name: string) => {
-      refocusSustainPedal();
+      blurFocusedControl();
       isMouseDown.current = true;
       triggerNote(name);
     },

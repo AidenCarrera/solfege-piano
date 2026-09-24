@@ -7,24 +7,18 @@ const handlers = {
   stopNote: vi.fn(),
   activateNote: vi.fn(),
   deactivateNote: vi.fn(),
-  clearAllNotes: vi.fn(),
 };
+const clearAllNotes = vi.fn();
 
 function setup() {
-  return renderHook(() =>
-    useMouseControls(
-      handlers.playNote,
-      handlers.stopNote,
-      handlers.activateNote,
-      handlers.deactivateNote,
-      handlers.clearAllNotes,
-    ),
-  );
+  return renderHook(() => useMouseControls(handlers, clearAllNotes));
 }
 
 describe("useMouseControls", () => {
   beforeEach(() => {
-    Object.values(handlers).forEach((handler) => handler.mockClear());
+    [...Object.values(handlers), clearAllNotes].forEach((mock) =>
+      mock.mockClear(),
+    );
   });
 
   it("lights a key on press and clears it on release", () => {
@@ -79,7 +73,7 @@ describe("useMouseControls", () => {
     });
 
     expect(handlers.stopNote).toHaveBeenCalledWith("C3");
-    expect(handlers.clearAllNotes).toHaveBeenCalled();
+    expect(clearAllNotes).toHaveBeenCalled();
   });
 
   it("releases when the page goes inactive mid-press", () => {

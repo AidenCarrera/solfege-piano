@@ -44,8 +44,6 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-ui-fg: var(--ui-fg);
   --color-ui-muted: var(--ui-muted);
   --color-ui-subtle: var(--ui-subtle);

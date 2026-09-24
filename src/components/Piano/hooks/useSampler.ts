@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type * as ToneType from "tone";
 import type { Note } from "@/lib/note";
 import { PIANO_CONFIG, type ReleaseCurve } from "@/lib/config";
-import { refocusSustainPedal } from "@/lib/keyboard";
+import { blurFocusedControl } from "@/lib/keyboard";
 
 // Leave headroom for chords and boosting effects.
 const HEADROOM_DB = 3;
@@ -21,7 +21,7 @@ function createSampler(
   const bufferMap: Record<string, ToneType.ToneAudioBuffer> = {};
   notes.forEach((note) => {
     try {
-      if (buffers.has && !buffers.has(note.toneName)) return;
+      if (!buffers.has(note.toneName)) return;
       const buffer = buffers.get(note.toneName);
       if (buffer) bufferMap[note.toneName] = buffer;
     } catch {
@@ -51,16 +51,27 @@ export interface SamplerControls {
   stopAllNotes: () => void;
 }
 
-export function useSampler(
-  Tone: typeof ToneType | null,
-  buffers: ToneType.ToneAudioBuffers | null,
-  notes: Note[],
-  volume: number,
-  sustainMode: boolean,
-  releaseMs: number,
-  releaseCurve: ReleaseCurve,
-  limiterRef: React.RefObject<ToneType.Limiter | null>,
-): SamplerControls {
+export interface SamplerOptions {
+  Tone: typeof ToneType | null;
+  buffers: ToneType.ToneAudioBuffers | null;
+  notes: Note[];
+  volume: number;
+  sustainMode: boolean;
+  releaseMs: number;
+  releaseCurve: ReleaseCurve;
+  limiterRef: React.RefObject<ToneType.Limiter | null>;
+}
+
+export function useSampler({
+  Tone,
+  buffers,
+  notes,
+  volume,
+  sustainMode,
+  releaseMs,
+  releaseCurve,
+  limiterRef,
+}: SamplerOptions): SamplerControls {
   const samplerRef = useRef<ToneType.Sampler | null>(null);
 
   const toneNames = useMemo(() => {
@@ -104,7 +115,7 @@ export function useSampler(
 
   const playNote = useCallback(
     (noteName: string, velocity = 1) => {
-      refocusSustainPedal();
+      blurFocusedControl();
       if (!Tone || !buffers?.loaded || !samplerRef.current) return;
 
       const toneNote = toneNames.get(noteName);

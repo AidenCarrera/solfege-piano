@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 export const SITE_NAME = "Solfege Piano";
 
 export const SITE_TITLE = "Solfege Piano | Free Online Piano";
@@ -8,7 +10,7 @@ export const SITE_OG_IMAGE_ALT =
 export const SITE_DESCRIPTION =
   "Practice piano, solfege, ear training, and music theory online with an interactive keyboard, realistic samples, sustain, note labels, and audio effects.";
 
-const FALLBACK_SITE_URL = "https://solfegepiano.vercel.app";
+const FALLBACK_SITE_URL = "https://solfege.aidencarrera.com";
 
 function normalizeSiteUrl(value: string): string {
   const url =
@@ -19,11 +21,27 @@ function normalizeSiteUrl(value: string): string {
   return url.replace(/\/$/, "");
 }
 
-const configuredUrl = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
-const vercelProductionUrl =
-  process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-  process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
-
+// Server-only module, so the plain (non-NEXT_PUBLIC) variables are enough.
 export const SITE_URL = normalizeSiteUrl(
-  configuredUrl ?? vercelProductionUrl ?? FALLBACK_SITE_URL,
+  process.env.SITE_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    FALLBACK_SITE_URL,
 );
+
+export function canonicalUrl(path: string): string {
+  return path === "/" ? SITE_URL : `${SITE_URL}${path}`;
+}
+
+export const SITE_OPEN_GRAPH = {
+  siteName: SITE_NAME,
+  locale: "en_US",
+  type: "website",
+  images: [
+    {
+      url: "/og-image.png",
+      width: 1200,
+      height: 630,
+      alt: SITE_OG_IMAGE_ALT,
+    },
+  ],
+} satisfies Metadata["openGraph"];

@@ -7,6 +7,7 @@ import {
   loadSettings,
   saveSettings,
   type PianoSettings,
+  type UpdateSetting,
 } from "@/lib/settings";
 
 const SAVE_DEBOUNCE_MS = 250;
@@ -67,25 +68,13 @@ export function useSettings() {
     commit({ ...getSnapshot(), ...DEFAULT_PREFERENCES });
   }, []);
 
-  const updateSetting = useCallback(
-    <K extends keyof PianoSettings>(
-      key: K,
-      value:
-        PianoSettings[K] | ((previous: PianoSettings[K]) => PianoSettings[K]),
-    ) => {
-      const previous = getSnapshot();
-      const next =
-        typeof value === "function"
-          ? (value as (previous: PianoSettings[K]) => PianoSettings[K])(
-              previous[key],
-            )
-          : value;
+  const updateSetting = useCallback<UpdateSetting>((key, value) => {
+    const previous = getSnapshot();
+    const next = typeof value === "function" ? value(previous[key]) : value;
 
-      if (Object.is(previous[key], next)) return;
-      commit({ ...previous, [key]: next });
-    },
-    [],
-  );
+    if (Object.is(previous[key], next)) return;
+    commit({ ...previous, [key]: next });
+  }, []);
 
   return { settings, updateSetting, patchSettings, resetSettings };
 }

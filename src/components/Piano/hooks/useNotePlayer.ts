@@ -33,16 +33,16 @@ export function useNotePlayer({
     notes,
     enablePreload,
   );
-  const sampler = useSampler(
-    engine.Tone,
-    samples.buffers,
+  const sampler = useSampler({
+    Tone: engine.Tone,
+    buffers: samples.buffers,
     notes,
     volume,
     sustainMode,
-    getReleaseMs(soundType),
-    getReleaseCurve(soundType),
-    engine.limiterRef,
-  );
+    releaseMs: getReleaseMs(soundType),
+    releaseCurve: getReleaseCurve(soundType),
+    limiterRef: engine.limiterRef,
+  });
 
   // Build the source before routing it through the effect graph.
   useEffectChain(

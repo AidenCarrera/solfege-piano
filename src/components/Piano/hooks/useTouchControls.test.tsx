@@ -10,12 +10,7 @@ const handlers = {
 };
 
 function Keyboard() {
-  const keyboardRef = useTouchControls(
-    (note) => handlers.playNote(note),
-    (note) => handlers.stopNote(note),
-    (note) => handlers.activateNote(note),
-    (note) => handlers.deactivateNote(note),
-  );
+  const keyboardRef = useTouchControls(handlers);
 
   return (
     <div ref={keyboardRef}>

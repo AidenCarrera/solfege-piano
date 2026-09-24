@@ -193,28 +193,19 @@ export function Piano() {
     [playNote, reportNote],
   );
 
-  useKeyboardControls(
-    notes,
-    playUserNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
+  const noteHandlers = useMemo(
+    () => ({ playNote: playUserNote, stopNote, activateNote, deactivateNote }),
+    [playUserNote, stopNote, activateNote, deactivateNote],
   );
 
+  useKeyboardControls(notes, noteHandlers);
+
   const { handleMouseDown, handleMouseEnter, handleMouseUp } = useMouseControls(
-    playUserNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
+    noteHandlers,
     clearAllNotes,
   );
 
-  const keyboardRef = useTouchControls(
-    playUserNote,
-    stopNote,
-    activateNote,
-    deactivateNote,
-  );
+  const keyboardRef = useTouchControls(noteHandlers);
 
   const midi = useMidiInput({
     onNoteOn: (midiNote, velocity) => {

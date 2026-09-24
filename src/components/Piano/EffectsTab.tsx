@@ -74,6 +74,33 @@ function GhostCard({ type, x, y }: { type: EffectType; x: number; y: number }) {
   );
 }
 
+/**
+ * Runs `onDrag` once the pointer has travelled far enough to mean a drag rather
+ * than a tap, so a plain click on a palette button still appends the effect.
+ */
+function watchForDrag(startX: number, startY: number, onDrag: () => void) {
+  const onMove = (e: PointerEvent) => {
+    if (
+      Math.abs(e.clientX - startX) <= DRAG_ACTIVATION_DISTANCE_PX &&
+      Math.abs(e.clientY - startY) <= DRAG_ACTIVATION_DISTANCE_PX
+    ) {
+      return;
+    }
+    stop();
+    onDrag();
+  };
+
+  const stop = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", stop);
+    document.removeEventListener("pointercancel", stop);
+  };
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", stop);
+  document.addEventListener("pointercancel", stop);
+}
+
 function DropIndicator() {
   return (
     <motion.div
@@ -207,12 +234,10 @@ export function EffectsTab({
     };
   }, [draggingNewType, computeDropIndex, setEffectChain]);
 
-  const startAddDrag = (type: EffectType, e: React.PointerEvent) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
+  const startAddDrag = (type: EffectType, x: number, y: number) => {
     dropIndexRef.current = null;
     setDraggingNewType(type);
-    setGhostPos({ x: e.clientX, y: e.clientY });
+    setGhostPos({ x, y });
   };
 
   return (
@@ -225,85 +250,71 @@ export function EffectsTab({
         transition={{ duration: 0.18 }}
         className="p-3 sm:p-4"
       >
-        <div className="mb-2">
-          <div className="flex flex-wrap gap-1.5 items-center">
-            {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
-              const meta = EFFECT_META[type];
-              return (
-                <motion.button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    if (!isDraggingNew.current) {
-                      setEffectChain((prev) => [
-                        ...prev,
-                        createEffectNode(type),
-                      ]);
-                    }
-                  }}
-                  onPointerDown={(e) => {
-                    isDraggingNew.current = false;
-                    const startX = e.clientX;
-                    const startY = e.clientY;
-                    const onMove = (me: PointerEvent) => {
-                      if (
-                        Math.abs(me.clientX - startX) >
-                          DRAG_ACTIVATION_DISTANCE_PX ||
-                        Math.abs(me.clientY - startY) >
-                          DRAG_ACTIVATION_DISTANCE_PX
-                      ) {
-                        isDraggingNew.current = true;
-                        startAddDrag(type, e as unknown as React.PointerEvent);
-                        document.removeEventListener("pointermove", onMove);
-                        document.removeEventListener("pointerup", onUp);
-                        document.removeEventListener("pointercancel", onUp);
-                      }
-                    };
-                    const onUp = () => {
-                      document.removeEventListener("pointermove", onMove);
-                      document.removeEventListener("pointerup", onUp);
-                      document.removeEventListener("pointercancel", onUp);
-                    };
-                    document.addEventListener("pointermove", onMove);
-                    document.addEventListener("pointerup", onUp);
-                    document.addEventListener("pointercancel", onUp);
-                  }}
-                  // Preserve the pointer stream during touch drags.
-                  className="flex touch-none items-center gap-1.5 rounded-lg border border-ui-border bg-ui-surface py-1 pr-2.5 pl-1 text-[12px] font-semibold text-ui-fg cursor-grab select-none transition-colors hover:bg-ui-surface-hover active:cursor-grabbing"
-                  title={`${meta.description}. Click to add, or drag into the chain.`}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 25,
-                  }}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {(Object.keys(EFFECT_META) as EffectType[]).map((type) => {
+            const meta = EFFECT_META[type];
+            return (
+              <motion.button
+                key={type}
+                type="button"
+                onClick={() => {
+                  if (!isDraggingNew.current) {
+                    setEffectChain((prev) => [...prev, createEffectNode(type)]);
+                  }
+                }}
+                onPointerDown={(e) => {
+                  if (e.button !== 0) return;
+                  isDraggingNew.current = false;
+                  const { clientX, clientY } = e;
+                  watchForDrag(clientX, clientY, () => {
+                    isDraggingNew.current = true;
+                    startAddDrag(type, clientX, clientY);
+                  });
+                }}
+                // Preserve the pointer stream during touch drags.
+                className="flex touch-none items-center gap-1.5 rounded-lg border border-ui-border bg-ui-surface py-1 pr-2.5 pl-1 text-[12px] font-semibold text-ui-fg cursor-grab select-none transition-colors hover:bg-ui-surface-hover active:cursor-grabbing"
+                title={`${meta.description}. Click to add, or drag into the chain.`}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 25,
+                }}
+              >
+                <span
+                  className={`flex size-5 items-center justify-center rounded-md bg-linear-to-br text-white ${meta.color}`}
                 >
-                  <span
-                    className={`flex size-5 items-center justify-center rounded-md bg-linear-to-br text-white ${meta.color}`}
-                  >
-                    <meta.Icon size={EFFECT_ICON_SIZE} />
-                  </span>
-                  <span>{type}</span>
-                  <Plus
-                    size={12}
-                    className="text-ui-subtle"
-                    aria-hidden="true"
-                  />
-                </motion.button>
-              );
-            })}
-          </div>
+                  <meta.Icon size={EFFECT_ICON_SIZE} />
+                </span>
+                <span>{type}</span>
+                <Plus size={12} className="text-ui-subtle" aria-hidden="true" />
+              </motion.button>
+            );
+          })}
         </div>
 
-        <AnimatePresence mode="wait">
+        <div
+          ref={rackRef}
+          role="region"
+          aria-label="Active effects chain"
+          className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-2"
+          style={{
+            scrollbarWidth: "thin",
+            outline: draggingNewType
+              ? "2px dashed rgba(99,102,241,0.5)"
+              : "none",
+            outlineOffset: "4px",
+            borderRadius: "12px",
+            transition: "outline 0.15s ease",
+          }}
+        >
           {effectChain.length === 0 && !draggingNewType ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed py-3 text-ui-muted sm:py-4"
+              className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed py-3 text-ui-muted sm:py-4"
               style={{ borderColor }}
             >
               <Waves size={20} />
@@ -312,79 +323,60 @@ export function EffectsTab({
               </p>
             </motion.div>
           ) : (
-            <div
-              ref={rackRef}
-              role="region"
-              aria-label="Active effects chain"
-              className="flex min-h-20 items-start overflow-x-auto overscroll-x-contain pb-2"
-              style={{
-                scrollbarWidth: "thin",
-                outline: draggingNewType
-                  ? "2px dashed rgba(99,102,241,0.5)"
-                  : "none",
-                outlineOffset: "4px",
-                borderRadius: "12px",
-                transition: "outline 0.15s ease",
-              }}
+            <Reorder.Group
+              axis="x"
+              values={effectChain}
+              onReorder={setEffectChain}
+              as="div"
+              className="flex items-start"
             >
-              <Reorder.Group
-                axis="x"
-                values={effectChain}
-                onReorder={setEffectChain}
-                as="div"
-                className="flex items-start gap-0"
-                style={{ listStyle: "none", padding: 0, margin: 0 }}
-              >
-                <AnimatePresence initial={false}>
-                  {effectChain.map((effect, index) => (
-                    <React.Fragment key={effect.id}>
-                      <AnimatePresence>
-                        {dropIndex === index && (
-                          <DropIndicator key="drop-before" />
-                        )}
-                      </AnimatePresence>
-                      <div data-effect-card="true">
-                        <EffectCard
-                          effect={effect}
-                          borderColor={borderColor}
-                          onToggle={() => toggleEnabled(effect.id)}
-                          onRemove={() => removeEffect(effect.id)}
-                          onUpdate={(params) => updateEffect(effect.id, params)}
-                        />
-                      </div>
-                      {index < effectChain.length - 1 && (
-                        <motion.div
-                          className="flex items-center self-stretch shrink-0 px-1"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.5 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          <ChevronRight
-                            size={16}
-                            style={{ color: "var(--panel-fg)" }}
-                          />
-                        </motion.div>
+              <AnimatePresence initial={false}>
+                {effectChain.map((effect, index) => (
+                  <React.Fragment key={effect.id}>
+                    <AnimatePresence>
+                      {dropIndex === index && (
+                        <DropIndicator key="drop-before" />
                       )}
-                    </React.Fragment>
-                  ))}
-                  <AnimatePresence>
-                    {dropIndex === effectChain.length && (
-                      <DropIndicator key="drop-end" />
+                    </AnimatePresence>
+                    <div data-effect-card="true">
+                      <EffectCard
+                        effect={effect}
+                        borderColor={borderColor}
+                        onToggle={() => toggleEnabled(effect.id)}
+                        onRemove={() => removeEffect(effect.id)}
+                        onUpdate={(params) => updateEffect(effect.id, params)}
+                      />
+                    </div>
+                    {index < effectChain.length - 1 && (
+                      <motion.div
+                        className="flex items-center self-stretch shrink-0 px-1"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <ChevronRight
+                          size={16}
+                          style={{ color: "var(--panel-fg)" }}
+                        />
+                      </motion.div>
                     )}
-                  </AnimatePresence>
+                  </React.Fragment>
+                ))}
+                <AnimatePresence>
+                  {dropIndex === effectChain.length && (
+                    <DropIndicator key="drop-end" />
+                  )}
                 </AnimatePresence>
-              </Reorder.Group>
-            </div>
+              </AnimatePresence>
+            </Reorder.Group>
           )}
-        </AnimatePresence>
+        </div>
       </motion.div>
 
-      <AnimatePresence>
-        {draggingNewType && (
-          <GhostCard type={draggingNewType} x={ghostPos.x} y={ghostPos.y} />
-        )}
-      </AnimatePresence>
+      {draggingNewType && (
+        <GhostCard type={draggingNewType} x={ghostPos.x} y={ghostPos.y} />
+      )}
     </>
   );
 }

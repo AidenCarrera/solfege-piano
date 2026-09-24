@@ -68,6 +68,7 @@ Before submitting a change, run the automated checks:
 
 ```bash
 pnpm test
+pnpm typecheck
 pnpm lint
 pnpm format:check
 pnpm build
@@ -89,9 +90,11 @@ Set `SITE_URL` when developing locally or deploying outside Vercel:
 SITE_URL=
 ```
 
-If `SITE_URL` is not set, the app uses Vercel’s stable production URL and falls back to `https://solfegepiano.vercel.app`.
+If `SITE_URL` is not set, the app uses Vercel’s stable production URL and falls back to `https://solfege.aidencarrera.com`.
 
 If you add a custom domain, set `SITE_URL` to that domain so canonical URLs, the sitemap, and `robots.txt` use it.
+
+To test on a phone over your local network, run pnpm dev:mobile and set DEV_ORIGIN to your machine's LAN IP so the dev server accepts the request.
 
 ## Playing The Piano
 

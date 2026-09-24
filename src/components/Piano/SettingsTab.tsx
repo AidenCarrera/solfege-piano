@@ -7,15 +7,10 @@ import {
   SHORT_SCREEN_OCTAVE_RANGES,
   SHORT_SCREEN_QUERY,
 } from "@/lib/config";
-import type { PianoSettings } from "@/lib/settings";
+import type { PianoSettings, UpdateSetting } from "@/lib/settings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Field, Segmented, Slider, ToggleChip } from "@/components/ui/controls";
 import type { MidiStatus } from "./hooks/useMidiInput";
-
-type UpdateSetting = <K extends keyof PianoSettings>(
-  key: K,
-  value: PianoSettings[K],
-) => void;
 
 export interface SettingsTabProps {
   settings: PianoSettings;

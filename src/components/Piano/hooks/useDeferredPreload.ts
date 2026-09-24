@@ -2,12 +2,10 @@
 
 import { useEffect, useRef } from "react";
 
-export function useDeferredPreload(preloadFn: () => void, delay = 500) {
+export function useDeferredPreload(preloadFn: () => void, delay: number) {
   const hasPreloaded = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     const triggerPreload = () => {
       if (hasPreloaded.current) return;
       hasPreloaded.current = true;

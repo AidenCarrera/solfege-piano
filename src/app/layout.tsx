@@ -4,9 +4,11 @@ import { Analytics } from "@vercel/analytics/next";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_SCRIPT } from "@/lib/theme";
 import {
+  canonicalUrl,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_OG_IMAGE_ALT,
+  SITE_OPEN_GRAPH,
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
@@ -54,20 +56,10 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    locale: "en_US",
-    type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: SITE_OG_IMAGE_ALT,
-      },
-    ],
+    url: canonicalUrl("/"),
   },
   twitter: {
     card: "summary_large_image",
@@ -109,46 +101,48 @@ export const viewport: Viewport = {
   themeColor: DEFAULT_THEME_COLOR,
 };
 
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "@id": `${SITE_URL}/#application`,
+  name: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Any",
+  browserRequirements: "Requires a modern browser with Web Audio support",
+  inLanguage: "en-US",
+  isAccessibleForFree: true,
+  image: `${SITE_URL}/og-image.png`,
+  featureList: [
+    "Interactive online piano keyboard",
+    "Piano and sung solfege samples",
+    "Movable-do solfege labels in any key and scale",
+    "Ear-training practice with scoring",
+    "Live note, interval, and chord names",
+    "Keyboard, mouse, touch, and MIDI controls",
+    "Sustain and configurable audio effects",
+    "Adjustable note labels and octave range",
+  ],
+  author: {
+    "@type": "Person",
+    name: "Aiden Carrera",
+  },
+  url: SITE_URL,
+  offers: {
+    "@type": "Offer",
+    price: 0,
+    priceCurrency: "USD",
+  },
+};
+
+// Escaping "<" keeps the serialised payload from closing the script element early.
+const SERIALIZED_JSON_LD = JSON.stringify(JSON_LD).replace(/</g, "\\u003c");
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "@id": `${SITE_URL}/#application`,
-    name: SITE_NAME,
-    description: SITE_DESCRIPTION,
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Any",
-    browserRequirements: "Requires a modern browser with Web Audio support",
-    inLanguage: "en-US",
-    isAccessibleForFree: true,
-    image: `${SITE_URL}/og-image.png`,
-    featureList: [
-      "Interactive online piano keyboard",
-      "Piano and sung solfege samples",
-      "Movable-do solfege labels in any key and scale",
-      "Ear-training practice with scoring",
-      "Live note, interval, and chord names",
-      "Keyboard, mouse, touch, and MIDI controls",
-      "Sustain and configurable audio effects",
-      "Adjustable note labels and octave range",
-    ],
-    author: {
-      "@type": "Person",
-      name: "Aiden Carrera",
-    },
-    url: SITE_URL,
-    offers: {
-      "@type": "Offer",
-      price: 0,
-      priceCurrency: "USD",
-    },
-  };
-  const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
-
   return (
     // The pre-paint theme script mutates this element before hydration.
     <html lang="en" suppressHydrationWarning>
@@ -158,7 +152,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializedJsonLd }}
+          dangerouslySetInnerHTML={{ __html: SERIALIZED_JSON_LD }}
         />
         {children}
         <SiteFooter />
