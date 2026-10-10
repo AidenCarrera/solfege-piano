@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "motion/react";
 import { GripVertical, Waves, ChevronRight, Plus } from "lucide-react";
 import {
   EffectNode,

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Cable, Pipette, Volume1, Volume2, VolumeX } from "lucide-react";
 import {
   BACKGROUND_SWATCHES,
