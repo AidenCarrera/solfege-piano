@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
 
 export function SiteFooter() {
+  // oxlint-disable-next-line react/purity -- server component, never re-rendered on the client
   const currentYear = new Date().getFullYear();
 
   return (
